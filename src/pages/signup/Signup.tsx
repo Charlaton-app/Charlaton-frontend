@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../stores/useAuthStore";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
+import WebContentReader from '../../components/web-reader/WebContentReader';
 import "./Signup.scss";
 
 const Signup: React.FC = () => {
@@ -86,6 +87,7 @@ const Signup: React.FC = () => {
 
   return (
     <div className="signup-page">
+      <WebContentReader />
       <a href="#main-content" className="skip-to-main">
         Saltar al contenido principal
       </a>
@@ -106,7 +108,7 @@ const Signup: React.FC = () => {
           <p className="subtitle">Únete a Charlaton y comienza a colaborar</p>
 
           {error && (
-            <div className="error-message" role="alert" aria-live="polite">
+            <div id="signup-error" className="error-message" role="alert" aria-live="polite">
               {error}
             </div>
           )}
@@ -123,6 +125,8 @@ const Signup: React.FC = () => {
                 placeholder="Juan Pérez"
                 disabled={isLoading}
                 aria-required="true"
+                aria-invalid={error && !formData.name ? "true" : "false"}
+                aria-describedby={error ? "signup-error" : undefined}
               />
             </div>
 
@@ -137,6 +141,8 @@ const Signup: React.FC = () => {
                 placeholder="tu@ejemplo.com"
                 disabled={isLoading}
                 aria-required="true"
+                aria-invalid={error && !formData.email ? "true" : "false"}
+                aria-describedby={error ? "signup-error" : undefined}
               />
             </div>
 
@@ -151,7 +157,10 @@ const Signup: React.FC = () => {
                 placeholder="Mínimo 6 caracteres"
                 disabled={isLoading}
                 aria-required="true"
+                aria-invalid={error && formData.password.length < 6 && formData.password.length > 0 ? "true" : "false"}
+                aria-describedby={error ? "signup-error password-help" : "password-help"}
               />
+              <span id="password-help" className="visually-hidden">La contraseña debe tener al menos 6 caracteres</span>
             </div>
 
             <div className="form-group">
@@ -165,6 +174,8 @@ const Signup: React.FC = () => {
                 placeholder="Repite tu contraseña"
                 disabled={isLoading}
                 aria-required="true"
+                aria-invalid={error && formData.password !== formData.confirmPassword && formData.confirmPassword.length > 0 ? "true" : "false"}
+                aria-describedby={error ? "signup-error" : undefined}
               />
             </div>
 

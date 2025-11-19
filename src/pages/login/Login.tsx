@@ -6,6 +6,7 @@ import googleIcon from "/icons/google-icon.svg";
 import facebookIcon from "/icons/facebook-icon.svg";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
+import WebContentReader from '../../components/web-reader/WebContentReader';
 import "./Login.scss";
 
 const Login: React.FC = () => {
@@ -59,6 +60,7 @@ const Login: React.FC = () => {
 
   return (
     <div className="login-page">
+      <WebContentReader />
       <a href="#main-content" className="skip-to-main">
         Saltar al contenido principal
       </a>
@@ -84,7 +86,7 @@ const Login: React.FC = () => {
 
           {/* Error Message */}
           {error && (
-            <div className="error-message" role="alert" aria-live="polite">
+            <div id="login-error" className="error-message" role="alert" aria-live="polite">
               {error}
             </div>
           )}
@@ -101,6 +103,8 @@ const Login: React.FC = () => {
                 placeholder="tu@ejemplo.com"
                 disabled={isLoading}
                 aria-required="true"
+                aria-invalid={error ? "true" : "false"}
+                aria-describedby={error ? "login-error" : undefined}
               />
             </div>
 
@@ -114,6 +118,8 @@ const Login: React.FC = () => {
                 placeholder="••••••••"
                 disabled={isLoading}
                 aria-required="true"
+                aria-invalid={error ? "true" : "false"}
+                aria-describedby={error ? "login-error" : undefined}
               />
             </div>
 
