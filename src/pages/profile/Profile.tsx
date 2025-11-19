@@ -41,7 +41,6 @@ const Profile: React.FC = () => {
     updateUserProfile,
     changePassword,
     deleteAccount,
-    logout,
     isLoading,
   } = useAuthStore();
   const [error, setError] = useState("");

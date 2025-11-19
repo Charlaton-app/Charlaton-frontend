@@ -30,9 +30,9 @@ export interface SignupData {
 
 export interface UserResponse {
   id: string;
-  email: string;
-  nickname?: string;
-  role?: string;
+  email: string | null;
+  nickname?: string | null;
+  role?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
