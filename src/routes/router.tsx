@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
+import Home from "../pages/home/Home";
 import Login from "../pages/login/Login";
 import Profile from "../pages/profile/Profile";
 import Chat from "../pages/chat/Chat";
@@ -6,7 +7,7 @@ import Chat from "../pages/chat/Chat";
 export const routes = [
   {
     path: "/",
-    element: <Navigate to="/login" replace />,
+    element: <Home />,
   },
   {
     path: "/login",
