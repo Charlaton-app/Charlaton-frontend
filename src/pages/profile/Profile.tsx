@@ -89,14 +89,6 @@ const Profile: React.FC = () => {
       setError(result.error || "Error al cambiar la contraseña");
     }
   };
-        await updatePassword(auth.currentUser, passwordData.newPassword);
-        
-        setSuccess("Contraseña actualizada exitosamente");
-      });
-    } else {
-      setError(result.error || "Error al cambiar la contraseña");
-    }
-  };
 
   const handleDeleteAccount = async () => {
     const password = window.prompt(
