@@ -1,6 +1,6 @@
-$primary-color: #0D5E9E;
-$font-title: 'Days One', sans-serif;
-$font-body: 'Rubik', sans-serif;
+$primary-color: #0d5e9e;
+$font-title: "Days One", sans-serif;
+$font-body: "Rubik", sans-serif;
 
 .footer {
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
@@ -38,7 +38,8 @@ $font-body: 'Rubik', sans-serif;
         li {
           margin-bottom: 0.625rem;
 
-          a, .footer-link-button {
+          a,
+          .footer-link-button {
             font-family: $font-body;
             color: rgba(255, 255, 255, 0.7);
             text-decoration: none;

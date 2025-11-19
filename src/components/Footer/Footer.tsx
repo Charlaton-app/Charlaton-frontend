@@ -2,15 +2,15 @@ import React, { useState } from "react";
 import Modal from "../Modal/Modal";
 import "./Footer.scss";
 
-type ModalContent = 
-  | 'contact' 
-  | 'faq' 
-  | 'manual' 
-  | 'speed-test' 
-  | 'privacy' 
-  | 'terms' 
-  | 'cookies' 
-  | 'accessibility' 
+type ModalContent =
+  | "contact"
+  | "faq"
+  | "manual"
+  | "speed-test"
+  | "privacy"
+  | "terms"
+  | "cookies"
+  | "accessibility"
   | null;
 
 const Footer: React.FC = () => {
@@ -21,32 +21,42 @@ const Footer: React.FC = () => {
 
   const renderModalContent = () => {
     switch (activeModal) {
-      case 'contact':
+      case "contact":
         return (
           <Modal isOpen={true} onClose={closeModal} title="Contáctanos">
             <div>
               <p>
-                Estamos aquí para ayudarte. Puedes comunicarte con nuestro equipo de soporte a través de los siguientes canales:
+                Estamos aquí para ayudarte. Puedes comunicarte con nuestro
+                equipo de soporte a través de los siguientes canales:
               </p>
-              
+
               <h3>Correo Electrónico</h3>
               <p>
-                <strong>Soporte General:</strong> <a href="mailto:soporte@charlaton.com">soporte@charlaton.com</a><br />
-                <strong>Ventas:</strong> <a href="mailto:ventas@charlaton.com">ventas@charlaton.com</a><br />
-                <strong>Asuntos Técnicos:</strong> <a href="mailto:tecnico@charlaton.com">tecnico@charlaton.com</a>
+                <strong>Soporte General:</strong>{" "}
+                <a href="mailto:soporte@charlaton.com">soporte@charlaton.com</a>
+                <br />
+                <strong>Ventas:</strong>{" "}
+                <a href="mailto:ventas@charlaton.com">ventas@charlaton.com</a>
+                <br />
+                <strong>Asuntos Técnicos:</strong>{" "}
+                <a href="mailto:tecnico@charlaton.com">tecnico@charlaton.com</a>
               </p>
 
               <h3>Teléfono</h3>
               <p>
-                <strong>Nacional:</strong> +57 (1) 123-4567<br />
-                <strong>Internacional:</strong> +1 (800) 555-0123<br />
-                <strong>Horario:</strong> Lunes a Viernes, 8:00 AM - 6:00 PM (GMT-5)
+                <strong>Nacional:</strong> +57 (1) 123-4567
+                <br />
+                <strong>Internacional:</strong> +1 (800) 555-0123
+                <br />
+                <strong>Horario:</strong> Lunes a Viernes, 8:00 AM - 6:00 PM
+                (GMT-5)
               </p>
 
               <h3>Chat en Vivo</h3>
               <p>
-                Disponible en nuestra plataforma de lunes a viernes de 9:00 AM a 5:00 PM. 
-                Inicia sesión y haz clic en el ícono de chat en la esquina inferior derecha.
+                Disponible en nuestra plataforma de lunes a viernes de 9:00 AM a
+                5:00 PM. Inicia sesión y haz clic en el ícono de chat en la
+                esquina inferior derecha.
               </p>
 
               <h3>Redes Sociales</h3>
@@ -61,75 +71,91 @@ const Footer: React.FC = () => {
 
               <h3>Tiempo de Respuesta</h3>
               <p>
-                Nos esforzamos por responder todas las consultas en un plazo de 24 horas durante días hábiles. 
-                Para problemas urgentes, te recomendamos usar nuestro chat en vivo o línea telefónica.
+                Nos esforzamos por responder todas las consultas en un plazo de
+                24 horas durante días hábiles. Para problemas urgentes, te
+                recomendamos usar nuestro chat en vivo o línea telefónica.
               </p>
             </div>
           </Modal>
         );
 
-      case 'faq':
+      case "faq":
         return (
-          <Modal isOpen={true} onClose={closeModal} title="Preguntas Frecuentes">
+          <Modal
+            isOpen={true}
+            onClose={closeModal}
+            title="Preguntas Frecuentes"
+          >
             <div>
               <h3>¿Cómo puedo crear una cuenta?</h3>
               <p>
-                Haz clic en "Registrarse" en la página principal, completa el formulario con tus datos 
-                o usa tu cuenta de Google/Facebook. Recibirás un correo de confirmación para activar tu cuenta.
+                Haz clic en "Registrarse" en la página principal, completa el
+                formulario con tus datos o usa tu cuenta de Google/Facebook.
+                Recibirás un correo de confirmación para activar tu cuenta.
               </p>
 
               <h3>¿Es necesario descargar algún programa?</h3>
               <p>
-                No, Charlaton funciona completamente en tu navegador web. Solo necesitas una conexión 
-                a internet estable y un navegador actualizado (Chrome, Firefox, Safari o Edge).
+                No, Charlaton funciona completamente en tu navegador web. Solo
+                necesitas una conexión a internet estable y un navegador
+                actualizado (Chrome, Firefox, Safari o Edge).
               </p>
 
               <h3>¿Cuántos participantes pueden unirse a una reunión?</h3>
               <p>
-                El plan gratuito permite hasta 10 participantes. Los planes Premium permiten hasta 100 
-                participantes, y el plan Enterprise soporta hasta 500 participantes simultáneos.
+                El plan gratuito permite hasta 10 participantes. Los planes
+                Premium permiten hasta 100 participantes, y el plan Enterprise
+                soporta hasta 500 participantes simultáneos.
               </p>
 
               <h3>¿Puedo grabar mis reuniones?</h3>
               <p>
-                Sí, la función de grabación está disponible en todos los planes de pago. Las grabaciones 
-                se guardan en la nube y están disponibles por 30 días. Puedes descargarlas en cualquier momento.
+                Sí, la función de grabación está disponible en todos los planes
+                de pago. Las grabaciones se guardan en la nube y están
+                disponibles por 30 días. Puedes descargarlas en cualquier
+                momento.
               </p>
 
               <h3>¿Qué requisitos técnicos necesito?</h3>
               <p>
-                Necesitas una cámara web, micrófono, altavoces o auriculares, y una conexión a internet de 
-                al menos 3 Mbps para video HD. Recomendamos usar un ordenador o tablet para la mejor experiencia.
+                Necesitas una cámara web, micrófono, altavoces o auriculares, y
+                una conexión a internet de al menos 3 Mbps para video HD.
+                Recomendamos usar un ordenador o tablet para la mejor
+                experiencia.
               </p>
 
               <h3>¿Cómo comparto mi pantalla?</h3>
               <p>
-                Durante una videollamada, haz clic en el botón "Compartir pantalla" en la barra de herramientas. 
-                Selecciona qué ventana o aplicación deseas compartir y confirma.
+                Durante una videollamada, haz clic en el botón "Compartir
+                pantalla" en la barra de herramientas. Selecciona qué ventana o
+                aplicación deseas compartir y confirma.
               </p>
 
               <h3>¿Puedo programar reuniones con anticipación?</h3>
               <p>
-                Sí, desde tu dashboard puedes programar reuniones futuras, enviar invitaciones por correo 
-                y añadir las reuniones a tu calendario.
+                Sí, desde tu dashboard puedes programar reuniones futuras,
+                enviar invitaciones por correo y añadir las reuniones a tu
+                calendario.
               </p>
 
               <h3>¿Cómo cancelo mi suscripción?</h3>
               <p>
-                Ve a Configuración &gt; Facturación y haz clic en "Cancelar suscripción". Tu acceso Premium 
-                continuará hasta el final del período de facturación actual.
+                Ve a Configuración &gt; Facturación y haz clic en "Cancelar
+                suscripción". Tu acceso Premium continuará hasta el final del
+                período de facturación actual.
               </p>
             </div>
           </Modal>
         );
 
-      case 'manual':
+      case "manual":
         return (
           <Modal isOpen={true} onClose={closeModal} title="Manual de Usuario">
             <div>
               <h3>Comenzando con Charlaton</h3>
               <p>
-                Esta guía te ayudará a aprovechar al máximo nuestra plataforma de videoconferencia.
+                Esta guía te ayudará a aprovechar al máximo nuestra plataforma
+                de videoconferencia.
               </p>
 
               <h3>1. Crear tu Primera Reunión</h3>
@@ -150,26 +176,45 @@ const Footer: React.FC = () => {
 
               <h3>3. Controles Durante la Reunión</h3>
               <ul>
-                <li><strong>Micrófono:</strong> Activar/desactivar tu audio</li>
-                <li><strong>Cámara:</strong> Activar/desactivar tu video</li>
-                <li><strong>Compartir pantalla:</strong> Mostrar tu pantalla a otros participantes</li>
-                <li><strong>Chat:</strong> Enviar mensajes a todos o participantes específicos</li>
-                <li><strong>Participantes:</strong> Ver la lista de asistentes</li>
-                <li><strong>Grabar:</strong> Iniciar/detener grabación (planes Premium)</li>
+                <li>
+                  <strong>Micrófono:</strong> Activar/desactivar tu audio
+                </li>
+                <li>
+                  <strong>Cámara:</strong> Activar/desactivar tu video
+                </li>
+                <li>
+                  <strong>Compartir pantalla:</strong> Mostrar tu pantalla a
+                  otros participantes
+                </li>
+                <li>
+                  <strong>Chat:</strong> Enviar mensajes a todos o participantes
+                  específicos
+                </li>
+                <li>
+                  <strong>Participantes:</strong> Ver la lista de asistentes
+                </li>
+                <li>
+                  <strong>Grabar:</strong> Iniciar/detener grabación (planes
+                  Premium)
+                </li>
               </ul>
 
               <h3>4. Funciones Avanzadas</h3>
               <p>
-                <strong>Fondos Virtuales:</strong> Cambia tu fondo para mayor privacidad o profesionalismo.
+                <strong>Fondos Virtuales:</strong> Cambia tu fondo para mayor
+                privacidad o profesionalismo.
               </p>
               <p>
-                <strong>Sala de Espera:</strong> Controla quién puede entrar a tu reunión.
+                <strong>Sala de Espera:</strong> Controla quién puede entrar a
+                tu reunión.
               </p>
               <p>
-                <strong>Compartir Archivos:</strong> Arrastra archivos al chat para compartirlos con todos.
+                <strong>Compartir Archivos:</strong> Arrastra archivos al chat
+                para compartirlos con todos.
               </p>
               <p>
-                <strong>Pizarra Compartida:</strong> Colabora visualmente con tu equipo en tiempo real.
+                <strong>Pizarra Compartida:</strong> Colabora visualmente con tu
+                equipo en tiempo real.
               </p>
 
               <h3>5. Consejos para Mejores Reuniones</h3>
@@ -183,63 +228,112 @@ const Footer: React.FC = () => {
 
               <h3>Soporte Adicional</h3>
               <p>
-                ¿Necesitas más ayuda? Visita nuestro <a href="#">Centro de Ayuda</a> o 
-                contáctanos en <a href="mailto:soporte@charlaton.com">soporte@charlaton.com</a>
+                ¿Necesitas más ayuda? Visita nuestro{" "}
+                <a href="#">Centro de Ayuda</a> o contáctanos en{" "}
+                <a href="mailto:soporte@charlaton.com">soporte@charlaton.com</a>
               </p>
             </div>
           </Modal>
         );
 
-      case 'speed-test':
+      case "speed-test":
         return (
           <Modal isOpen={true} onClose={closeModal} title="Test de Velocidad">
             <div>
               <h3>Verifica tu Conexión a Internet</h3>
               <p>
-                Una conexión estable es esencial para videoconferencias de calidad. Usa esta herramienta 
-                para verificar si tu conexión cumple con los requisitos.
+                Una conexión estable es esencial para videoconferencias de
+                calidad. Usa esta herramienta para verificar si tu conexión
+                cumple con los requisitos.
               </p>
 
               <h3>Requisitos Recomendados</h3>
               <ul>
-                <li><strong>Video en Calidad Estándar:</strong> Mínimo 1.5 Mbps (subida/bajada)</li>
-                <li><strong>Video HD:</strong> Mínimo 3 Mbps (subida/bajada)</li>
-                <li><strong>Video Full HD:</strong> Mínimo 5 Mbps (subida/bajada)</li>
-                <li><strong>Compartir Pantalla:</strong> Adicional 1-2 Mbps</li>
+                <li>
+                  <strong>Video en Calidad Estándar:</strong> Mínimo 1.5 Mbps
+                  (subida/bajada)
+                </li>
+                <li>
+                  <strong>Video HD:</strong> Mínimo 3 Mbps (subida/bajada)
+                </li>
+                <li>
+                  <strong>Video Full HD:</strong> Mínimo 5 Mbps (subida/bajada)
+                </li>
+                <li>
+                  <strong>Compartir Pantalla:</strong> Adicional 1-2 Mbps
+                </li>
               </ul>
 
               <h3>Cómo Realizar el Test</h3>
               <ol>
                 <li>Cierra todas las descargas y aplicaciones de streaming</li>
-                <li>Conecta tu dispositivo directamente al router si es posible</li>
+                <li>
+                  Conecta tu dispositivo directamente al router si es posible
+                </li>
                 <li>Haz clic en el botón "Iniciar Test" a continuación</li>
-                <li>Espera a que se complete la prueba (aproximadamente 30 segundos)</li>
+                <li>
+                  Espera a que se complete la prueba (aproximadamente 30
+                  segundos)
+                </li>
               </ol>
 
-              <div style={{ textAlign: 'center', margin: '2rem 0', padding: '2rem', background: '#F0F8FF', borderRadius: '12px' }}>
-                <p style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>
+              <div
+                style={{
+                  textAlign: "center",
+                  margin: "2rem 0",
+                  padding: "2rem",
+                  background: "#F0F8FF",
+                  borderRadius: "12px",
+                }}
+              >
+                <p style={{ fontSize: "1.125rem", marginBottom: "1rem" }}>
                   <strong>Estado de Prueba</strong>
                 </p>
-                <button 
+                <button
                   style={{
-                    background: '#0D5E9E',
-                    color: 'white',
-                    padding: '0.75rem 2rem',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '1rem',
+                    background: "#0D5E9E",
+                    color: "white",
+                    padding: "0.75rem 2rem",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontSize: "1rem",
                     fontWeight: 600,
-                    cursor: 'pointer',
-                    fontFamily: 'Rubik, sans-serif'
+                    cursor: "pointer",
+                    fontFamily: "Rubik, sans-serif",
                   }}
-                  onClick={() => alert('Funcionalidad de test de velocidad próximamente. Por ahora, puedes usar fast.com o speedtest.net')}
+                  onClick={() =>
+                    alert(
+                      "Funcionalidad de test de velocidad próximamente. Por ahora, puedes usar fast.com o speedtest.net"
+                    )
+                  }
                 >
                   Iniciar Test de Velocidad
                 </button>
-                <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>
-                  Nota: Esta función estará completamente disponible próximamente.
-                  Por ahora, recomendamos usar <a href="https://fast.com" target="_blank" rel="noopener noreferrer">fast.com</a> o 
-                  <a href="https://speedtest.net" target="_blank" rel="noopener noreferrer"> speedtest.net</a>
+                <p
+                  style={{
+                    marginTop: "1rem",
+                    fontSize: "0.875rem",
+                    color: "#6b7280",
+                  }}
+                >
+                  Nota: Esta función estará completamente disponible
+                  próximamente. Por ahora, recomendamos usar{" "}
+                  <a
+                    href="https://fast.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    fast.com
+                  </a>{" "}
+                  o
+                  <a
+                    href="https://speedtest.net"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {" "}
+                    speedtest.net
+                  </a>
                 </p>
               </div>
 
@@ -248,34 +342,60 @@ const Footer: React.FC = () => {
                 <li>Usa conexión por cable Ethernet en lugar de WiFi</li>
                 <li>Acércate al router si usas WiFi</li>
                 <li>Cierra pestañas del navegador que no uses</li>
-                <li>Limita el uso de internet por otros dispositivos durante la reunión</li>
-                <li>Contacta a tu proveedor si la velocidad es constantemente baja</li>
+                <li>
+                  Limita el uso de internet por otros dispositivos durante la
+                  reunión
+                </li>
+                <li>
+                  Contacta a tu proveedor si la velocidad es constantemente baja
+                </li>
               </ul>
             </div>
           </Modal>
         );
 
-      case 'privacy':
+      case "privacy":
         return (
-          <Modal isOpen={true} onClose={closeModal} title="Política de Privacidad">
+          <Modal
+            isOpen={true}
+            onClose={closeModal}
+            title="Política de Privacidad"
+          >
             <div>
-              <p><em>Última actualización: 18 de noviembre de 2025</em></p>
+              <p>
+                <em>Última actualización: 18 de noviembre de 2025</em>
+              </p>
 
               <h3>1. Información que Recopilamos</h3>
               <p>
-                En Charlaton, recopilamos la siguiente información cuando usas nuestra plataforma:
+                En Charlaton, recopilamos la siguiente información cuando usas
+                nuestra plataforma:
               </p>
               <ul>
-                <li><strong>Información de cuenta:</strong> nombre, correo electrónico, foto de perfil</li>
-                <li><strong>Información técnica:</strong> dirección IP, tipo de navegador, sistema operativo</li>
-                <li><strong>Información de uso:</strong> fechas y duración de reuniones, participantes</li>
-                <li><strong>Contenido de comunicaciones:</strong> mensajes de chat, archivos compartidos (con tu consentimiento)</li>
+                <li>
+                  <strong>Información de cuenta:</strong> nombre, correo
+                  electrónico, foto de perfil
+                </li>
+                <li>
+                  <strong>Información técnica:</strong> dirección IP, tipo de
+                  navegador, sistema operativo
+                </li>
+                <li>
+                  <strong>Información de uso:</strong> fechas y duración de
+                  reuniones, participantes
+                </li>
+                <li>
+                  <strong>Contenido de comunicaciones:</strong> mensajes de
+                  chat, archivos compartidos (con tu consentimiento)
+                </li>
               </ul>
 
               <h3>2. Cómo Usamos tu Información</h3>
               <p>Utilizamos tu información para:</p>
               <ul>
-                <li>Proporcionar y mejorar nuestros servicios de videoconferencia</li>
+                <li>
+                  Proporcionar y mejorar nuestros servicios de videoconferencia
+                </li>
                 <li>Personalizar tu experiencia en la plataforma</li>
                 <li>Comunicarnos contigo sobre actualizaciones y soporte</li>
                 <li>Garantizar la seguridad y prevenir fraudes</li>
@@ -287,18 +407,29 @@ const Footer: React.FC = () => {
                 No vendemos tu información personal. Solo compartimos datos con:
               </p>
               <ul>
-                <li>Proveedores de servicios que nos ayudan a operar la plataforma</li>
+                <li>
+                  Proveedores de servicios que nos ayudan a operar la plataforma
+                </li>
                 <li>Autoridades cuando la ley lo requiera</li>
-                <li>Otros usuarios, solo la información que elijas compartir durante las reuniones</li>
+                <li>
+                  Otros usuarios, solo la información que elijas compartir
+                  durante las reuniones
+                </li>
               </ul>
 
               <h3>4. Seguridad de Datos</h3>
               <p>
-                Implementamos medidas de seguridad técnicas y organizativas para proteger tu información:
+                Implementamos medidas de seguridad técnicas y organizativas para
+                proteger tu información:
               </p>
               <ul>
-                <li>Cifrado de extremo a extremo para todas las comunicaciones</li>
-                <li>Almacenamiento seguro en servidores con certificación ISO 27001</li>
+                <li>
+                  Cifrado de extremo a extremo para todas las comunicaciones
+                </li>
+                <li>
+                  Almacenamiento seguro en servidores con certificación ISO
+                  27001
+                </li>
                 <li>Acceso restringido solo a personal autorizado</li>
                 <li>Auditorías de seguridad regulares</li>
               </ul>
@@ -315,57 +446,81 @@ const Footer: React.FC = () => {
 
               <h3>6. Retención de Datos</h3>
               <p>
-                Conservamos tu información mientras tu cuenta esté activa y durante un período adicional 
-                para cumplir con obligaciones legales. Las grabaciones se retienen por 30 días o según 
-                tu configuración de plan.
+                Conservamos tu información mientras tu cuenta esté activa y
+                durante un período adicional para cumplir con obligaciones
+                legales. Las grabaciones se retienen por 30 días o según tu
+                configuración de plan.
               </p>
 
               <h3>7. Cookies y Tecnologías Similares</h3>
               <p>
-                Usamos cookies para mejorar tu experiencia. Puedes configurar tu navegador para rechazar 
-                cookies, pero esto puede afectar la funcionalidad del sitio. Ver nuestra <a href="#" onClick={(e) => { e.preventDefault(); openModal('cookies'); }}>Política de Cookies</a>.
+                Usamos cookies para mejorar tu experiencia. Puedes configurar tu
+                navegador para rechazar cookies, pero esto puede afectar la
+                funcionalidad del sitio. Ver nuestra{" "}
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    openModal("cookies");
+                  }}
+                >
+                  Política de Cookies
+                </a>
+                .
               </p>
 
               <h3>8. Cambios a esta Política</h3>
               <p>
-                Podemos actualizar esta política ocasionalmente. Te notificaremos de cambios significativos 
-                por correo electrónico o mediante aviso en la plataforma.
+                Podemos actualizar esta política ocasionalmente. Te
+                notificaremos de cambios significativos por correo electrónico o
+                mediante aviso en la plataforma.
               </p>
 
               <h3>Contacto</h3>
               <p>
-                Para preguntas sobre privacidad, contáctanos en: <a href="mailto:privacidad@charlaton.com">privacidad@charlaton.com</a>
+                Para preguntas sobre privacidad, contáctanos en:{" "}
+                <a href="mailto:privacidad@charlaton.com">
+                  privacidad@charlaton.com
+                </a>
               </p>
             </div>
           </Modal>
         );
 
-      case 'terms':
+      case "terms":
         return (
           <Modal isOpen={true} onClose={closeModal} title="Términos de Uso">
             <div>
-              <p><em>Última actualización: 18 de noviembre de 2025</em></p>
+              <p>
+                <em>Última actualización: 18 de noviembre de 2025</em>
+              </p>
 
               <h3>1. Aceptación de Términos</h3>
               <p>
-                Al acceder y usar Charlaton, aceptas estar sujeto a estos Términos de Uso. Si no estás 
-                de acuerdo, no uses nuestros servicios.
+                Al acceder y usar Charlaton, aceptas estar sujeto a estos
+                Términos de Uso. Si no estás de acuerdo, no uses nuestros
+                servicios.
               </p>
 
               <h3>2. Descripción del Servicio</h3>
               <p>
-                Charlaton proporciona una plataforma de videoconferencia que permite a usuarios comunicarse 
-                mediante video, audio, chat de texto y compartir archivos. Ofrecemos tanto planes gratuitos 
+                Charlaton proporciona una plataforma de videoconferencia que
+                permite a usuarios comunicarse mediante video, audio, chat de
+                texto y compartir archivos. Ofrecemos tanto planes gratuitos
                 como de pago con diferentes características.
               </p>
 
               <h3>3. Registro y Cuenta</h3>
               <p>Para usar nuestros servicios debes:</p>
               <ul>
-                <li>Tener al menos 18 años de edad o contar con permiso parental</li>
+                <li>
+                  Tener al menos 18 años de edad o contar con permiso parental
+                </li>
                 <li>Proporcionar información precisa y actualizada</li>
                 <li>Mantener la confidencialidad de tu contraseña</li>
-                <li>Notificarnos inmediatamente de cualquier uso no autorizado</li>
+                <li>
+                  Notificarnos inmediatamente de cualquier uso no autorizado
+                </li>
               </ul>
 
               <h3>4. Uso Aceptable</h3>
@@ -382,29 +537,42 @@ const Footer: React.FC = () => {
 
               <h3>5. Contenido del Usuario</h3>
               <p>
-                Eres responsable del contenido que compartes en Charlaton. Al publicar contenido, 
-                otorgas a Charlaton una licencia limitada para almacenar, transmitir y mostrar ese 
-                contenido según sea necesario para proporcionar el servicio.
+                Eres responsable del contenido que compartes en Charlaton. Al
+                publicar contenido, otorgas a Charlaton una licencia limitada
+                para almacenar, transmitir y mostrar ese contenido según sea
+                necesario para proporcionar el servicio.
               </p>
 
               <h3>6. Planes de Pago y Facturación</h3>
               <ul>
-                <li>Los planes de pago se facturan mensual o anualmente según tu elección</li>
+                <li>
+                  Los planes de pago se facturan mensual o anualmente según tu
+                  elección
+                </li>
                 <li>Las renovaciones son automáticas a menos que canceles</li>
-                <li>Los precios pueden cambiar con notificación previa de 30 días</li>
-                <li>Las cancelaciones surten efecto al final del período de facturación</li>
-                <li>No ofrecemos reembolsos parciales por períodos no utilizados</li>
+                <li>
+                  Los precios pueden cambiar con notificación previa de 30 días
+                </li>
+                <li>
+                  Las cancelaciones surten efecto al final del período de
+                  facturación
+                </li>
+                <li>
+                  No ofrecemos reembolsos parciales por períodos no utilizados
+                </li>
               </ul>
 
               <h3>7. Propiedad Intelectual</h3>
               <p>
-                Charlaton y su contenido (incluyendo diseño, código, logos y marcas) son propiedad de 
-                Charlaton Company LLC y están protegidos por leyes de propiedad intelectual.
+                Charlaton y su contenido (incluyendo diseño, código, logos y
+                marcas) son propiedad de Charlaton Company LLC y están
+                protegidos por leyes de propiedad intelectual.
               </p>
 
               <h3>8. Limitación de Responsabilidad</h3>
               <p>
-                Charlaton se proporciona "tal cual" sin garantías de ningún tipo. No somos responsables por:
+                Charlaton se proporciona "tal cual" sin garantías de ningún
+                tipo. No somos responsables por:
               </p>
               <ul>
                 <li>Interrupciones del servicio o errores técnicos</li>
@@ -415,53 +583,64 @@ const Footer: React.FC = () => {
 
               <h3>9. Modificación y Terminación</h3>
               <p>
-                Nos reservamos el derecho de modificar o discontinuar el servicio en cualquier momento. 
-                Podemos suspender o terminar tu cuenta si violas estos términos.
+                Nos reservamos el derecho de modificar o discontinuar el
+                servicio en cualquier momento. Podemos suspender o terminar tu
+                cuenta si violas estos términos.
               </p>
 
               <h3>10. Ley Aplicable</h3>
               <p>
-                Estos términos se rigen por las leyes de Colombia. Cualquier disputa se resolverá en 
-                los tribunales de Bogotá, Colombia.
+                Estos términos se rigen por las leyes de Colombia. Cualquier
+                disputa se resolverá en los tribunales de Bogotá, Colombia.
               </p>
 
               <h3>Contacto</h3>
               <p>
-                Para preguntas sobre estos términos: <a href="mailto:legal@charlaton.com">legal@charlaton.com</a>
+                Para preguntas sobre estos términos:{" "}
+                <a href="mailto:legal@charlaton.com">legal@charlaton.com</a>
               </p>
             </div>
           </Modal>
         );
 
-      case 'cookies':
+      case "cookies":
         return (
           <Modal isOpen={true} onClose={closeModal} title="Política de Cookies">
             <div>
-              <p><em>Última actualización: 18 de noviembre de 2025</em></p>
+              <p>
+                <em>Última actualización: 18 de noviembre de 2025</em>
+              </p>
 
               <h3>¿Qué son las Cookies?</h3>
               <p>
-                Las cookies son pequeños archivos de texto que se almacenan en tu dispositivo cuando 
-                visitas un sitio web. Nos ayudan a mejorar tu experiencia recordando tus preferencias 
-                y proporcionando funcionalidad esencial.
+                Las cookies son pequeños archivos de texto que se almacenan en
+                tu dispositivo cuando visitas un sitio web. Nos ayudan a mejorar
+                tu experiencia recordando tus preferencias y proporcionando
+                funcionalidad esencial.
               </p>
 
               <h3>Tipos de Cookies que Usamos</h3>
-              
+
               <h4>1. Cookies Esenciales (Obligatorias)</h4>
               <p>
-                Estas cookies son necesarias para que el sitio funcione correctamente:
+                Estas cookies son necesarias para que el sitio funcione
+                correctamente:
               </p>
               <ul>
-                <li><strong>Autenticación:</strong> Mantienen tu sesión activa</li>
-                <li><strong>Seguridad:</strong> Protegen contra ataques y fraudes</li>
-                <li><strong>Preferencias de usuario:</strong> Recuerdan tu idioma y configuración</li>
+                <li>
+                  <strong>Autenticación:</strong> Mantienen tu sesión activa
+                </li>
+                <li>
+                  <strong>Seguridad:</strong> Protegen contra ataques y fraudes
+                </li>
+                <li>
+                  <strong>Preferencias de usuario:</strong> Recuerdan tu idioma
+                  y configuración
+                </li>
               </ul>
 
               <h4>2. Cookies de Rendimiento</h4>
-              <p>
-                Nos ayudan a entender cómo usas nuestro sitio:
-              </p>
+              <p>Nos ayudan a entender cómo usas nuestro sitio:</p>
               <ul>
                 <li>Google Analytics: Análisis de tráfico y comportamiento</li>
                 <li>Métricas de rendimiento del sitio</li>
@@ -469,9 +648,7 @@ const Footer: React.FC = () => {
               </ul>
 
               <h4>3. Cookies de Funcionalidad</h4>
-              <p>
-                Mejoran tu experiencia con características personalizadas:
-              </p>
+              <p>Mejoran tu experiencia con características personalizadas:</p>
               <ul>
                 <li>Preferencias de visualización (modo oscuro/claro)</li>
                 <li>Configuración de video y audio</li>
@@ -479,9 +656,7 @@ const Footer: React.FC = () => {
               </ul>
 
               <h4>4. Cookies de Marketing (Opcionales)</h4>
-              <p>
-                Usadas para mostrarte contenido relevante:
-              </p>
+              <p>Usadas para mostrarte contenido relevante:</p>
               <ul>
                 <li>Facebook Pixel: Publicidad personalizada</li>
                 <li>Google Ads: Campañas de marketing</li>
@@ -490,29 +665,57 @@ const Footer: React.FC = () => {
 
               <h3>Duración de las Cookies</h3>
               <ul>
-                <li><strong>Cookies de sesión:</strong> Se eliminan cuando cierras el navegador</li>
-                <li><strong>Cookies persistentes:</strong> Permanecen entre 30 días y 2 años</li>
+                <li>
+                  <strong>Cookies de sesión:</strong> Se eliminan cuando cierras
+                  el navegador
+                </li>
+                <li>
+                  <strong>Cookies persistentes:</strong> Permanecen entre 30
+                  días y 2 años
+                </li>
               </ul>
 
               <h3>Control de Cookies</h3>
               <p>
-                Puedes controlar y eliminar cookies mediante la configuración de tu navegador:
+                Puedes controlar y eliminar cookies mediante la configuración de
+                tu navegador:
               </p>
               <ul>
-                <li><strong>Chrome:</strong> Configuración &gt; Privacidad y seguridad &gt; Cookies</li>
-                <li><strong>Firefox:</strong> Opciones &gt; Privacidad y seguridad &gt; Cookies</li>
-                <li><strong>Safari:</strong> Preferencias &gt; Privacidad &gt; Gestionar datos de sitios</li>
-                <li><strong>Edge:</strong> Configuración &gt; Privacidad &gt; Cookies</li>
+                <li>
+                  <strong>Chrome:</strong> Configuración &gt; Privacidad y
+                  seguridad &gt; Cookies
+                </li>
+                <li>
+                  <strong>Firefox:</strong> Opciones &gt; Privacidad y seguridad
+                  &gt; Cookies
+                </li>
+                <li>
+                  <strong>Safari:</strong> Preferencias &gt; Privacidad &gt;
+                  Gestionar datos de sitios
+                </li>
+                <li>
+                  <strong>Edge:</strong> Configuración &gt; Privacidad &gt;
+                  Cookies
+                </li>
               </ul>
 
-              <p style={{ background: '#FEF3C7', padding: '1rem', borderRadius: '8px', marginTop: '1rem' }}>
-                <strong>Nota:</strong> Bloquear o eliminar cookies puede afectar la funcionalidad del sitio 
-                y algunas características pueden no estar disponibles.
+              <p
+                style={{
+                  background: "#FEF3C7",
+                  padding: "1rem",
+                  borderRadius: "8px",
+                  marginTop: "1rem",
+                }}
+              >
+                <strong>Nota:</strong> Bloquear o eliminar cookies puede afectar
+                la funcionalidad del sitio y algunas características pueden no
+                estar disponibles.
               </p>
 
               <h3>Cookies de Terceros</h3>
               <p>
-                Algunos servicios de terceros que usamos pueden establecer sus propias cookies:
+                Algunos servicios de terceros que usamos pueden establecer sus
+                propias cookies:
               </p>
               <ul>
                 <li>Google (Analytics, Fonts, reCAPTCHA)</li>
@@ -522,45 +725,70 @@ const Footer: React.FC = () => {
 
               <h3>Actualizaciones de esta Política</h3>
               <p>
-                Podemos actualizar esta política de cookies ocasionalmente. Te notificaremos de cambios 
-                significativos mediante un aviso en nuestro sitio web.
+                Podemos actualizar esta política de cookies ocasionalmente. Te
+                notificaremos de cambios significativos mediante un aviso en
+                nuestro sitio web.
               </p>
 
               <h3>Más Información</h3>
               <p>
-                Para más detalles sobre cómo usamos cookies y tu privacidad, consulta nuestra 
-                <a href="#" onClick={(e) => { e.preventDefault(); openModal('privacy'); }}> Política de Privacidad</a> o 
-                contáctanos en <a href="mailto:privacidad@charlaton.com">privacidad@charlaton.com</a>
+                Para más detalles sobre cómo usamos cookies y tu privacidad,
+                consulta nuestra
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    openModal("privacy");
+                  }}
+                >
+                  {" "}
+                  Política de Privacidad
+                </a>{" "}
+                o contáctanos en{" "}
+                <a href="mailto:privacidad@charlaton.com">
+                  privacidad@charlaton.com
+                </a>
               </p>
             </div>
           </Modal>
         );
 
-      case 'accessibility':
+      case "accessibility":
         return (
-          <Modal isOpen={true} onClose={closeModal} title="Declaración de Accesibilidad">
+          <Modal
+            isOpen={true}
+            onClose={closeModal}
+            title="Declaración de Accesibilidad"
+          >
             <div>
-              <p><em>Última actualización: 18 de noviembre de 2025</em></p>
+              <p>
+                <em>Última actualización: 18 de noviembre de 2025</em>
+              </p>
 
               <h3>Nuestro Compromiso</h3>
               <p>
-                Charlaton está comprometido con garantizar la accesibilidad digital para personas con 
-                discapacidades. Continuamente mejoramos la experiencia del usuario para todos, aplicando 
-                los estándares de accesibilidad relevantes.
+                Charlaton está comprometido con garantizar la accesibilidad
+                digital para personas con discapacidades. Continuamente
+                mejoramos la experiencia del usuario para todos, aplicando los
+                estándares de accesibilidad relevantes.
               </p>
 
               <h3>Estándares de Conformidad</h3>
               <p>
-                Nuestro objetivo es cumplir con las Pautas de Accesibilidad para el Contenido Web (WCAG) 
-                2.1 Nivel AA. Estas pautas explican cómo hacer el contenido web más accesible para personas 
-                con discapacidades.
+                Nuestro objetivo es cumplir con las Pautas de Accesibilidad para
+                el Contenido Web (WCAG) 2.1 Nivel AA. Estas pautas explican cómo
+                hacer el contenido web más accesible para personas con
+                discapacidades.
               </p>
 
               <h3>Características de Accesibilidad</h3>
-              
+
               <h4>Navegación por Teclado</h4>
               <ul>
-                <li>Todas las funcionalidades son accesibles usando solo el teclado</li>
+                <li>
+                  Todas las funcionalidades son accesibles usando solo el
+                  teclado
+                </li>
                 <li>Indicadores visuales claros para el foco del teclado</li>
                 <li>Atajos de teclado para acciones comunes</li>
                 <li>Orden de tabulación lógico en toda la plataforma</li>
@@ -576,8 +804,12 @@ const Footer: React.FC = () => {
 
               <h4>Visual</h4>
               <ul>
-                <li>Contraste de color que cumple con WCAG AA (ratio mínimo 4.5:1)</li>
-                <li>Texto redimensionable hasta 200% sin pérdida de funcionalidad</li>
+                <li>
+                  Contraste de color que cumple con WCAG AA (ratio mínimo 4.5:1)
+                </li>
+                <li>
+                  Texto redimensionable hasta 200% sin pérdida de funcionalidad
+                </li>
                 <li>No se usa solo el color para transmitir información</li>
                 <li>Opción de modo de alto contraste</li>
               </ul>
@@ -611,42 +843,53 @@ const Footer: React.FC = () => {
 
               <h3>Limitaciones Conocidas</h3>
               <p>
-                A pesar de nuestros esfuerzos, algunas áreas pueden presentar desafíos de accesibilidad:
+                A pesar de nuestros esfuerzos, algunas áreas pueden presentar
+                desafíos de accesibilidad:
               </p>
               <ul>
-                <li>Contenido compartido por otros usuarios durante reuniones</li>
+                <li>
+                  Contenido compartido por otros usuarios durante reuniones
+                </li>
                 <li>Documentos PDF antiguos sin etiquetas apropiadas</li>
                 <li>Videos subidos por usuarios sin subtítulos</li>
               </ul>
 
-              <p>Estamos trabajando activamente para abordar estas limitaciones.</p>
+              <p>
+                Estamos trabajando activamente para abordar estas limitaciones.
+              </p>
 
               <h3>Feedback y Asistencia</h3>
               <p>
-                Valoramos tus comentarios sobre la accesibilidad de Charlaton. Si encuentras alguna 
-                barrera de accesibilidad:
+                Valoramos tus comentarios sobre la accesibilidad de Charlaton.
+                Si encuentras alguna barrera de accesibilidad:
               </p>
               <ul>
-                <li>Email: <a href="mailto:accesibilidad@charlaton.com">accesibilidad@charlaton.com</a></li>
+                <li>
+                  Email:{" "}
+                  <a href="mailto:accesibilidad@charlaton.com">
+                    accesibilidad@charlaton.com
+                  </a>
+                </li>
                 <li>Teléfono: +57 (1) 123-4567</li>
                 <li>Formulario de contacto en nuestra página de soporte</li>
               </ul>
 
               <p>
-                Intentaremos responder a tu consulta dentro de 2 días hábiles y proporcionar una solución 
-                o alternativa cuando sea posible.
+                Intentaremos responder a tu consulta dentro de 2 días hábiles y
+                proporcionar una solución o alternativa cuando sea posible.
               </p>
 
               <h3>Evaluación y Mejora Continua</h3>
               <p>
-                Realizamos evaluaciones de accesibilidad regulares y trabajamos continuamente para mejorar. 
-                Nuestro equipo recibe capacitación continua en mejores prácticas de accesibilidad.
+                Realizamos evaluaciones de accesibilidad regulares y trabajamos
+                continuamente para mejorar. Nuestro equipo recibe capacitación
+                continua en mejores prácticas de accesibilidad.
               </p>
 
               <h3>Aprobación Formal</h3>
               <p>
-                Esta declaración de accesibilidad fue aprobada el 18 de noviembre de 2025 y será revisada 
-                cada 6 meses.
+                Esta declaración de accesibilidad fue aprobada el 18 de
+                noviembre de 2025 y será revisada cada 6 meses.
               </p>
             </div>
           </Modal>
@@ -701,22 +944,34 @@ const Footer: React.FC = () => {
             <h3>Ayuda</h3>
             <ul>
               <li>
-                <button onClick={() => openModal('contact')} className="footer-link-button">
+                <button
+                  onClick={() => openModal("contact")}
+                  className="footer-link-button"
+                >
                   Contáctanos
                 </button>
               </li>
               <li>
-                <button onClick={() => openModal('faq')} className="footer-link-button">
+                <button
+                  onClick={() => openModal("faq")}
+                  className="footer-link-button"
+                >
                   Preguntas Frecuentes
                 </button>
               </li>
               <li>
-                <button onClick={() => openModal('manual')} className="footer-link-button">
+                <button
+                  onClick={() => openModal("manual")}
+                  className="footer-link-button"
+                >
                   Manual de Usuario
                 </button>
               </li>
               <li>
-                <button onClick={() => openModal('speed-test')} className="footer-link-button">
+                <button
+                  onClick={() => openModal("speed-test")}
+                  className="footer-link-button"
+                >
                   Test de Velocidad
                 </button>
               </li>
@@ -728,22 +983,34 @@ const Footer: React.FC = () => {
             <h3>Legal</h3>
             <ul>
               <li>
-                <button onClick={() => openModal('privacy')} className="footer-link-button">
+                <button
+                  onClick={() => openModal("privacy")}
+                  className="footer-link-button"
+                >
                   Privacidad
                 </button>
               </li>
               <li>
-                <button onClick={() => openModal('terms')} className="footer-link-button">
+                <button
+                  onClick={() => openModal("terms")}
+                  className="footer-link-button"
+                >
                   Términos de Uso
                 </button>
               </li>
               <li>
-                <button onClick={() => openModal('cookies')} className="footer-link-button">
+                <button
+                  onClick={() => openModal("cookies")}
+                  className="footer-link-button"
+                >
                   Cookies
                 </button>
               </li>
               <li>
-                <button onClick={() => openModal('accessibility')} className="footer-link-button">
+                <button
+                  onClick={() => openModal("accessibility")}
+                  className="footer-link-button"
+                >
                   Accesibilidad
                 </button>
               </li>
@@ -753,9 +1020,7 @@ const Footer: React.FC = () => {
 
         {/* Copyright */}
         <div className="footer-bottom">
-          <p>
-            @2025 Charlaton Company, LLC. Todos los derechos reservados.
-          </p>
+          <p>@2025 Charlaton Company, LLC. Todos los derechos reservados.</p>
 
           {/* Social Icons */}
           <div className="social-icons">
@@ -776,7 +1041,7 @@ const Footer: React.FC = () => {
             </a>
             <a href="#linkedin" aria-label="LinkedIn">
               <svg fill="currentColor" viewBox="0 0 24 24">
-                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
               </svg>
             </a>
           </div>
