@@ -1,3 +1,4 @@
+@use "sass:color";
 @import "../../index.scss";
 
 .signup-page {
@@ -7,7 +8,7 @@
   background: linear-gradient(
     135deg,
     $primary-background 0%,
-    lighten($primary-background, 5%) 100%
+    color.adjust($primary-background, $lightness: 5%) 100%
   );
 
   .main-content {
@@ -132,7 +133,7 @@
         background: linear-gradient(
           135deg,
           $primary-color 0%,
-          darken($primary-color, 5%) 100%
+          color.adjust($primary-color, $lightness: -5%) 100%
         );
         color: white;
         border: none;
@@ -216,7 +217,7 @@
 
         &:hover:not(:disabled) {
           border-color: $primary-color;
-          background: lighten($primary-background, 5%);
+          background: color.adjust($primary-background, $lightness: 5%);
         }
 
         &:disabled {
@@ -251,7 +252,7 @@
         transition: color 0.2s ease;
 
         &:hover {
-          color: darken($primary-color, 10%);
+          color: color.adjust($primary-color, $lightness: -10%);
           text-decoration: underline;
         }
 

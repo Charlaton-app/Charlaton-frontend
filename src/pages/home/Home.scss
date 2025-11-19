@@ -1,12 +1,14 @@
-$primary-color: #0D5E9E;
-$secondary-color: #24C4E8;
-$accent-color: #F7941D;
-$bg-light: #F0F8FF;
-$bg-white: #FFFFFF;
-$text-dark: #1A1A1A;
-$text-gray: #5A5A5A;
-$font-title: 'Days One', sans-serif;
-$font-body: 'Rubik', sans-serif;
+$primary-color: #0d5e9e;
+$secondary-color: #24c4e8;
+$accent-color: #f7941d;
+$bg-light: #f0f8ff;
+$bg-white: #ffffff;
+$text-dark: #1a1a1a;
+$text-gray: #5a5a5a;
+$font-title: "Days One", sans-serif;
+$font-body: "Rubik", sans-serif;
+
+@use "sass:color";
 
 .home-page {
   display: flex;
@@ -23,7 +25,7 @@ $font-body: 'Rubik', sans-serif;
 .hero-section {
   background: linear-gradient(135deg, $bg-light 0%, $bg-white 100%);
   padding: 4rem 2rem;
-  
+
   .hero-container {
     max-width: 1200px;
     margin: 0 auto;
@@ -64,7 +66,7 @@ $font-body: 'Rubik', sans-serif;
       box-shadow: 0 4px 12px rgba($primary-color, 0.3);
 
       &:hover {
-        background: darken($primary-color, 10%);
+        background: color.adjust($primary-color, $lightness: -10%);
         transform: translateY(-2px);
         box-shadow: 0 6px 16px rgba($primary-color, 0.4);
       }
@@ -120,8 +122,8 @@ $font-body: 'Rubik', sans-serif;
 .stats-section {
   background: $bg-white;
   padding: 3rem 2rem;
-  border-top: 1px solid #E5E5E5;
-  border-bottom: 1px solid #E5E5E5;
+  border-top: 1px solid #e5e5e5;
+  border-bottom: 1px solid #e5e5e5;
 
   .stats-container {
     max-width: 1200px;
@@ -260,7 +262,7 @@ $font-body: 'Rubik', sans-serif;
   }
 
   .faq-item {
-    border: 1px solid #E5E5E5;
+    border: 1px solid #e5e5e5;
     border-radius: 8px;
     margin-bottom: 1rem;
     overflow: hidden;
@@ -287,7 +289,7 @@ $font-body: 'Rubik', sans-serif;
       transition: background 0.3s ease;
 
       &:hover {
-        background: lighten($bg-light, 5%);
+        background: color.adjust($bg-light, $lightness: 5%);
       }
 
       &:focus-visible {
@@ -310,7 +312,7 @@ $font-body: 'Rubik', sans-serif;
 
     .faq-answer {
       padding: 0 1.5rem 1.25rem;
-      background: lighten($bg-light, 7%);
+      background: color.adjust($bg-light, $lightness: 7%);
       animation: slideDown 0.3s ease;
 
       p {
@@ -367,7 +369,7 @@ $font-body: 'Rubik', sans-serif;
   text-decoration: none;
   border-radius: 0 0 8px 0;
   font-weight: 500;
-  
+
   &:focus {
     left: 0;
   }

@@ -1,3 +1,4 @@
+@use "sass:color";
 @import "../../index.scss";
 
 .recovery-page {
@@ -7,7 +8,7 @@
   background: linear-gradient(
     135deg,
     $primary-background 0%,
-    lighten($primary-background, 5%) 100%
+    color.adjust($primary-background, $lightness: 5%) 100%
   );
 
   .main-content {
@@ -40,7 +41,7 @@
         background: linear-gradient(
           135deg,
           $accent-color 0%,
-          darken($accent-color, 10%) 100%
+          color.adjust($accent-color, $lightness: -10%) 100%
         );
         color: white;
         display: flex;
@@ -86,8 +87,8 @@
     .success-message {
       background: linear-gradient(
         135deg,
-        lighten($secondary-color, 45%) 0%,
-        lighten($secondary-color, 48%) 100%
+        color.adjust($secondary-color, $lightness: 45%) 0%,
+        color.adjust($secondary-color, $lightness: 48%) 100%
       );
       border: 2px solid $secondary-color;
       border-radius: 12px;
@@ -149,7 +150,7 @@
         transition: all 0.3s ease;
 
         &:hover {
-          background: darken($primary-color, 5%);
+          background: color.adjust($primary-color, $lightness: -5%);
           transform: translateY(-2px);
           box-shadow: 0 4px 12px rgba($primary-color, 0.3);
         }
@@ -211,7 +212,7 @@
         background: linear-gradient(
           135deg,
           $accent-color 0%,
-          darken($accent-color, 5%) 100%
+          color.adjust($accent-color, $lightness: -5%) 100%
         );
         color: white;
         border: none;

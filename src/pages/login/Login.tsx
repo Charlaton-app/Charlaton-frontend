@@ -8,7 +8,8 @@ import "./Login.scss";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { login, loginWithGoogle, loginWithFacebook, isLoading } = useAuthStore();
+  const { login, loginWithGoogle, loginWithFacebook, isLoading } =
+    useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -16,7 +17,7 @@ const Login: React.FC = () => {
   const handleLoginGoogle = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    
+
     const result = await loginWithGoogle();
     if (result.success) {
       navigate("/dashboard");
@@ -28,7 +29,7 @@ const Login: React.FC = () => {
   const handleLoginFacebook = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    
+
     const result = await loginWithFacebook();
     if (result.success) {
       navigate("/dashboard");

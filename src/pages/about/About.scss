@@ -1,3 +1,4 @@
+@use "sass:color";
 @import "../../index.scss";
 
 .about-page {
@@ -200,7 +201,7 @@
       gap: 2rem;
 
       .feature-card {
-        background: lighten($primary-background, 3%);
+        background: color.adjust($primary-background, $lightness: 3%);
         border-radius: 16px;
         padding: 2.5rem;
         transition: all 0.3s ease;
@@ -219,7 +220,7 @@
           background: linear-gradient(
             135deg,
             $secondary-color 0%,
-            darken($secondary-color, 5%) 100%
+            color.adjust($secondary-color, $lightness: -5%) 100%
           );
           color: white;
           display: flex;
@@ -290,7 +291,7 @@
           background: linear-gradient(
             135deg,
             $accent-color 0%,
-            darken($accent-color, 5%) 100%
+            color.adjust($accent-color, $lightness: -5%) 100%
           );
           color: white;
           display: flex;
@@ -346,7 +347,7 @@
           }
 
           .note {
-            background: lighten($primary-background, 2%);
+            background: color.adjust($primary-background, $lightness: 2%);
             border-left: 4px solid $secondary-color;
             padding: 1rem 1.25rem;
             border-radius: 4px;
@@ -372,8 +373,8 @@
       padding: 4rem 3rem;
       background: linear-gradient(
         135deg,
-        lighten($primary-color, 48%) 0%,
-        lighten($secondary-color, 45%) 100%
+        color.adjust($primary-color, $lightness: 48%) 0%,
+        color.adjust($secondary-color, $lightness: 45%) 100%
       );
       border-radius: 24px;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
@@ -414,7 +415,7 @@
           background: linear-gradient(
             135deg,
             $primary-color 0%,
-            darken($primary-color, 5%) 100%
+            color.adjust($primary-color, $lightness: -5%) 100%
           );
           color: white;
           border: none;

@@ -119,7 +119,7 @@ export const signup = async (data: SignupData) => {
     return loginResponse;
   } catch (error: any) {
     console.error("Error en signup:", error);
-    
+
     // Mensajes de error más amigables
     if (error.code === "auth/email-already-in-use") {
       return { error: "El correo ya está registrado" };
@@ -130,7 +130,7 @@ export const signup = async (data: SignupData) => {
     if (error.code === "auth/invalid-email") {
       return { error: "El correo electrónico no es válido" };
     }
-    
+
     return {
       error: error.message || "Error al registrarse",
     };
@@ -323,7 +323,10 @@ export const resetPassword = async (
 /**
  * Actualizar perfil de usuario
  */
-export const updateProfile = async (userId: string, data: Partial<UserResponse>) => {
+export const updateProfile = async (
+  userId: string,
+  data: Partial<UserResponse>
+) => {
   try {
     const response = await api.put(`/user/${userId}`, data);
 
@@ -358,7 +361,10 @@ export const changePassword = async (
       return { error: "No hay usuario autenticado" };
     }
 
-    const credential = EmailAuthProvider.credential(user.email, currentPassword);
+    const credential = EmailAuthProvider.credential(
+      user.email,
+      currentPassword
+    );
     await reauthenticateWithCredential(user, credential);
 
     // 2. Cambiar contraseña en Firebase
@@ -379,11 +385,11 @@ export const changePassword = async (
     };
   } catch (error: any) {
     console.error("Error en cambiar contraseña:", error);
-    
+
     if (error.code === "auth/wrong-password") {
       return { error: "La contraseña actual es incorrecta" };
     }
-    
+
     return {
       error: error.message || "Error al cambiar contraseña",
     };
@@ -419,11 +425,11 @@ export const deleteAccount = async (userId: string, password: string) => {
     };
   } catch (error: any) {
     console.error("Error en eliminar cuenta:", error);
-    
+
     if (error.code === "auth/wrong-password") {
       return { error: "La contraseña es incorrecta" };
     }
-    
+
     return {
       error: error.message || "Error al eliminar cuenta",
     };

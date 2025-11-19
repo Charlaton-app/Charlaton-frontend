@@ -7,7 +7,8 @@ import "./Signup.scss";
 
 const Signup: React.FC = () => {
   const navigate = useNavigate();
-  const { signup, loginWithGoogle, loginWithFacebook, isLoading } = useAuthStore();
+  const { signup, loginWithGoogle, loginWithFacebook, isLoading } =
+    useAuthStore();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -63,7 +64,7 @@ const Signup: React.FC = () => {
 
   const handleGoogleSignup = async () => {
     setError("");
-    
+
     const result = await loginWithGoogle();
     if (result.success) {
       navigate("/signup-success");
@@ -74,7 +75,7 @@ const Signup: React.FC = () => {
 
   const handleFacebookSignup = async () => {
     setError("");
-    
+
     const result = await loginWithFacebook();
     if (result.success) {
       navigate("/signup-success");
@@ -173,7 +174,7 @@ const Signup: React.FC = () => {
               disabled={isLoading}
               aria-label="Crear cuenta"
             >
-              { isLoading ? "Creando cuenta..." : "CREAR CUENTA"}
+              {isLoading ? "Creando cuenta..." : "CREAR CUENTA"}
             </button>
           </form>
 

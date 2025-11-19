@@ -1,4 +1,5 @@
-@import '../../index.scss';
+@use "sass:color";
+@import "../../index.scss";
 
 .profile-page {
   min-height: 100vh;
@@ -34,15 +35,15 @@
     font-size: 0.975rem;
 
     &.alert-error {
-      background: #FEE;
-      border: 1px solid #FCC;
-      color: #C33;
+      background: #fee;
+      border: 1px solid #fcc;
+      color: #c33;
     }
 
     &.alert-success {
-      background: #E8F5E9;
-      border: 1px solid #A5D6A7;
-      color: #2E7D32;
+      background: #e8f5e9;
+      border: 1px solid #a5d6a7;
+      color: #2e7d32;
     }
   }
 
@@ -64,7 +65,7 @@
     border-radius: 16px;
     padding: 2rem;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    border: 2px solid #E5E7EB;
+    border: 2px solid #e5e7eb;
 
     h2 {
       font-family: $font-title;
@@ -90,7 +91,11 @@
       width: 120px;
       height: 120px;
       border-radius: 50%;
-      background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+      background: linear-gradient(
+        135deg,
+        $primary-color 0%,
+        $secondary-color 100%
+      );
       color: white;
       display: flex;
       align-items: center;
@@ -125,8 +130,8 @@
       width: 100%;
       margin-bottom: 2rem;
       padding: 1.5rem 0;
-      border-top: 2px solid #E5E7EB;
-      border-bottom: 2px solid #E5E7EB;
+      border-top: 2px solid #e5e7eb;
+      border-bottom: 2px solid #e5e7eb;
 
       .stat-item {
         flex: 1;
@@ -149,7 +154,7 @@
       .stat-divider {
         width: 2px;
         height: 40px;
-        background: #E5E7EB;
+        background: #e5e7eb;
       }
     }
 
@@ -194,7 +199,7 @@
         input {
           width: 100%;
           padding: 0.75rem 1rem;
-          border: 2px solid #E5E7EB;
+          border: 2px solid #e5e7eb;
           border-radius: 8px;
           font-family: $font-body;
           font-size: 1rem;
@@ -208,7 +213,7 @@
           }
 
           &:disabled {
-            background: #F9FAFB;
+            background: #f9fafb;
             cursor: not-allowed;
             opacity: 0.6;
           }
@@ -245,7 +250,11 @@
       .btn-save {
         width: 100%;
         padding: 0.875rem;
-        background: linear-gradient(135deg, $primary-color 0%, darken($primary-color, 5%) 100%);
+        background: linear-gradient(
+          135deg,
+          $primary-color 0%,
+          color.adjust($primary-color, $lightness: -5%) 100%
+        );
         color: white;
         border: none;
         border-radius: 8px;
@@ -297,7 +306,7 @@
         input {
           width: 100%;
           padding: 0.75rem 1rem;
-          border: 2px solid #E5E7EB;
+          border: 2px solid #e5e7eb;
           border-radius: 8px;
           font-family: $font-body;
           font-size: 1rem;
@@ -311,7 +320,7 @@
           }
 
           &:disabled {
-            background: #F9FAFB;
+            background: #f9fafb;
             cursor: not-allowed;
             opacity: 0.6;
           }
@@ -325,7 +334,11 @@
       .btn-change-password {
         width: 100%;
         padding: 0.875rem;
-        background: linear-gradient(135deg, $primary-color 0%, darken($primary-color, 5%) 100%);
+        background: linear-gradient(
+          135deg,
+          $primary-color 0%,
+          color.adjust($primary-color, $lightness: -5%) 100%
+        );
         color: white;
         border: none;
         border-radius: 8px;
@@ -361,11 +374,11 @@
 
   // Danger Zone Card
   .danger-card {
-    border-color: #FEE;
-    background: linear-gradient(135deg, #FFF 0%, #FEF8F8 100%);
+    border-color: #fee;
+    background: linear-gradient(135deg, #fff 0%, #fef8f8 100%);
 
     h2 {
-      color: #C33;
+      color: #c33;
     }
 
     .danger-warning {
@@ -378,7 +391,7 @@
     .btn-delete {
       width: 100%;
       padding: 0.875rem;
-      background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
       color: white;
       border: none;
       border-radius: 8px;
@@ -391,7 +404,7 @@
 
       &:hover:not(:disabled) {
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(#DC2626, 0.4);
+        box-shadow: 0 6px 20px rgba(#dc2626, 0.4);
       }
 
       &:active:not(:disabled) {
@@ -405,7 +418,7 @@
       }
 
       &:focus-visible {
-        outline: 3px solid rgba(#DC2626, 0.5);
+        outline: 3px solid rgba(#dc2626, 0.5);
         outline-offset: 2px;
       }
     }

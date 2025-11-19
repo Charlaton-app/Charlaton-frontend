@@ -21,7 +21,10 @@ type AuthStore = {
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
   initAuthObserver: () => () => void;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (
+    email: string,
+    password: string
+  ) => Promise<{ success: boolean; error?: string }>;
   signup: (data: {
     email: string;
     nickname?: string;
@@ -31,14 +34,20 @@ type AuthStore = {
   loginWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   loginWithFacebook: () => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
-  recoverPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
-  updateUserProfile: (data: Partial<User>) => Promise<{ success: boolean; error?: string }>;
+  recoverPassword: (
+    email: string
+  ) => Promise<{ success: boolean; error?: string }>;
+  updateUserProfile: (
+    data: Partial<User>
+  ) => Promise<{ success: boolean; error?: string }>;
   changePassword: (
     currentPassword: string,
     newPassword: string,
     confirmPassword: string
   ) => Promise<{ success: boolean; error?: string }>;
-  deleteAccount: (password: string) => Promise<{ success: boolean; error?: string }>;
+  deleteAccount: (
+    password: string
+  ) => Promise<{ success: boolean; error?: string }>;
 };
 
 const useAuthStore = create<AuthStore>()(
@@ -60,7 +69,7 @@ const useAuthStore = create<AuthStore>()(
               // Sincronizar con el backend para obtener datos completos
               try {
                 const response = await authService.getCurrentUser(fbUser.uid);
-                
+
                 if (response.data) {
                   const userLogged: User = {
                     id: fbUser.uid,

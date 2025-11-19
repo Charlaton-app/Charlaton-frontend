@@ -1,3 +1,5 @@
+@use "sass:color";
+
 $primary-color: #0d5e9e;
 $secondary-color: #24c4e8;
 $font-title: "Days One", sans-serif;
@@ -204,8 +206,8 @@ $font-body: "Rubik", sans-serif;
           font-family: $font-body;
 
           &:hover {
-            background: darken($primary-color, 10%);
-            border-color: darken($primary-color, 10%);
+            background: color.adjust($primary-color, $lightness: -10%);
+            border-color: color.adjust($primary-color, $lightness: -10%);
           }
         }
       }
