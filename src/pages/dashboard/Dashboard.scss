@@ -1,0 +1,253 @@
+$primary-color: #0D5E9E;
+$secondary-color: #24C4E8;
+$accent-color: #F7941D;
+$bg-light: #F0F8FF;
+$bg-white: #FFFFFF;
+$text-dark: #1A1A1A;
+$text-gray: #5A5A5A;
+$font-title: 'Days One', sans-serif;
+$font-body: 'Rubik', sans-serif;
+
+.dashboard-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: $bg-light;
+
+  .dashboard-content {
+    flex: 1;
+    padding-top: 90px; // Account for fixed navbar
+    padding-bottom: 2rem;
+  }
+
+  .dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+
+    @media (max-width: 768px) {
+      padding: 0 1rem;
+    }
+  }
+}
+
+// Welcome Section
+.welcome-section {
+  padding: 2rem 0 3rem;
+
+  h1 {
+    font-family: $font-title;
+    font-size: clamp(2rem, 4vw, 2.75rem);
+    color: $primary-color;
+    margin-bottom: 0.5rem;
+  }
+
+  .welcome-subtitle {
+    font-family: $font-body;
+    font-size: 1.125rem;
+    color: $text-gray;
+  }
+
+  @media (max-width: 768px) {
+    padding: 1.5rem 0 2rem;
+  }
+}
+
+// Quick Actions
+.quick-actions {
+  margin-bottom: 3rem;
+
+  .actions-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+
+    @media (max-width: 968px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: 640px) {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+
+  .action-card {
+    background: $bg-white;
+    border: 2px solid transparent;
+    border-radius: 12px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+    &:hover {
+      border-color: $secondary-color;
+      transform: translateY(-4px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    }
+
+    &:focus-visible {
+      outline: 3px solid $secondary-color;
+      outline-offset: 2px;
+    }
+
+    .action-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    .action-title {
+      font-family: $font-title;
+      font-size: 1.125rem;
+      color: $text-dark;
+      margin-bottom: 0.5rem;
+    }
+
+    .action-description {
+      font-family: $font-body;
+      font-size: 0.875rem;
+      color: $text-gray;
+      margin: 0;
+    }
+  }
+}
+
+// Recent Meetings
+.recent-meetings {
+  margin-bottom: 3rem;
+
+  h2 {
+    font-family: $font-title;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    color: $primary-color;
+    margin-bottom: 1.5rem;
+  }
+
+  .meetings-list {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .meeting-card {
+    background: $bg-white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: box-shadow 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    .meeting-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+
+      .meeting-title {
+        font-family: $font-title;
+        font-size: 1.125rem;
+        color: $text-dark;
+        margin: 0;
+      }
+
+      .meeting-date {
+        font-family: $font-body;
+        font-size: 0.875rem;
+        color: $text-gray;
+      }
+    }
+
+    .meeting-details {
+      display: flex;
+      gap: 1.5rem;
+
+      .meeting-info {
+        font-family: $font-body;
+        font-size: 0.875rem;
+        color: $text-gray;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        span {
+          font-size: 1rem;
+        }
+      }
+    }
+
+    @media (max-width: 640px) {
+      padding: 1.25rem;
+    }
+  }
+}
+
+// Stats Overview
+.stats-overview {
+  margin-bottom: 2rem;
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+
+  .stat-card {
+    background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+    border-radius: 12px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+    .stat-value {
+      font-family: $font-title;
+      font-size: 2.5rem;
+      color: white;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+      font-family: $font-body;
+      font-size: 0.9375rem;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    @media (max-width: 640px) {
+      padding: 1.5rem 1rem;
+
+      .stat-value {
+        font-size: 2rem;
+      }
+    }
+  }
+}
+
+// Skip to main content
+.skip-to-main {
+  position: absolute;
+  left: -9999px;
+  top: 70px;
+  z-index: 999;
+  padding: 1rem 1.5rem;
+  background: $primary-color;
+  color: white;
+  font-family: $font-body;
+  text-decoration: none;
+  border-radius: 0 0 8px 0;
+  font-weight: 500;
+  
+  &:focus {
+    left: 0;
+  }
+}
