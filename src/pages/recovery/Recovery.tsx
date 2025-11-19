@@ -45,9 +45,9 @@ const Recovery: React.FC = () => {
       <a href="#main-content" className="skip-to-main">
         Saltar al contenido principal
       </a>
-      
+
       <Navbar showAuthButtons={false} />
-      
+
       <main id="main-content" className="main-content">
         <div className="recovery-card">
           <div className="logo-container">
@@ -60,7 +60,8 @@ const Recovery: React.FC = () => {
 
           <h1>¿Olvidaste tu contraseña?</h1>
           <p className="subtitle">
-            Ingresa tu correo electrónico y te enviaremos instrucciones para restablecer tu contraseña
+            Ingresa tu correo electrónico y te enviaremos instrucciones para
+            restablecer tu contraseña
           </p>
 
           {error && (
@@ -78,11 +79,13 @@ const Recovery: React.FC = () => {
               </div>
               <h3>¡Correo enviado!</h3>
               <p>
-                Hemos enviado un enlace de recuperación a <strong>{email}</strong>. 
-                Por favor revisa tu bandeja de entrada y sigue las instrucciones.
+                Hemos enviado un enlace de recuperación a{" "}
+                <strong>{email}</strong>. Por favor revisa tu bandeja de entrada
+                y sigue las instrucciones.
               </p>
               <p className="note">
-                Si no recibes el correo en unos minutos, verifica tu carpeta de spam.
+                Si no recibes el correo en unos minutos, verifica tu carpeta de
+                spam.
               </p>
               <a href="/login" className="back-btn">
                 Volver al inicio de sesión
@@ -107,8 +110,8 @@ const Recovery: React.FC = () => {
                 />
               </div>
 
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="submit-btn"
                 disabled={loading}
                 aria-label="Enviar enlace de recuperación"

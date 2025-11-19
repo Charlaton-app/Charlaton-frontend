@@ -11,7 +11,7 @@ const ResetPassword: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -48,7 +48,7 @@ const ResetPassword: React.FC = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -88,7 +88,9 @@ const ResetPassword: React.FC = () => {
       } else if (error.code === "auth/expired-action-code") {
         setError("El enlace ha expirado. Solicita uno nuevo");
       } else {
-        setError("Error al restablecer la contraseña. Por favor, intenta nuevamente.");
+        setError(
+          "Error al restablecer la contraseña. Por favor, intenta nuevamente."
+        );
       }
     } finally {
       setLoading(false);
@@ -105,7 +107,10 @@ const ResetPassword: React.FC = () => {
         <Navbar showAuthButtons={false} />
         <main className="main-content">
           <div className="reset-card">
-            <div className="loading-spinner" aria-label="Validando código"></div>
+            <div
+              className="loading-spinner"
+              aria-label="Validando código"
+            ></div>
             <p>Validando código de restablecimiento...</p>
           </div>
         </main>
@@ -120,9 +125,9 @@ const ResetPassword: React.FC = () => {
         <a href="#main-content" className="skip-to-main">
           Saltar al contenido principal
         </a>
-        
+
         <Navbar showAuthButtons={false} />
-        
+
         <main id="main-content" className="main-content">
           <div className="reset-card">
             <div className="error-icon">
@@ -149,9 +154,9 @@ const ResetPassword: React.FC = () => {
         <a href="#main-content" className="skip-to-main">
           Saltar al contenido principal
         </a>
-        
+
         <Navbar showAuthButtons={false} />
-        
+
         <main id="main-content" className="main-content">
           <div className="reset-card">
             <div className="success-icon">
@@ -161,7 +166,8 @@ const ResetPassword: React.FC = () => {
             </div>
             <h1>¡Contraseña restablecida!</h1>
             <p className="success-text">
-              Tu contraseña ha sido actualizada exitosamente. Ya puedes iniciar sesión con tu nueva contraseña.
+              Tu contraseña ha sido actualizada exitosamente. Ya puedes iniciar
+              sesión con tu nueva contraseña.
             </p>
             <button onClick={handleGoToLogin} className="continue-btn">
               INICIAR SESIÓN
@@ -179,9 +185,9 @@ const ResetPassword: React.FC = () => {
       <a href="#main-content" className="skip-to-main">
         Saltar al contenido principal
       </a>
-      
+
       <Navbar showAuthButtons={false} />
-      
+
       <main id="main-content" className="main-content">
         <div className="reset-card">
           <div className="logo-container">
@@ -220,7 +226,9 @@ const ResetPassword: React.FC = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="confirmPassword">Confirmar nueva contraseña</label>
+              <label htmlFor="confirmPassword">
+                Confirmar nueva contraseña
+              </label>
               <input
                 type="password"
                 id="confirmPassword"
@@ -239,14 +247,21 @@ const ResetPassword: React.FC = () => {
                 <li className={formData.password.length >= 6 ? "valid" : ""}>
                   Mínimo 6 caracteres
                 </li>
-                <li className={formData.password === formData.confirmPassword && formData.password ? "valid" : ""}>
+                <li
+                  className={
+                    formData.password === formData.confirmPassword &&
+                    formData.password
+                      ? "valid"
+                      : ""
+                  }
+                >
                   Las contraseñas coinciden
                 </li>
               </ul>
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="submit-btn"
               disabled={loading}
               aria-label="Restablecer contraseña"

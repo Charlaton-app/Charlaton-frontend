@@ -76,7 +76,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 >
                   INICIAR SESIÓN
                 </button>
-                <button 
+                <button
                   className="btn-primary"
                   onClick={() => navigate("/signup")}
                 >

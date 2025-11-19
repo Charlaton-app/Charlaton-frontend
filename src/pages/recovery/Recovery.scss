@@ -1,10 +1,14 @@
-@import '../../index.scss';
+@import "../../index.scss";
 
 .recovery-page {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, $primary-background 0%, lighten($primary-background, 5%) 100%);
+  background: linear-gradient(
+    135deg,
+    $primary-background 0%,
+    lighten($primary-background, 5%) 100%
+  );
 
   .main-content {
     flex: 1;
@@ -33,7 +37,11 @@
         width: 64px;
         height: 64px;
         border-radius: 16px;
-        background: linear-gradient(135deg, $accent-color 0%, darken($accent-color, 10%) 100%);
+        background: linear-gradient(
+          135deg,
+          $accent-color 0%,
+          darken($accent-color, 10%) 100%
+        );
         color: white;
         display: flex;
         align-items: center;
@@ -64,9 +72,9 @@
     }
 
     .error-message {
-      background: #FEE;
-      border: 1px solid #FCC;
-      color: #C33;
+      background: #fee;
+      border: 1px solid #fcc;
+      color: #c33;
       padding: 0.875rem 1rem;
       border-radius: 8px;
       margin-bottom: 1.5rem;
@@ -76,7 +84,11 @@
     }
 
     .success-message {
-      background: linear-gradient(135deg, lighten($secondary-color, 45%) 0%, lighten($secondary-color, 48%) 100%);
+      background: linear-gradient(
+        135deg,
+        lighten($secondary-color, 45%) 0%,
+        lighten($secondary-color, 48%) 100%
+      );
       border: 2px solid $secondary-color;
       border-radius: 12px;
       padding: 2rem 1.5rem;
@@ -168,7 +180,7 @@
         input {
           width: 100%;
           padding: 0.875rem 1rem;
-          border: 2px solid #E5E7EB;
+          border: 2px solid #e5e7eb;
           border-radius: 8px;
           font-family: $font-body;
           font-size: 1rem;
@@ -182,7 +194,7 @@
           }
 
           &:disabled {
-            background: #F9FAFB;
+            background: #f9fafb;
             cursor: not-allowed;
             opacity: 0.6;
           }
@@ -196,7 +208,11 @@
       .submit-btn {
         width: 100%;
         padding: 1rem;
-        background: linear-gradient(135deg, $accent-color 0%, darken($accent-color, 5%) 100%);
+        background: linear-gradient(
+          135deg,
+          $accent-color 0%,
+          darken($accent-color, 5%) 100%
+        );
         color: white;
         border: none;
         border-radius: 8px;

@@ -1,10 +1,14 @@
-@import '../../index.scss';
+@import "../../index.scss";
 
 .success-page {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, $primary-background 0%, lighten($primary-background, 5%) 100%);
+  background: linear-gradient(
+    135deg,
+    $primary-background 0%,
+    lighten($primary-background, 5%) 100%
+  );
 
   .main-content {
     flex: 1;
@@ -45,7 +49,8 @@
           stroke: $secondary-color;
           stroke-miterlimit: 10;
           box-shadow: 0 4px 16px rgba($secondary-color, 0.25);
-          animation: fill 0.4s ease-in-out 0.4s forwards, scale 0.3s ease-in-out 0.9s both;
+          animation: fill 0.4s ease-in-out 0.4s forwards,
+            scale 0.3s ease-in-out 0.9s both;
           position: relative;
 
           .checkmark-circle-bg {
@@ -114,7 +119,11 @@
           width: 48px;
           height: 48px;
           border-radius: 12px;
-          background: linear-gradient(135deg, $secondary-color 0%, darken($secondary-color, 5%) 100%);
+          background: linear-gradient(
+            135deg,
+            $secondary-color 0%,
+            darken($secondary-color, 5%) 100%
+          );
           color: white;
           display: flex;
           align-items: center;
@@ -148,7 +157,11 @@
     }
 
     .next-steps {
-      background: linear-gradient(135deg, lighten($accent-color, 35%) 0%, lighten($accent-color, 38%) 100%);
+      background: linear-gradient(
+        135deg,
+        lighten($accent-color, 35%) 0%,
+        lighten($accent-color, 38%) 100%
+      );
       border-left: 4px solid $accent-color;
       border-radius: 8px;
       padding: 1.75rem 2rem;
@@ -185,7 +198,11 @@
       width: 100%;
       max-width: 400px;
       padding: 1.125rem 2rem;
-      background: linear-gradient(135deg, $primary-color 0%, darken($primary-color, 5%) 100%);
+      background: linear-gradient(
+        135deg,
+        $primary-color 0%,
+        darken($primary-color, 5%) 100%
+      );
       color: white;
       border: none;
       border-radius: 8px;
@@ -255,7 +272,8 @@
   }
 
   @keyframes scale {
-    0%, 100% {
+    0%,
+    100% {
       transform: none;
     }
     50% {

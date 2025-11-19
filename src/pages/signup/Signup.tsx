@@ -1,8 +1,16 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../stores/useAuthStore";
-import { createUserWithEmailAndPassword, signInWithPopup, updateProfile } from "firebase/auth";
-import { auth, googleProvider, facebookProvider } from "../../lib/firebase.config";
+import {
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  updateProfile,
+} from "firebase/auth";
+import {
+  auth,
+  googleProvider,
+  facebookProvider,
+} from "../../lib/firebase.config";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
 import "./Signup.scss";
@@ -14,7 +22,7 @@ const Signup: React.FC = () => {
     name: "",
     email: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -22,7 +30,7 @@ const Signup: React.FC = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -31,7 +39,12 @@ const Signup: React.FC = () => {
     setLoading(true);
     setError("");
 
-    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+    if (
+      !formData.name ||
+      !formData.email ||
+      !formData.password ||
+      !formData.confirmPassword
+    ) {
       setError("Por favor, completa todos los campos");
       setLoading(false);
       return;
@@ -50,10 +63,14 @@ const Signup: React.FC = () => {
     }
 
     try {
-      const result = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-      
+      const result = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
+
       await updateProfile(result.user, {
-        displayName: formData.name
+        displayName: formData.name,
       });
 
       const user = {
@@ -93,7 +110,9 @@ const Signup: React.FC = () => {
       navigate("/signup-success");
     } catch (error: any) {
       console.error("Error con Google:", error);
-      setError("Error al registrarse con Google. Por favor, intenta nuevamente.");
+      setError(
+        "Error al registrarse con Google. Por favor, intenta nuevamente."
+      );
     } finally {
       setLoading(false);
     }
@@ -113,7 +132,9 @@ const Signup: React.FC = () => {
       navigate("/signup-success");
     } catch (error: any) {
       console.error("Error con Facebook:", error);
-      setError("Error al registrarse con Facebook. Por favor, intenta nuevamente.");
+      setError(
+        "Error al registrarse con Facebook. Por favor, intenta nuevamente."
+      );
     } finally {
       setLoading(false);
     }
@@ -124,9 +145,9 @@ const Signup: React.FC = () => {
       <a href="#main-content" className="skip-to-main">
         Saltar al contenido principal
       </a>
-      
+
       <Navbar showAuthButtons={false} />
-      
+
       <main id="main-content" className="main-content">
         <div className="signup-card">
           <div className="logo-container">
@@ -203,8 +224,8 @@ const Signup: React.FC = () => {
               />
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="submit-btn"
               disabled={loading}
               aria-label="Crear cuenta"
@@ -218,8 +239,8 @@ const Signup: React.FC = () => {
           </div>
 
           <div className="social-buttons">
-            <button 
-              onClick={handleGoogleSignup} 
+            <button
+              onClick={handleGoogleSignup}
               className="social-btn google-btn"
               disabled={loading}
               aria-label="Registrarse con Google"
@@ -228,8 +249,8 @@ const Signup: React.FC = () => {
               Google
             </button>
 
-            <button 
-              onClick={handleFacebookSignup} 
+            <button
+              onClick={handleFacebookSignup}
               className="social-btn facebook-btn"
               disabled={loading}
               aria-label="Registrarse con Facebook"

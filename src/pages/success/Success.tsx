@@ -18,16 +18,26 @@ const Success: React.FC = () => {
       <a href="#main-content" className="skip-to-main">
         Saltar al contenido principal
       </a>
-      
+
       <Navbar showAuthButtons={false} />
-      
+
       <main id="main-content" className="main-content">
         <div className="success-card">
           <div className="success-animation">
             <div className="checkmark-circle">
               <svg className="checkmark" viewBox="0 0 52 52">
-                <circle className="checkmark-circle-bg" cx="26" cy="26" r="25" fill="none"/>
-                <path className="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                <circle
+                  className="checkmark-circle-bg"
+                  cx="26"
+                  cy="26"
+                  r="25"
+                  fill="none"
+                />
+                <path
+                  className="checkmark-check"
+                  fill="none"
+                  d="M14.1 27.2l7.1 7.2 16.7-16.8"
+                />
               </svg>
             </div>
           </div>
@@ -35,7 +45,10 @@ const Success: React.FC = () => {
           <h1>¡Bienvenido a Charlaton!</h1>
           <p className="welcome-message">
             {user?.displayName ? (
-              <>Hola <strong>{user.displayName}</strong>, tu cuenta ha sido creada exitosamente.</>
+              <>
+                Hola <strong>{user.displayName}</strong>, tu cuenta ha sido
+                creada exitosamente.
+              </>
             ) : (
               <>Tu cuenta ha sido creada exitosamente.</>
             )}
@@ -89,7 +102,7 @@ const Success: React.FC = () => {
             </ol>
           </div>
 
-          <button 
+          <button
             onClick={handleContinue}
             className="continue-btn"
             aria-label="Ir al dashboard"

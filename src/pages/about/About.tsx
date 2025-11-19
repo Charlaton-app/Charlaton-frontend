@@ -9,16 +9,19 @@ const About: React.FC = () => {
       <a href="#main-content" className="skip-to-main">
         Saltar al contenido principal
       </a>
-      
+
       <Navbar />
-      
+
       <main id="main-content">
         {/* Hero Section */}
         <section className="hero-section">
           <div className="hero-content">
-            <h1>Somos un equipo <span className="highlight">Apasionado</span></h1>
+            <h1>
+              Somos un equipo <span className="highlight">Apasionado</span>
+            </h1>
             <p className="hero-subtitle">
-              Comprometidos con transformar la forma en que las personas se conectan y colaboran en el mundo digital
+              Comprometidos con transformar la forma en que las personas se
+              conectan y colaboran en el mundo digital
             </p>
           </div>
         </section>
@@ -29,15 +32,19 @@ const About: React.FC = () => {
             <div className="mission-card">
               <h2>Nuestra Misión</h2>
               <p>
-                En Charlaton, creemos que la comunicación efectiva es la clave del éxito. Nuestra misión es 
-                proporcionar una plataforma de videoconferencia de alta calidad que sea accesible, segura y fácil 
-                de usar para todos. Nos esforzamos por eliminar las barreras de la comunicación remota, permitiendo 
-                que equipos de todo el mundo colaboren como si estuvieran en la misma sala.
+                En Charlaton, creemos que la comunicación efectiva es la clave
+                del éxito. Nuestra misión es proporcionar una plataforma de
+                videoconferencia de alta calidad que sea accesible, segura y
+                fácil de usar para todos. Nos esforzamos por eliminar las
+                barreras de la comunicación remota, permitiendo que equipos de
+                todo el mundo colaboren como si estuvieran en la misma sala.
               </p>
               <p>
-                Combinamos tecnología de vanguardia con un diseño intuitivo para crear experiencias de videollamada 
-                que van más allá de lo básico. Con funciones inteligentes impulsadas por IA, seguridad de nivel 
-                empresarial y una calidad de video superior, estamos redefiniendo lo que significa estar conectado.
+                Combinamos tecnología de vanguardia con un diseño intuitivo para
+                crear experiencias de videollamada que van más allá de lo
+                básico. Con funciones inteligentes impulsadas por IA, seguridad
+                de nivel empresarial y una calidad de video superior, estamos
+                redefiniendo lo que significa estar conectado.
               </p>
             </div>
           </div>
@@ -74,7 +81,7 @@ const About: React.FC = () => {
             <p className="section-subtitle">
               Herramientas poderosas diseñadas para maximizar tu productividad
             </p>
-            
+
             <div className="features-grid">
               <div className="feature-card">
                 <div className="feature-icon">
@@ -83,7 +90,10 @@ const About: React.FC = () => {
                   </svg>
                 </div>
                 <h3>Videollamadas HD</h3>
-                <p>Calidad de video y audio cristalina en alta definición para reuniones profesionales sin interrupciones</p>
+                <p>
+                  Calidad de video y audio cristalina en alta definición para
+                  reuniones profesionales sin interrupciones
+                </p>
               </div>
 
               <div className="feature-card">
@@ -93,7 +103,10 @@ const About: React.FC = () => {
                   </svg>
                 </div>
                 <h3>Seguridad</h3>
-                <p>Cifrado de extremo a extremo y protección de datos de nivel empresarial para mantener tu privacidad</p>
+                <p>
+                  Cifrado de extremo a extremo y protección de datos de nivel
+                  empresarial para mantener tu privacidad
+                </p>
               </div>
 
               <div className="feature-card">
@@ -103,7 +116,10 @@ const About: React.FC = () => {
                   </svg>
                 </div>
                 <h3>Resúmenes IA</h3>
-                <p>Inteligencia artificial que genera resúmenes automáticos de tus reuniones para mayor productividad</p>
+                <p>
+                  Inteligencia artificial que genera resúmenes automáticos de
+                  tus reuniones para mayor productividad
+                </p>
               </div>
 
               <div className="feature-card">
@@ -113,7 +129,10 @@ const About: React.FC = () => {
                   </svg>
                 </div>
                 <h3>Acceso global</h3>
-                <p>Conéctate desde cualquier lugar del mundo con servidores optimizados en múltiples regiones</p>
+                <p>
+                  Conéctate desde cualquier lugar del mundo con servidores
+                  optimizados en múltiples regiones
+                </p>
               </div>
 
               <div className="feature-card">
@@ -123,7 +142,10 @@ const About: React.FC = () => {
                   </svg>
                 </div>
                 <h3>Colaboración fácil</h3>
-                <p>Herramientas intuitivas para compartir pantalla, pizarra digital y trabajo en equipo eficiente</p>
+                <p>
+                  Herramientas intuitivas para compartir pantalla, pizarra
+                  digital y trabajo en equipo eficiente
+                </p>
               </div>
 
               <div className="feature-card">
@@ -133,7 +155,10 @@ const About: React.FC = () => {
                   </svg>
                 </div>
                 <h3>Chat integrado</h3>
-                <p>Sistema de mensajería instantánea para comunicación fluida antes, durante y después de las llamadas</p>
+                <p>
+                  Sistema de mensajería instantánea para comunicación fluida
+                  antes, durante y después de las llamadas
+                </p>
               </div>
             </div>
           </div>
@@ -157,8 +182,8 @@ const About: React.FC = () => {
                 <h3>Contenido Prohibido</h3>
                 <div className="restriction-content">
                   <p>
-                    En Charlaton mantenemos una política de tolerancia cero hacia contenidos inapropiados. 
-                    Está estrictamente prohibido:
+                    En Charlaton mantenemos una política de tolerancia cero
+                    hacia contenidos inapropiados. Está estrictamente prohibido:
                   </p>
                   <ul>
                     <li>Contenido violento, de odio o discriminatorio</li>
@@ -168,7 +193,8 @@ const About: React.FC = () => {
                     <li>Compartir información personal sin consentimiento</li>
                   </ul>
                   <p className="note">
-                    El incumplimiento de estas normas resultará en la suspensión inmediata de la cuenta.
+                    El incumplimiento de estas normas resultará en la suspensión
+                    inmediata de la cuenta.
                   </p>
                 </div>
               </div>
@@ -182,17 +208,21 @@ const About: React.FC = () => {
                 <h3>Compromisos de calidad</h3>
                 <div className="restriction-content">
                   <p>
-                    Nos comprometemos a proporcionar un servicio de excelencia garantizando:
+                    Nos comprometemos a proporcionar un servicio de excelencia
+                    garantizando:
                   </p>
                   <ul>
                     <li>99.9% de tiempo de actividad garantizado</li>
-                    <li>Actualizaciones regulares de seguridad y características</li>
+                    <li>
+                      Actualizaciones regulares de seguridad y características
+                    </li>
                     <li>Soporte técnico 24/7 en múltiples idiomas</li>
                     <li>Transparencia en el uso y protección de datos</li>
                     <li>Cumplimiento con GDPR, CCPA y regulaciones locales</li>
                   </ul>
                   <p className="note">
-                    Tu confianza es nuestra prioridad. Trabajamos continuamente para mejorar tu experiencia.
+                    Tu confianza es nuestra prioridad. Trabajamos continuamente
+                    para mejorar tu experiencia.
                   </p>
                 </div>
               </div>
@@ -206,7 +236,8 @@ const About: React.FC = () => {
             <div className="cta-card">
               <h2>¿Listo para comenzar?</h2>
               <p>
-                Únete a millones de usuarios que ya confían en Charlaton para sus comunicaciones
+                Únete a millones de usuarios que ya confían en Charlaton para
+                sus comunicaciones
               </p>
               <div className="cta-buttons">
                 <a href="/signup" className="btn-primary">
