@@ -27,13 +27,8 @@ const Chat: React.FC = () => {
   const [messageInput, setMessageInput] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [isManuallyDisconnected, setIsManuallyDisconnected] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const hasLoadedHistory = useRef(false);
-
-  // Scroll to top on component mount
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
 
   useEffect(() => {
     // Verificar autenticación
@@ -117,7 +112,12 @@ const Chat: React.FC = () => {
 
   useEffect(() => {
     // Scroll to bottom when new messages arrive
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
   }, [messages]);
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -161,6 +161,14 @@ const Chat: React.FC = () => {
 
       {/* Main Content */}
       <main className="main-content">
+        <div className="back-wrapper">
+          <button
+            className="back-dashboard-btn"
+            onClick={() => navigate("/dashboard")}
+          >
+            ← Volver al dashboard
+          </button>
+        </div>
         <div className="chat-container">
           {/* Chat Header */}
           <div className="chat-header">
@@ -235,7 +243,7 @@ const Chat: React.FC = () => {
           </div>
 
           {/* Messages Container */}
-          <div className="messages-container">
+          <div className="messages-container" ref={messagesContainerRef}>
             {messages.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-content">
@@ -283,7 +291,6 @@ const Chat: React.FC = () => {
                 );
               })
             )}
-            <div ref={messagesEndRef} />
           </div>
 
           {/* Message Input */}
