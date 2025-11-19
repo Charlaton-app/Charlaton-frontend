@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
+import WebContentReader from '../../components/web-reader/WebContentReader';
 import './Home.scss';
 
 const Home: React.FC = () => {
@@ -61,6 +62,7 @@ const Home: React.FC = () => {
 
   return (
     <div className="home-page">
+      <WebContentReader />
       <a href="#main-content" className="skip-to-main">
         Saltar al contenido principal
       </a>

@@ -5,6 +5,7 @@ import { socket } from "../../lib/socket.config";
 import useAuthStore from "../../stores/useAuthStore";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
+import WebContentReader from '../../components/web-reader/WebContentReader';
 import "./Chat.scss";
 
 interface Message {
@@ -156,6 +157,7 @@ const Chat: React.FC = () => {
 
   return (
     <div className="chat-page">
+      <WebContentReader />
       {/* Header */}
       <Navbar onLogout={handleLogout} />
 

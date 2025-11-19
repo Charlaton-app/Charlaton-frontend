@@ -4,6 +4,7 @@ import { confirmPasswordReset, verifyPasswordResetCode } from "firebase/auth";
 import { auth } from "../../lib/firebase.config";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
+import WebContentReader from '../../components/web-reader/WebContentReader';
 import "./ResetPassword.scss";
 
 const ResetPassword: React.FC = () => {
@@ -104,6 +105,7 @@ const ResetPassword: React.FC = () => {
   if (validatingCode) {
     return (
       <div className="reset-password-page">
+        <WebContentReader />
         <Navbar showAuthButtons={false} />
         <main className="main-content">
           <div className="reset-card">
@@ -122,6 +124,7 @@ const ResetPassword: React.FC = () => {
   if (!codeValid) {
     return (
       <div className="reset-password-page">
+        <WebContentReader />
         <a href="#main-content" className="skip-to-main">
           Saltar al contenido principal
         </a>
@@ -151,6 +154,7 @@ const ResetPassword: React.FC = () => {
   if (success) {
     return (
       <div className="reset-password-page">
+        <WebContentReader />
         <a href="#main-content" className="skip-to-main">
           Saltar al contenido principal
         </a>
@@ -182,6 +186,7 @@ const ResetPassword: React.FC = () => {
 
   return (
     <div className="reset-password-page">
+      <WebContentReader />
       <a href="#main-content" className="skip-to-main">
         Saltar al contenido principal
       </a>
