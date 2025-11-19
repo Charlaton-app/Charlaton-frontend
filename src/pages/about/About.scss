@@ -17,52 +17,82 @@
 
   // Hero Section
   .hero-section {
-    background: linear-gradient(
-      135deg,
-      $primary-color 0%,
-      darken($primary-color, 10%) 100%
-    );
-    color: white;
+    background: $primary-background;
     padding: 8rem 2rem 6rem;
     margin-top: 70px;
-    text-align: center;
 
-    .hero-content {
-      max-width: 900px;
+    .hero-container {
+      max-width: 1200px;
       margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
 
-      h1 {
-        font-family: $font-title;
-        font-size: 3.5rem;
-        margin-bottom: 1.5rem;
-        letter-spacing: -1px;
-        line-height: 1.2;
+      .hero-content {
+        h1 {
+          font-family: $font-title;
+          font-size: 3.5rem;
+          color: $primary-color;
+          margin-bottom: 1.5rem;
+          letter-spacing: -1px;
+          line-height: 1.2;
 
-        .highlight {
-          color: $accent-color;
-          position: relative;
-          display: inline-block;
-
-          &::after {
-            content: "";
-            position: absolute;
-            bottom: 8px;
-            left: 0;
-            right: 0;
-            height: 12px;
-            background: rgba($accent-color, 0.3);
-            z-index: -1;
+          .highlight {
+            color: $accent-color;
+            position: relative;
+            display: inline-block;
           }
+        }
+
+        .hero-subtitle {
+          font-family: $font-body;
+          font-size: 1.125rem;
+          line-height: 1.8;
+          color: $text-secondary;
+          margin-bottom: 2rem;
         }
       }
 
-      .hero-subtitle {
-        font-family: $font-body;
-        font-size: 1.25rem;
-        line-height: 1.8;
-        opacity: 0.95;
-        max-width: 700px;
-        margin: 0 auto;
+      .hero-image {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        img {
+          width: 100%;
+          max-width: 500px;
+          height: auto;
+          filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.1));
+        }
+      }
+    }
+
+    @media (max-width: 968px) {
+      .hero-container {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+        text-align: center;
+
+        .hero-image {
+          order: -1;
+        }
+      }
+    }
+
+    @media (max-width: 768px) {
+      padding: 6rem 1.5rem 4rem;
+
+      .hero-container {
+        .hero-content {
+          h1 {
+            font-size: 2.5rem;
+          }
+
+          .hero-subtitle {
+            font-size: 1rem;
+          }
+        }
       }
     }
   }
