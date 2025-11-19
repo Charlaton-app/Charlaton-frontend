@@ -31,7 +31,7 @@ Add the following environment variables in Vercel:
 
 **Firebase Configuration:**
 ```
-VITE_FIREBASE_API_KEY=AIzaSyA3UXMfWqZMgrSic3Z66_IgRip6bBvBh5Q
+VITE_FIREBASE_API=AIzaSyA3UXMfWqZMgrSic3Z66_IgRip6bBvBh5Q
 VITE_FIREBASE_AUTH_DOMAIN=eisc-chat.firebaseapp.com
 VITE_FIREBASE_PROJECT_ID=eisc-chat
 VITE_FIREBASE_STORAGE_BUCKET=eisc-chat.firebasestorage.app

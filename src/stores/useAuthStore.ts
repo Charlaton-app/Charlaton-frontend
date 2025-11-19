@@ -386,7 +386,7 @@ const useAuthStore = create<AuthStore>()(
 
           // Actualizar usuario en el store
           set({
-            user: { ...user, ...data },
+            user: { ...user, ...data } as User,
             isLoading: false,
             isAuthenticated: true,
             error: null
