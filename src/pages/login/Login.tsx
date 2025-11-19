@@ -3,7 +3,11 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../stores/useAuthStore";
 import { signInWithPopup, signInWithEmailAndPassword } from "firebase/auth";
-import { auth, googleProvider, facebookProvider } from "../../lib/firebase.config";
+import {
+  auth,
+  googleProvider,
+  facebookProvider,
+} from "../../lib/firebase.config";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
 import "./Login.scss";
@@ -31,7 +35,9 @@ const Login: React.FC = () => {
       navigate("/dashboard");
     } catch (error: any) {
       console.error("Error al iniciar sesión con Google:", error);
-      setError("Error al iniciar sesión con Google. Por favor, intenta nuevamente.");
+      setError(
+        "Error al iniciar sesión con Google. Por favor, intenta nuevamente."
+      );
     } finally {
       setLoading(false);
     }
@@ -52,7 +58,9 @@ const Login: React.FC = () => {
       navigate("/dashboard");
     } catch (error: any) {
       console.error("Error al iniciar sesión con Facebook:", error);
-      setError("Error al iniciar sesión con Facebook. Por favor, intenta nuevamente.");
+      setError(
+        "Error al iniciar sesión con Facebook. Por favor, intenta nuevamente."
+      );
     } finally {
       setLoading(false);
     }
@@ -62,7 +70,7 @@ const Login: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError("");
-    
+
     if (!email || !password) {
       setError("Por favor, completa todos los campos");
       setLoading(false);
@@ -80,7 +88,9 @@ const Login: React.FC = () => {
       navigate("/dashboard");
     } catch (error: any) {
       console.error("Error al iniciar sesión:", error);
-      setError("Credenciales incorrectas. Por favor, verifica tu correo y contraseña.");
+      setError(
+        "Credenciales incorrectas. Por favor, verifica tu correo y contraseña."
+      );
     } finally {
       setLoading(false);
     }
@@ -146,8 +156,8 @@ const Login: React.FC = () => {
               />
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="submit-btn"
               disabled={loading}
               aria-label="Iniciar sesión con correo electrónico"
@@ -163,8 +173,8 @@ const Login: React.FC = () => {
 
           {/* Social Sign In Buttons */}
           <div className="social-buttons">
-            <button 
-              onClick={handleLoginGoogle} 
+            <button
+              onClick={handleLoginGoogle}
               className="social-btn google-btn"
               disabled={loading}
               aria-label="Iniciar sesión con Google"
@@ -173,8 +183,8 @@ const Login: React.FC = () => {
               Google
             </button>
 
-            <button 
-              onClick={handleLoginFacebook} 
+            <button
+              onClick={handleLoginFacebook}
               className="social-btn facebook-btn"
               disabled={loading}
               aria-label="Iniciar sesión con Facebook"
@@ -186,12 +196,12 @@ const Login: React.FC = () => {
 
           {/* Register Link */}
           <p className="register-link">
-            ¿No tienes una cuenta? <a href="/register">Regístrate</a>
+            ¿No tienes una cuenta? <a href="/signup">Regístrate</a>
           </p>
 
           {/* Forgot Password */}
           <p className="forgot-password">
-            <a href="/forgot-password">¿Olvidaste tu contraseña?</a>
+            <a href="/recovery">¿Olvidaste tu contraseña?</a>
           </p>
         </div>
       </main>

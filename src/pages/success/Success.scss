@@ -1,0 +1,350 @@
+@import '../../index.scss';
+
+.success-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, $primary-background 0%, lighten($primary-background, 5%) 100%);
+
+  .main-content {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem 1rem;
+    padding-top: calc(2rem + 70px);
+  }
+
+  .success-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    padding: 3rem 2.5rem;
+    max-width: 680px;
+    width: 100%;
+    text-align: center;
+
+    .success-animation {
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: center;
+
+      .checkmark-circle {
+        width: 80px;
+        height: 80px;
+        position: relative;
+        display: inline-block;
+        animation: scaleIn 0.5s ease-out;
+
+        .checkmark {
+          width: 80px;
+          height: 80px;
+          border-radius: 50%;
+          display: block;
+          stroke-width: 3;
+          stroke: $secondary-color;
+          stroke-miterlimit: 10;
+          box-shadow: 0 4px 16px rgba($secondary-color, 0.25);
+          animation: fill 0.4s ease-in-out 0.4s forwards, scale 0.3s ease-in-out 0.9s both;
+          position: relative;
+
+          .checkmark-circle-bg {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 3;
+            stroke-miterlimit: 10;
+            stroke: $secondary-color;
+            fill: lighten($secondary-color, 45%);
+            animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+          }
+
+          .checkmark-check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            stroke: $secondary-color;
+            stroke-width: 3;
+            animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+          }
+        }
+      }
+    }
+
+    h1 {
+      font-family: $font-title;
+      font-size: 2.25rem;
+      color: $primary-color;
+      margin-bottom: 1rem;
+      letter-spacing: -0.5px;
+    }
+
+    .welcome-message {
+      font-family: $font-body;
+      font-size: 1.125rem;
+      color: $text-secondary;
+      margin-bottom: 2.5rem;
+      line-height: 1.6;
+
+      strong {
+        color: $primary-color;
+        font-weight: 600;
+      }
+    }
+
+    .features-list {
+      margin-bottom: 2.5rem;
+      text-align: left;
+
+      .feature-item {
+        display: flex;
+        gap: 1rem;
+        padding: 1.25rem;
+        background: lighten($primary-background, 3%);
+        border-radius: 12px;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+
+        &:hover {
+          transform: translateX(4px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        }
+
+        .feature-icon {
+          flex-shrink: 0;
+          width: 48px;
+          height: 48px;
+          border-radius: 12px;
+          background: linear-gradient(135deg, $secondary-color 0%, darken($secondary-color, 5%) 100%);
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          svg {
+            width: 24px;
+            height: 24px;
+          }
+        }
+
+        .feature-text {
+          flex: 1;
+
+          h3 {
+            font-family: $font-body;
+            font-size: 1rem;
+            font-weight: 600;
+            color: $primary-color;
+            margin-bottom: 0.25rem;
+          }
+
+          p {
+            font-family: $font-body;
+            font-size: 0.9rem;
+            color: $text-secondary;
+            line-height: 1.5;
+          }
+        }
+      }
+    }
+
+    .next-steps {
+      background: linear-gradient(135deg, lighten($accent-color, 35%) 0%, lighten($accent-color, 38%) 100%);
+      border-left: 4px solid $accent-color;
+      border-radius: 8px;
+      padding: 1.75rem 2rem;
+      margin-bottom: 2rem;
+      text-align: left;
+
+      h2 {
+        font-family: $font-title;
+        font-size: 1.25rem;
+        color: $primary-color;
+        margin-bottom: 1rem;
+      }
+
+      ol {
+        margin: 0;
+        padding-left: 1.5rem;
+        font-family: $font-body;
+        color: $text-primary;
+        line-height: 2;
+
+        li {
+          font-size: 0.975rem;
+          margin-bottom: 0.5rem;
+
+          &::marker {
+            color: $accent-color;
+            font-weight: 600;
+          }
+        }
+      }
+    }
+
+    .continue-btn {
+      width: 100%;
+      max-width: 400px;
+      padding: 1.125rem 2rem;
+      background: linear-gradient(135deg, $primary-color 0%, darken($primary-color, 5%) 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-family: $font-body;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-bottom: 1.25rem;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba($primary-color, 0.35);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+
+      &:focus-visible {
+        outline: 3px solid rgba($primary-color, 0.5);
+        outline-offset: 3px;
+      }
+    }
+
+    .help-text {
+      font-family: $font-body;
+      font-size: 0.9rem;
+      color: $text-secondary;
+
+      a {
+        color: $primary-color;
+        font-weight: 600;
+        text-decoration: none;
+        transition: color 0.2s ease;
+
+        &:hover {
+          color: darken($primary-color, 10%);
+          text-decoration: underline;
+        }
+
+        &:focus-visible {
+          outline: 2px solid $primary-color;
+          outline-offset: 2px;
+          border-radius: 2px;
+        }
+      }
+    }
+  }
+
+  @keyframes scaleIn {
+    0% {
+      transform: scale(0);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes stroke {
+    100% {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes scale {
+    0%, 100% {
+      transform: none;
+    }
+    50% {
+      transform: scale3d(1.1, 1.1, 1);
+    }
+  }
+
+  @keyframes fill {
+    100% {
+      box-shadow: 0 4px 20px rgba($secondary-color, 0.4);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .main-content {
+      padding: 1.5rem 1rem;
+      padding-top: calc(1.5rem + 70px);
+    }
+
+    .success-card {
+      padding: 2rem 1.5rem;
+
+      h1 {
+        font-size: 1.75rem;
+      }
+
+      .welcome-message {
+        font-size: 1rem;
+      }
+
+      .next-steps {
+        padding: 1.5rem 1.25rem;
+
+        h2 {
+          font-size: 1.125rem;
+        }
+      }
+    }
+  }
+
+  @media (max-width: 480px) {
+    .success-card {
+      padding: 1.5rem 1rem;
+
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      .welcome-message {
+        font-size: 0.95rem;
+      }
+
+      .features-list {
+        .feature-item {
+          padding: 1rem;
+
+          .feature-icon {
+            width: 40px;
+            height: 40px;
+
+            svg {
+              width: 20px;
+              height: 20px;
+            }
+          }
+
+          .feature-text {
+            h3 {
+              font-size: 0.95rem;
+            }
+
+            p {
+              font-size: 0.85rem;
+            }
+          }
+        }
+      }
+
+      .next-steps {
+        padding: 1.25rem 1rem;
+
+        ol {
+          padding-left: 1.25rem;
+
+          li {
+            font-size: 0.9rem;
+          }
+        }
+      }
+    }
+  }
+}
