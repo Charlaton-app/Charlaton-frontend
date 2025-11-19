@@ -1,16 +1,16 @@
 // Design System Variables
-$primary-color: #0D5E9E; // Blue from design
-$secondary-color: #24C4E8; // Light blue
-$accent-color: #F7941D; // Orange accent
-$bg-light: #F0F8FF;
-$bg-white: #FFFFFF;
-$text-dark: #1A1A1A;
-$text-gray: #5A5A5A;
-$border-color: #E5E5E5;
+$primary-color: #0d5e9e; // Blue from design
+$secondary-color: #24c4e8; // Light blue
+$accent-color: #f7941d; // Orange accent
+$bg-light: #f0f8ff;
+$bg-white: #ffffff;
+$text-dark: #1a1a1a;
+$text-gray: #5a5a5a;
+$border-color: #e5e5e5;
 
 // Typography
-$font-title: 'Days One', sans-serif;
-$font-body: 'Rubik', sans-serif;
+$font-title: "Days One", sans-serif;
+$font-body: "Rubik", sans-serif;
 
 // Reset and Base Styles
 * {
@@ -25,7 +25,7 @@ $font-body: 'Rubik', sans-serif;
   font-weight: 400;
   color: $text-dark;
   background-color: $bg-white;
-  
+
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -40,7 +40,12 @@ body {
 }
 
 // Typography
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: $font-title;
   font-weight: 400;
   line-height: 1.2;
@@ -75,7 +80,7 @@ a {
   &:hover {
     color: $secondary-color;
   }
-  
+
   &:focus-visible {
     outline: 2px solid $primary-color;
     outline-offset: 2px;
@@ -93,12 +98,12 @@ button {
   font-size: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  
+
   &:focus-visible {
     outline: 2px solid $primary-color;
     outline-offset: 2px;
   }
-  
+
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
@@ -115,7 +120,7 @@ button {
   background: $primary-color;
   color: white;
   text-decoration: none;
-  
+
   &:focus {
     left: 0;
   }

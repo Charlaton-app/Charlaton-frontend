@@ -1,10 +1,10 @@
-$primary-color: #0D5E9E;
-$secondary-color: #24C4E8;
-$accent-color: #F7941D;
-$bg-light: #F0F8FF;
-$error-color: #DC2626;
-$font-title: 'Days One', sans-serif;
-$font-body: 'Rubik', sans-serif;
+$primary-color: #0d5e9e;
+$secondary-color: #24c4e8;
+$accent-color: #f7941d;
+$bg-light: #f0f8ff;
+$error-color: #dc2626;
+$font-title: "Days One", sans-serif;
+$font-body: "Rubik", sans-serif;
 
 .login-page {
   min-height: 100vh;
@@ -16,7 +16,11 @@ $font-body: 'Rubik', sans-serif;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, $bg-light 0%, lighten($secondary-color, 15%) 100%);
+    background: linear-gradient(
+      135deg,
+      $bg-light 0%,
+      lighten($secondary-color, 15%) 100%
+    );
     padding: 6rem 1rem 2rem;
     min-height: 100vh;
 
@@ -188,7 +192,7 @@ $font-body: 'Rubik', sans-serif;
         margin: 1.5rem 0;
 
         &::before {
-          content: '';
+          content: "";
           position: absolute;
           left: 0;
           top: 50%;
@@ -338,7 +342,7 @@ $font-body: 'Rubik', sans-serif;
   text-decoration: none;
   border-radius: 0 0 8px 0;
   font-weight: 500;
-  
+
   &:focus {
     left: 0;
   }

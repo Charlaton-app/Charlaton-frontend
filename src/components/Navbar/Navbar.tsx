@@ -51,9 +51,8 @@ const Navbar: React.FC<NavbarProps> = ({
         {/* Navegación - solo visible cuando NO hay usuario autenticado */}
         {!user && (
           <nav className="nav-links">
-            <a href="#">Inicio</a>
-            <a href="#">Producto</a>
-            <a href="#">Sobre nosotros</a>
+            <a href="/">Inicio</a>
+            <a href="/about">Sobre nosotros</a>
           </nav>
         )}
 
@@ -77,7 +76,12 @@ const Navbar: React.FC<NavbarProps> = ({
                 >
                   INICIAR SESIÓN
                 </button>
-                <button className="btn-primary">REGISTRARSE</button>
+                <button
+                  className="btn-primary"
+                  onClick={() => navigate("/signup")}
+                >
+                  REGISTRARSE
+                </button>
               </>
             )}
           </div>
