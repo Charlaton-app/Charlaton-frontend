@@ -6,6 +6,8 @@ $error-color: #dc2626;
 $font-title: "Days One", sans-serif;
 $font-body: "Rubik", sans-serif;
 
+@use "sass:color";
+
 .login-page {
   min-height: 100vh;
   display: flex;
@@ -19,7 +21,7 @@ $font-body: "Rubik", sans-serif;
     background: linear-gradient(
       135deg,
       $bg-light 0%,
-      lighten($secondary-color, 15%) 100%
+      color.adjust($secondary-color, $lightness: 15%) 100%
     );
     padding: 6rem 1rem 2rem;
     min-height: 100vh;
@@ -98,9 +100,9 @@ $font-body: "Rubik", sans-serif;
       }
 
       .error-message {
-        background: lighten($error-color, 35%);
+        background: color.adjust($error-color, $lightness: 35%);
         border: 1px solid $error-color;
-        color: darken($error-color, 10%);
+        color: color.adjust($error-color, $lightness: -10%);
         padding: 0.75rem 1rem;
         border-radius: 0.5rem;
         margin-bottom: 1rem;
@@ -165,7 +167,7 @@ $font-body: "Rubik", sans-serif;
           margin-top: 0.5rem;
 
           &:hover:not(:disabled) {
-            background: darken($primary-color, 10%);
+            background: color.adjust($primary-color, $lightness: -10%);
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba($primary-color, 0.3);
           }
@@ -292,7 +294,7 @@ $font-body: "Rubik", sans-serif;
           text-decoration: none;
 
           &:hover {
-            color: darken($primary-color, 10%);
+            color: color.adjust($primary-color, $lightness: -10%);
             text-decoration: underline;
           }
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
 import "./About.scss";
@@ -15,14 +15,24 @@ const About: React.FC = () => {
       <main id="main-content">
         {/* Hero Section */}
         <section className="hero-section">
-          <div className="hero-content">
-            <h1>
-              Somos un equipo <span className="highlight">Apasionado</span>
-            </h1>
-            <p className="hero-subtitle">
-              Comprometidos con transformar la forma en que las personas se
-              conectan y colaboran en el mundo digital
-            </p>
+          <div className="hero-container">
+            <div className="hero-content">
+              <h1>
+                Somos un equipo <span className="highlight">Apasionado</span>
+              </h1>
+              <p className="hero-subtitle">
+                Trabajamos para que tengas el mejor servicio web para reunirte
+                con tus equipos de trabajo y tus amigos. Con las mejores
+                herramientas del mercado.
+              </p>
+            </div>
+            <div className="hero-image">
+              <img
+                src="/social-picture.svg"
+                alt="Equipo colaborando en videoconferencia"
+                role="img"
+              />
+            </div>
           </div>
         </section>
 
