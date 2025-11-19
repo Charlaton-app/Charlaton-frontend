@@ -85,14 +85,16 @@ const Dashboard: React.FC = () => {
           </section>
 
           {/* Quick Actions */}
-          <section className="quick-actions" aria-label="Acciones rápidas">
-            <div className="actions-grid">
+          <section className="quick-actions" aria-labelledby="actions-title">
+            <h2 id="actions-title" className="visually-hidden">Acciones rápidas</h2>
+            <div className="actions-grid" role="list">
               {features.map((feature, index) => (
                 <button
                   key={index}
                   className="action-card"
                   onClick={feature.action}
-                  aria-label={feature.title}
+                  aria-label={`${feature.title}: ${feature.description}`}
+                  role="listitem"
                 >
                   <div className="action-icon" aria-hidden="true">
                     {feature.icon}
@@ -107,19 +109,21 @@ const Dashboard: React.FC = () => {
           {/* Recent Meetings */}
           <section className="recent-meetings" aria-labelledby="recent-title">
             <h2 id="recent-title">Reuniones Recientes</h2>
-            <div className="meetings-list">
+            <div className="meetings-list" role="list">
               {recentMeetings.map((meeting, index) => (
-                <article key={index} className="meeting-card">
+                <article key={index} className="meeting-card" role="listitem">
                   <div className="meeting-header">
                     <h3 className="meeting-title">{meeting.title}</h3>
                     <span className="meeting-date">{meeting.date}</span>
                   </div>
                   <div className="meeting-details">
                     <span className="meeting-info">
-                      <span aria-label="Participantes">👥</span> {meeting.participants}
+                      <span aria-label={`${meeting.participants} participantes`} role="img">👥</span>
+                      <span aria-hidden="true">{meeting.participants}</span>
                     </span>
                     <span className="meeting-info">
-                      <span aria-label="Duración">⏱️</span> {meeting.duration}
+                      <span aria-label={`Duración: ${meeting.duration}`} role="img">⏱️</span>
+                      <span aria-hidden="true">{meeting.duration}</span>
                     </span>
                   </div>
                 </article>
@@ -128,19 +132,20 @@ const Dashboard: React.FC = () => {
           </section>
 
           {/* Stats Overview */}
-          <section className="stats-overview" aria-label="Estadísticas">
-            <div className="stats-grid">
-              <div className="stat-card">
-                <div className="stat-value">12</div>
-                <div className="stat-label">Reuniones este mes</div>
+          <section className="stats-overview" aria-labelledby="stats-title">
+            <h2 id="stats-title" className="visually-hidden">Estadísticas de uso</h2>
+            <div className="stats-grid" role="list">
+              <div className="stat-card" role="listitem">
+                <div className="stat-value" aria-label="12 reuniones este mes">12</div>
+                <div className="stat-label" aria-hidden="true">Reuniones este mes</div>
               </div>
-              <div className="stat-card">
-                <div className="stat-value">8h 45m</div>
-                <div className="stat-label">Tiempo total</div>
+              <div className="stat-card" role="listitem">
+                <div className="stat-value" aria-label="8 horas y 45 minutos de tiempo total">8h 45m</div>
+                <div className="stat-label" aria-hidden="true">Tiempo total</div>
               </div>
-              <div className="stat-card">
-                <div className="stat-value">24</div>
-                <div className="stat-label">Contactos activos</div>
+              <div className="stat-card" role="listitem">
+                <div className="stat-value" aria-label="24 contactos activos">24</div>
+                <div className="stat-label" aria-hidden="true">Contactos activos</div>
               </div>
             </div>
           </section>

@@ -158,11 +158,14 @@ const Chat: React.FC = () => {
   return (
     <div className="chat-page">
       <WebContentReader />
+      <a href="#main-content" className="skip-to-main">
+        Saltar al contenido principal
+      </a>
       {/* Header */}
       <Navbar onLogout={handleLogout} />
 
       {/* Main Content */}
-      <main className="main-content">
+      <main id="main-content" className="main-content">
         <div className="back-wrapper">
           <button
             className="back-dashboard-btn"
@@ -177,16 +180,16 @@ const Chat: React.FC = () => {
             <div className="chat-header-content">
               <div className="chat-title">
                 <h2>Chat Global</h2>
-                <p className="status">
+                <p className="status" role="status" aria-live="polite">
                   {isConnected ? (
                     <>
-                      <span className="status-dot online"></span>
-                      Conectado
+                      <span className="status-dot online" aria-hidden="true"></span>
+                      <span>Conectado</span>
                     </>
                   ) : (
                     <>
-                      <span className="status-dot offline"></span>
-                      Desconectado
+                      <span className="status-dot offline" aria-hidden="true"></span>
+                      <span>Desconectado</span>
                     </>
                   )}
                 </p>
@@ -202,6 +205,9 @@ const Chat: React.FC = () => {
                   className={`connection-toggle-btn ${
                     isConnected ? "connected" : "disconnected"
                   }`}
+                  aria-label={
+                    isConnected ? "Desconectar del chat" : "Conectar al chat"
+                  }
                   title={
                     isConnected ? "Desconectar del chat" : "Conectar al chat"
                   }
@@ -245,7 +251,14 @@ const Chat: React.FC = () => {
           </div>
 
           {/* Messages Container */}
-          <div className="messages-container" ref={messagesContainerRef}>
+          <div 
+            className="messages-container" 
+            ref={messagesContainerRef}
+            role="log"
+            aria-live="polite"
+            aria-atomic="false"
+            aria-label="Mensajes del chat"
+          >
             {messages.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-content">
@@ -296,20 +309,25 @@ const Chat: React.FC = () => {
           </div>
 
           {/* Message Input */}
-          <form onSubmit={handleSendMessage} className="message-input-form">
+          <form onSubmit={handleSendMessage} className="message-input-form" aria-label="Formulario de envío de mensajes">
             <div className="input-container">
+              <label htmlFor="message-input" className="visually-hidden">Escribe un mensaje</label>
               <input
+                id="message-input"
                 type="text"
                 value={messageInput}
                 onChange={(e) => setMessageInput(e.target.value)}
                 placeholder="Escribe un mensaje..."
                 disabled={!isConnected}
+                aria-label="Escribe tu mensaje"
+                aria-disabled={!isConnected}
               />
               <button
                 type="submit"
                 disabled={!isConnected || !messageInput.trim()}
+                aria-label="Enviar mensaje"
               >
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"

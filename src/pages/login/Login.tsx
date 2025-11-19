@@ -86,7 +86,7 @@ const Login: React.FC = () => {
 
           {/* Error Message */}
           {error && (
-            <div className="error-message" role="alert" aria-live="polite">
+            <div id="login-error" className="error-message" role="alert" aria-live="polite">
               {error}
             </div>
           )}
@@ -103,6 +103,8 @@ const Login: React.FC = () => {
                 placeholder="tu@ejemplo.com"
                 disabled={isLoading}
                 aria-required="true"
+                aria-invalid={error ? "true" : "false"}
+                aria-describedby={error ? "login-error" : undefined}
               />
             </div>
 
@@ -116,6 +118,8 @@ const Login: React.FC = () => {
                 placeholder="••••••••"
                 disabled={isLoading}
                 aria-required="true"
+                aria-invalid={error ? "true" : "false"}
+                aria-describedby={error ? "login-error" : undefined}
               />
             </div>
 

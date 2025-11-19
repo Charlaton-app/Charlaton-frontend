@@ -56,9 +56,9 @@ const Success: React.FC = () => {
             )}
           </p>
 
-          <div className="features-list">
-            <div className="feature-item">
-              <div className="feature-icon">
+          <div className="features-list" role="list" aria-label="Características principales de Charlaton">
+            <div className="feature-item" role="listitem">
+              <div className="feature-icon" aria-hidden="true">
                 <svg fill="currentColor" viewBox="0 0 24 24">
                   <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" />
                 </svg>
@@ -69,8 +69,8 @@ const Success: React.FC = () => {
               </div>
             </div>
 
-            <div className="feature-item">
-              <div className="feature-icon">
+            <div className="feature-item" role="listitem">
+              <div className="feature-icon" aria-hidden="true">
                 <svg fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" />
                 </svg>
@@ -81,8 +81,8 @@ const Success: React.FC = () => {
               </div>
             </div>
 
-            <div className="feature-item">
-              <div className="feature-icon">
+            <div className="feature-item" role="listitem">
+              <div className="feature-icon" aria-hidden="true">
                 <svg fill="currentColor" viewBox="0 0 24 24">
                   <path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z" />
                 </svg>
@@ -94,8 +94,8 @@ const Success: React.FC = () => {
             </div>
           </div>
 
-          <div className="next-steps">
-            <h2>Próximos pasos</h2>
+          <div className="next-steps" aria-labelledby="next-steps-title">
+            <h2 id="next-steps-title">Próximos pasos</h2>
             <ol>
               <li>Explora tu dashboard personalizado</li>
               <li>Configura tu perfil y preferencias</li>
@@ -113,7 +113,7 @@ const Success: React.FC = () => {
           </button>
 
           <p className="help-text">
-            ¿Necesitas ayuda? Visita nuestro <a href="/help">Centro de ayuda</a>
+            ¿Necesitas ayuda? Visita nuestro <a href="/help" aria-label="Ir al centro de ayuda">Centro de ayuda</a>
           </p>
         </div>
       </main>

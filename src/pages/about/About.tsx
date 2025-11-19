@@ -31,7 +31,7 @@ const About: React.FC = () => {
             <div className="hero-image">
               <img
                 src="/social-picture.svg"
-                alt="Equipo colaborando en videoconferencia"
+                alt="Ilustración de equipo diverso colaborando juntos en videoconferencia"
                 role="img"
               />
             </div>
@@ -63,40 +63,41 @@ const About: React.FC = () => {
         </section>
 
         {/* Stats Section */}
-        <section className="stats-section">
+        <section className="stats-section" aria-labelledby="stats-title">
           <div className="container">
-            <div className="stats-grid">
-              <div className="stat-card">
-                <div className="stat-number">1M+</div>
-                <div className="stat-label">Usuarios activos</div>
+            <h2 id="stats-title" className="visually-hidden">Estadísticas de rendimiento</h2>
+            <div className="stats-grid" role="list">
+              <div className="stat-card" role="listitem">
+                <div className="stat-number" aria-label="Más de un millón de usuarios activos">1M+</div>
+                <div className="stat-label" aria-hidden="true">Usuarios activos</div>
               </div>
-              <div className="stat-card">
-                <div className="stat-number">99%</div>
-                <div className="stat-label">Tiempo de actividad</div>
+              <div className="stat-card" role="listitem">
+                <div className="stat-number" aria-label="99 por ciento de tiempo de actividad">99%</div>
+                <div className="stat-label" aria-hidden="true">Tiempo de actividad</div>
               </div>
-              <div className="stat-card">
-                <div className="stat-number">50+</div>
-                <div className="stat-label">Países</div>
+              <div className="stat-card" role="listitem">
+                <div className="stat-number" aria-label="Más de 50 países">50+</div>
+                <div className="stat-label" aria-hidden="true">Países</div>
               </div>
-              <div className="stat-card">
-                <div className="stat-number">24/7</div>
-                <div className="stat-label">Soporte</div>
+              <div className="stat-card" role="listitem">
+                <div className="stat-number" aria-label="Soporte disponible 24 horas al día, 7 días a la semana">24/7</div>
+                <div className="stat-label" aria-hidden="true">Soporte</div>
               </div>
             </div>
           </div>
         </section>
 
         {/* Features Section */}
-        <section className="features-section">
+        <section className="features-section" aria-labelledby="features-title">
           <div className="container">
-            <h2>Todo lo que necesitas</h2>
+            <h2 id="features-title">Todo lo que necesitas</h2>
             <p className="section-subtitle">
               Herramientas poderosas diseñadas para maximizar tu productividad
             </p>
 
-            <div className="features-grid">
-              <div className="feature-card">
-                <div className="feature-icon">
+            <div className="features-grid" role="list">
+              <div className="feature-card" role="listitem">
+                <div className="feature-icon" aria-hidden="true">
                   <svg fill="currentColor" viewBox="0 0 24 24">
                     <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" />
                   </svg>
@@ -243,19 +244,19 @@ const About: React.FC = () => {
         </section>
 
         {/* CTA Section */}
-        <section className="cta-section">
+        <section className="cta-section" aria-labelledby="cta-title">
           <div className="container">
             <div className="cta-card">
-              <h2>¿Listo para comenzar?</h2>
+              <h2 id="cta-title">¿Listo para comenzar?</h2>
               <p>
                 Únete a millones de usuarios que ya confían en Charlaton para
                 sus comunicaciones
               </p>
               <div className="cta-buttons">
-                <a href="/signup" className="btn-primary">
+                <a href="/signup" className="btn-primary" aria-label="Registrarse gratis en Charlaton">
                   REGISTRARSE GRATIS
                 </a>
-                <a href="/login" className="btn-outline">
+                <a href="/login" className="btn-outline" aria-label="Iniciar sesión en cuenta existente">
                   INICIAR SESIÓN
                 </a>
               </div>

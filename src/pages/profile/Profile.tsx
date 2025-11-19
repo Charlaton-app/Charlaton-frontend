@@ -198,13 +198,13 @@ const Profile: React.FC = () => {
           </div>
 
           {error && (
-            <div className="alert alert-error" role="alert" aria-live="polite">
+            <div id="profile-error" className="alert alert-error" role="alert" aria-live="assertive">
               {error}
             </div>
           )}
 
           {success && (
-            <div className="alert alert-success" role="alert" aria-live="polite">
+            <div id="profile-success" className="alert alert-success" role="status" aria-live="polite">
               {success}
             </div>
           )}
@@ -253,6 +253,8 @@ const Profile: React.FC = () => {
                     placeholder="Juan Pérez"
                     disabled={isLoading}
                     aria-required="true"
+                    aria-invalid={error && !personalInfo.fullName.trim() ? "true" : "false"}
+                    aria-describedby={error ? "profile-error" : undefined}
                   />
                 </div>
 
@@ -267,9 +269,11 @@ const Profile: React.FC = () => {
                     placeholder="user@email.com"
                     disabled={isLoading || Boolean(isOAuthUser)}
                     aria-required="true"
+                    aria-invalid={error && !personalInfo.email.trim() ? "true" : "false"}
+                    aria-describedby={isOAuthUser ? "email-help" : error ? "profile-error" : undefined}
                   />
                   {isOAuthUser && (
-                    <p className="field-note">
+                    <p id="email-help" className="field-note">
                       Este correo proviene de {user?.authProvider?.toUpperCase()} y no puede
                       editarse. Si necesitas cambiarlo, actualízalo directamente en el proveedor.
                     </p>
@@ -311,6 +315,8 @@ const Profile: React.FC = () => {
                     placeholder="Contraseña actual"
                     disabled={isLoading}
                     aria-required="true"
+                    aria-invalid={error ? "true" : "false"}
+                    aria-describedby={error ? "profile-error" : undefined}
                   />
                 </div>
 
@@ -325,7 +331,10 @@ const Profile: React.FC = () => {
                     placeholder="Nueva contraseña"
                     disabled={isLoading}
                     aria-required="true"
+                    aria-invalid={error && passwordData.newPassword.length < 6 && passwordData.newPassword.length > 0 ? "true" : "false"}
+                    aria-describedby={error ? "profile-error password-length-help" : "password-length-help"}
                   />
+                  <span id="password-length-help" className="visually-hidden">La contraseña debe tener al menos 6 caracteres</span>
                 </div>
 
                 <div className="form-group">
@@ -339,6 +348,8 @@ const Profile: React.FC = () => {
                     placeholder="Confirmar contraseña"
                     disabled={isLoading}
                     aria-required="true"
+                    aria-invalid={error && passwordData.newPassword !== passwordData.confirmPassword && passwordData.confirmPassword.length > 0 ? "true" : "false"}
+                    aria-describedby={error ? "profile-error" : undefined}
                   />
                 </div>
 

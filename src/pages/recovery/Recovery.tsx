@@ -55,13 +55,13 @@ const Recovery: React.FC = () => {
           </p>
 
           {error && (
-            <div className="error-message" role="alert" aria-live="polite">
+            <div id="recovery-error" className="error-message" role="alert" aria-live="assertive">
               {error}
             </div>
           )}
 
           {success && (
-            <div className="success-message" role="alert" aria-live="polite">
+            <div className="success-message" role="status" aria-live="polite" aria-atomic="true">
               <div className="success-icon">
                 <svg fill="currentColor" viewBox="0 0 24 24">
                   <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
@@ -96,6 +96,8 @@ const Recovery: React.FC = () => {
                   placeholder="tu@ejemplo.com"
                   disabled={isLoading}
                   aria-required="true"
+                  aria-invalid={error ? "true" : "false"}
+                  aria-describedby={error ? "recovery-error" : undefined}
                   autoFocus
                 />
               </div>
@@ -109,7 +111,7 @@ const Recovery: React.FC = () => {
                 {isLoading ? "Enviando..." : "ENVIAR ENLACE DE RECUPERACIÓN"}
               </button>
 
-              <a href="/login" className="back-link">
+              <a href="/login" className="back-link" aria-label="Regresar a la página de inicio de sesión">
                 ← Volver al inicio de sesión
               </a>
             </form>

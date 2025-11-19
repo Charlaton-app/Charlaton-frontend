@@ -82,14 +82,14 @@ const Home: React.FC = () => {
                 para tus reuniones virtuales. Todo lo que necesitas en un 
                 solo lugar.
               </p>
-              <button className="cta-button" aria-label="Comenzar a usar Charlaton">
+              <button className="cta-button" aria-label="Comenzar a usar Charlaton gratis">
                 COMIENZA YA
               </button>
             </div>
             <div className="hero-image">
               <img 
                 src="/social-picture.svg" 
-                alt="Personas colaborando en videoconferencia" 
+                alt="Ilustración de personas colaborando en videoconferencia desde diferentes dispositivos" 
                 role="img"
               />
             </div>
@@ -97,14 +97,15 @@ const Home: React.FC = () => {
         </section>
 
         {/* Stats Section */}
-        <section className="stats-section" aria-label="Estadísticas de Charlaton">
-          <div className="stats-container">
+        <section className="stats-section" aria-labelledby="stats-title">
+          <h2 id="stats-title" className="visually-hidden">Estadísticas de Charlaton</h2>
+          <div className="stats-container" role="list">
             {stats.map((stat, index) => (
-              <div key={index} className="stat-item">
+              <div key={index} className="stat-item" role="listitem">
                 <div className="stat-value" aria-label={`${stat.value} ${stat.label}`}>
                   {stat.value}
                 </div>
-                <div className="stat-label">{stat.label}</div>
+                <div className="stat-label" aria-hidden="true">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -140,6 +141,7 @@ const Home: React.FC = () => {
                   onClick={() => toggleFaq(index)}
                   aria-expanded={openFaqIndex === index}
                   aria-controls={`faq-answer-${index}`}
+                  id={`faq-question-${index}`}
                 >
                   <span>{faq.question}</span>
                   <span 
@@ -154,6 +156,7 @@ const Home: React.FC = () => {
                     id={`faq-answer-${index}`}
                     className="faq-answer"
                     role="region"
+                    aria-labelledby={`faq-question-${index}`}
                   >
                     <p>{faq.answer}</p>
                   </div>
