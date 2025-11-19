@@ -1,22 +1,19 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../stores/useAuthStore";
-import { updateProfile, updatePassword, deleteUser, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
-import { auth } from "../../lib/firebase.config";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
 import "./Profile.scss";
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();
-  const { user, setUser, logout } = useAuthStore();
-  const [loading, setLoading] = useState(false);
+  const { user, updateUserProfile, changePassword, deleteAccount, logout, isLoading } = useAuthStore();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   // Personal Info State
   const [personalInfo, setPersonalInfo] = useState({
-    name: user?.displayName || "Demo User",
+    name: user?.displayName || user?.nickname || "Demo User",
     lastName: "",
     email: user?.email || "demo.user@gmail.com",
     age: "20"
@@ -44,109 +41,84 @@ const Profile: React.FC = () => {
   };
 
   const handleSaveChanges = async () => {
-    setLoading(true);
     setError("");
     setSuccess("");
 
-    try {
-      if (auth.currentUser) {
-        const displayName = `${personalInfo.name} ${personalInfo.lastName}`.trim();
-        await updateProfile(auth.currentUser, {
-          displayName: displayName
-        });
+    const result = await updateUserProfile({
+      displayName: `${personalInfo.name} ${personalInfo.lastName}`.trim(),
+      nickname: personalInfo.name,
+      email: personalInfo.email
+    });
 
-        setUser({
-          ...user,
-          displayName: displayName,
-          email: personalInfo.email
-        });
-
-        setSuccess("Cambios guardados exitosamente");
-      }
-    } catch (error: any) {
-      console.error("Error updating profile:", error);
-      setError("Error al guardar los cambios");
-    } finally {
-      setLoading(false);
+    if (result.success) {
+      setSuccess("Cambios guardados exitosamente");
+    } else {
+      setError(result.error || "Error al guardar los cambios");
     }
   };
 
-  const handleChangePassword = async (e: React.FormEvent) => {
+  const handleChangePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
     setSuccess("");
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setError("Las contraseñas no coinciden");
-      setLoading(false);
       return;
     }
 
     if (passwordData.newPassword.length < 6) {
       setError("La contraseña debe tener al menos 6 caracteres");
-      setLoading(false);
       return;
     }
 
-    try {
-      if (auth.currentUser && auth.currentUser.email) {
-        // Re-authenticate user
-        const credential = EmailAuthProvider.credential(
-          auth.currentUser.email,
-          passwordData.currentPassword
-        );
-        await reauthenticateWithCredential(auth.currentUser, credential);
-        
-        // Update password
+    const result = await changePassword(
+      passwordData.currentPassword,
+      passwordData.newPassword,
+      passwordData.confirmPassword
+    );
+
+    if (result.success) {
+      setSuccess("Contraseña actualizada correctamente");
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+      });
+    } else {
+      setError(result.error || "Error al cambiar la contraseña");
+    }
+  };
         await updatePassword(auth.currentUser, passwordData.newPassword);
         
         setSuccess("Contraseña actualizada exitosamente");
-        setPasswordData({
-          currentPassword: "",
-          newPassword: "",
-          confirmPassword: ""
-        });
-      }
-    } catch (error: any) {
-      console.error("Error changing password:", error);
-      if (error.code === "auth/wrong-password") {
-        setError("Contraseña actual incorrecta");
-      } else if (error.code === "auth/weak-password") {
-        setError("La nueva contraseña es muy débil");
-      } else {
-        setError("Error al cambiar la contraseña");
-      }
-    } finally {
-      setLoading(false);
+      });
+    } else {
+      setError(result.error || "Error al cambiar la contraseña");
     }
   };
 
   const handleDeleteAccount = async () => {
+    const password = window.prompt(
+      "Por seguridad, ingresa tu contraseña para confirmar la eliminación de tu cuenta:"
+    );
+
+    if (!password) return;
+
     const confirmed = window.confirm(
-      "¿Estás seguro de que deseas eliminar tu cuenta? Esta acción es irreversible."
+      "¿Estás ABSOLUTAMENTE seguro de que deseas eliminar tu cuenta? Esta acción es irreversible y perderás todos tus datos."
     );
 
     if (!confirmed) return;
 
-    setLoading(true);
     setError("");
 
-    try {
-      if (auth.currentUser) {
-        await deleteUser(auth.currentUser);
-        logout();
-        navigate("/");
-      }
-    } catch (error: any) {
-      console.error("Error deleting account:", error);
-      if (error.code === "auth/requires-recent-login") {
-        setError("Por favor, vuelve a iniciar sesión e intenta nuevamente");
-      } else {
-        setError("Error al eliminar la cuenta");
-      }
-    } finally {
-      setLoading(false);
+    const result = await deleteAccount(password);
+
+    if (result.success) {
+      navigate("/");
+    } else {
+      setError(result.error || "Error al eliminar la cuenta");
     }
   };
 
@@ -222,7 +194,7 @@ const Profile: React.FC = () => {
                       value={personalInfo.name}
                       onChange={handlePersonalInfoChange}
                       placeholder="Demo User"
-                      disabled={loading}
+                      disabled={isLoading}
                       aria-required="true"
                     />
                   </div>
@@ -236,7 +208,7 @@ const Profile: React.FC = () => {
                       value={personalInfo.lastName}
                       onChange={handlePersonalInfoChange}
                       placeholder="Demo User"
-                      disabled={loading}
+                      disabled={isLoading}
                     />
                   </div>
                 </div>
@@ -251,7 +223,7 @@ const Profile: React.FC = () => {
                       value={personalInfo.email}
                       onChange={handlePersonalInfoChange}
                       placeholder="user@email.com"
-                      disabled={loading}
+                      disabled={isLoading}
                       aria-required="true"
                     />
                   </div>
@@ -267,7 +239,7 @@ const Profile: React.FC = () => {
                       placeholder="20"
                       min="1"
                       max="150"
-                      disabled={loading}
+                      disabled={isLoading}
                     />
                   </div>
                 </div>
@@ -283,10 +255,10 @@ const Profile: React.FC = () => {
                   type="button"
                   onClick={handleSaveChanges}
                   className="btn-save"
-                  disabled={loading}
+                  disabled={isLoading}
                   aria-label="Guardar cambios"
                 >
-                  {loading ? "Guardando..." : "GUARDAR CAMBIOS"}
+                  {isLoading ? "Guardando..." : "GUARDAR CAMBIOS"}
                 </button>
               </form>
             </div>
@@ -295,7 +267,7 @@ const Profile: React.FC = () => {
             <div className="profile-card password-card">
               <h2>Cambia tu contraseña</h2>
               
-              <form onSubmit={handleChangePassword} className="password-form">
+              <form onSubmit={handleChangePasswordSubmit} className="password-form">
                 <div className="form-group">
                   <label htmlFor="currentPassword">Digita tu contraseña actual</label>
                   <input
@@ -305,7 +277,7 @@ const Profile: React.FC = () => {
                     value={passwordData.currentPassword}
                     onChange={handlePasswordChange}
                     placeholder="Contraseña actual"
-                    disabled={loading}
+                    disabled={isLoading}
                     aria-required="true"
                   />
                 </div>
@@ -319,7 +291,7 @@ const Profile: React.FC = () => {
                     value={passwordData.newPassword}
                     onChange={handlePasswordChange}
                     placeholder="Nueva contraseña"
-                    disabled={loading}
+                    disabled={isLoading}
                     aria-required="true"
                   />
                 </div>
@@ -333,7 +305,7 @@ const Profile: React.FC = () => {
                     value={passwordData.confirmPassword}
                     onChange={handlePasswordChange}
                     placeholder="Confirmar contraseña"
-                    disabled={loading}
+                    disabled={isLoading}
                     aria-required="true"
                   />
                 </div>
@@ -341,10 +313,10 @@ const Profile: React.FC = () => {
                 <button
                   type="submit"
                   className="btn-change-password"
-                  disabled={loading}
+                  disabled={isLoading}
                   aria-label="Cambiar contraseña"
                 >
-                  {loading ? "Cambiando..." : "CAMBIAR CONTRASEÑA"}
+                  {isLoading ? "Cambiando..." : "CAMBIAR CONTRASEÑA"}
                 </button>
               </form>
             </div>
@@ -357,10 +329,10 @@ const Profile: React.FC = () => {
               <button
                 onClick={handleDeleteAccount}
                 className="btn-delete"
-                disabled={loading}
+                disabled={isLoading}
                 aria-label="Eliminar cuenta permanentemente"
               >
-                {loading ? "Eliminando..." : "ELIMINAR CUENTA"}
+                {isLoading ? "Eliminando..." : "ELIMINAR CUENTA"}
               </button>
             </div>
           </div>

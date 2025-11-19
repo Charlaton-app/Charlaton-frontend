@@ -1,42 +1,30 @@
 import React, { useState } from "react";
-import { sendPasswordResetEmail } from "firebase/auth";
-import { auth } from "../../lib/firebase.config";
+import useAuthStore from "../../stores/useAuthStore";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
 import "./Recovery.scss";
 
 const Recovery: React.FC = () => {
+  const { recoverPassword, isLoading } = useAuthStore();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
     setSuccess(false);
 
     if (!email) {
       setError("Por favor, ingresa tu correo electrónico");
-      setLoading(false);
       return;
     }
 
-    try {
-      await sendPasswordResetEmail(auth, email);
+    const result = await recoverPassword(email);
+    if (result.success) {
       setSuccess(true);
-    } catch (error: any) {
-      console.error("Error al enviar correo:", error);
-      if (error.code === "auth/user-not-found") {
-        setError("No existe una cuenta con este correo electrónico");
-      } else if (error.code === "auth/invalid-email") {
-        setError("Correo electrónico inválido");
-      } else {
-        setError("Error al enviar el correo. Por favor, intenta nuevamente.");
-      }
-    } finally {
-      setLoading(false);
+    } else {
+      setError(result.error || "Error al enviar el correo");
     }
   };
 
@@ -104,7 +92,7 @@ const Recovery: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@ejemplo.com"
-                  disabled={loading}
+                  disabled={isLoading}
                   aria-required="true"
                   autoFocus
                 />
@@ -113,10 +101,10 @@ const Recovery: React.FC = () => {
               <button
                 type="submit"
                 className="submit-btn"
-                disabled={loading}
+                disabled={isLoading}
                 aria-label="Enviar enlace de recuperación"
               >
-                {loading ? "Enviando..." : "ENVIAR ENLACE DE RECUPERACIÓN"}
+                {isLoading ? "Enviando..." : "ENVIAR ENLACE DE RECUPERACIÓN"}
               </button>
 
               <a href="/login" className="back-link">
