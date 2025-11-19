@@ -18,12 +18,51 @@
     margin: 0 auto;
   }
 
-  .profile-title {
-    font-family: $font-title;
-    font-size: 2.5rem;
-    color: $primary-color;
+  .profile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
     margin-bottom: 2rem;
-    text-align: center;
+
+    @media (max-width: 640px) {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .profile-title {
+      font-family: $font-title;
+      font-size: 2.5rem;
+      color: $primary-color;
+      margin: 0;
+    }
+
+    .btn-back-dashboard {
+      padding: 0.65rem 1.25rem;
+      border-radius: 0.6rem;
+      border: none;
+      background: linear-gradient(
+        135deg,
+        color.adjust($primary-color, $lightness: 5%) 0%,
+        color.adjust($primary-color, $lightness: 15%) 100%
+      );
+      color: white;
+      font-family: $font-body;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 18px rgba($primary-color, 0.25);
+      }
+
+      &:focus-visible {
+        outline: 3px solid rgba($primary-color, 0.3);
+        outline-offset: 3px;
+      }
+    }
   }
 
   // Alerts
@@ -328,6 +367,12 @@
           &::placeholder {
             color: $text-tertiary;
           }
+        }
+
+        .field-note {
+          margin-top: 0.5rem;
+          font-size: 0.85rem;
+          color: #6b7280;
         }
       }
 

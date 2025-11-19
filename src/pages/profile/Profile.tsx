@@ -1,23 +1,70 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../stores/useAuthStore";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
 import "./Profile.scss";
 
+const parseCreatedAt = (value?: any): Date | null => {
+  if (!value) return null;
+
+  if (typeof value === "string" || typeof value === "number") {
+    const date = new Date(value);
+    if (!isNaN(date.getTime())) return date;
+  }
+
+  if (typeof value === "object") {
+    if ("_seconds" in value && typeof value._seconds === "number") {
+      return new Date(value._seconds * 1000);
+    }
+    if ("seconds" in value && typeof value.seconds === "number") {
+      return new Date(value.seconds * 1000);
+    }
+  }
+
+  return null;
+};
+
+const formatMemberSince = (value?: any) => {
+  const date = parseCreatedAt(value);
+  if (!date) return "Información no disponible";
+  return date.toLocaleDateString("es-ES", {
+    month: "long",
+    year: "numeric",
+  });
+};
+
 const Profile: React.FC = () => {
   const navigate = useNavigate();
-  const { user, updateUserProfile, changePassword, deleteAccount, logout, isLoading } = useAuthStore();
+  const {
+    user,
+    updateUserProfile,
+    changePassword,
+    deleteAccount,
+    logout,
+    isLoading,
+  } = useAuthStore();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const isOAuthUser =
+    user?.authProvider && user.authProvider !== "password";
 
   // Personal Info State
   const [personalInfo, setPersonalInfo] = useState({
-    name: user?.displayName || user?.nickname || "Demo User",
-    lastName: "",
-    email: user?.email || "demo.user@gmail.com",
-    age: "20"
+    fullName: "",
+    email: ""
   });
+
+  // Cargar datos del usuario cuando el componente se monta o el usuario cambia
+  useEffect(() => {
+    if (user) {
+      const fullName = user.displayName || user.nickname || "";
+      setPersonalInfo({
+        fullName: fullName,
+        email: user.email || ""
+      });
+    }
+  }, [user]);
 
   // Password Change State
   const [passwordData, setPasswordData] = useState({
@@ -44,10 +91,20 @@ const Profile: React.FC = () => {
     setError("");
     setSuccess("");
 
+    if (!personalInfo.fullName.trim()) {
+      setError("El nombre completo es requerido");
+      return;
+    }
+
+    if (!personalInfo.email.trim()) {
+      setError("El correo electrónico es requerido");
+      return;
+    }
+
     const result = await updateUserProfile({
-      displayName: `${personalInfo.name} ${personalInfo.lastName}`.trim(),
-      nickname: personalInfo.name,
-      email: personalInfo.email
+      displayName: personalInfo.fullName.trim(),
+      nickname: personalInfo.fullName.trim(),
+      email: personalInfo.email.trim()
     });
 
     if (result.success) {
@@ -117,7 +174,7 @@ const Profile: React.FC = () => {
   // Mock stats data
   const resumeCount = 2;
   const sessionCount = 24;
-  const memberSince = "Enero del 2024";
+  const memberSince = formatMemberSince(user?.createdAt);
 
   return (
     <div className="profile-page">
@@ -129,7 +186,15 @@ const Profile: React.FC = () => {
       
       <main id="main-content" className="profile-main">
         <div className="profile-container">
-          <h1 className="profile-title">Perfil de Usuario</h1>
+          <div className="profile-header">
+            <h1 className="profile-title">Perfil de Usuario</h1>
+            <button
+              className="btn-back-dashboard"
+              onClick={() => navigate("/dashboard")}
+            >
+              ← Volver al dashboard
+            </button>
+          </div>
 
           {error && (
             <div className="alert alert-error" role="alert" aria-live="polite">
@@ -151,7 +216,7 @@ const Profile: React.FC = () => {
                   <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                 </svg>
               </div>
-              <h2 className="user-name">{personalInfo.name}</h2>
+              <h2 className="user-name">{personalInfo.fullName || user?.displayName || user?.nickname || "Usuario"}</h2>
               <p className="user-email">{personalInfo.email}</p>
               
               <div className="user-stats">
@@ -176,64 +241,38 @@ const Profile: React.FC = () => {
               <h2>Información personal</h2>
               
               <form className="info-form">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="name">Nombre</label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      value={personalInfo.name}
-                      onChange={handlePersonalInfoChange}
-                      placeholder="Demo User"
-                      disabled={isLoading}
-                      aria-required="true"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="lastName">Apellidos</label>
-                    <input
-                      type="text"
-                      id="lastName"
-                      name="lastName"
-                      value={personalInfo.lastName}
-                      onChange={handlePersonalInfoChange}
-                      placeholder="Demo User"
-                      disabled={isLoading}
-                    />
-                  </div>
+                <div className="form-group">
+                  <label htmlFor="fullName">Nombre completo</label>
+                  <input
+                    type="text"
+                    id="fullName"
+                    name="fullName"
+                    value={personalInfo.fullName}
+                    onChange={handlePersonalInfoChange}
+                    placeholder="Juan Pérez"
+                    disabled={isLoading}
+                    aria-required="true"
+                  />
                 </div>
 
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="email">Correo electrónico</label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={personalInfo.email}
-                      onChange={handlePersonalInfoChange}
-                      placeholder="user@email.com"
-                      disabled={isLoading}
-                      aria-required="true"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="age">Edad</label>
-                    <input
-                      type="number"
-                      id="age"
-                      name="age"
-                      value={personalInfo.age}
-                      onChange={handlePersonalInfoChange}
-                      placeholder="20"
-                      min="1"
-                      max="150"
-                      disabled={isLoading}
-                    />
-                  </div>
+                <div className="form-group">
+                  <label htmlFor="email">Correo electrónico</label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={personalInfo.email}
+                    onChange={handlePersonalInfoChange}
+                    placeholder="user@email.com"
+                    disabled={isLoading || Boolean(isOAuthUser)}
+                    aria-required="true"
+                  />
+                  {isOAuthUser && (
+                    <p className="field-note">
+                      Este correo proviene de {user?.authProvider?.toUpperCase()} y no puede
+                      editarse. Si necesitas cambiarlo, actualízalo directamente en el proveedor.
+                    </p>
+                  )}
                 </div>
 
                 <div className="member-info">

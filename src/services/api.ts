@@ -9,14 +9,21 @@ interface ApiResponse<T = any> {
   message?: string;
 }
 
-// Configuración base para fetch
+// Configuración base para fetch con timeout
 const fetchWithConfig = async <T = any>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> => {
+  const timeout = 10000; // 10 segundos de timeout
+  
   try {
+    // Crear un AbortController para el timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
     const response = await fetch(`${API_URL}${endpoint}`, {
       ...options,
+      signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
         ...options.headers,
@@ -24,16 +31,40 @@ const fetchWithConfig = async <T = any>(
       credentials: "include", // Importante para cookies (AccessToken, RefreshToken)
     });
 
+    clearTimeout(timeoutId);
+
     const data = await response.json();
 
     if (!response.ok) {
+      // Manejar errores específicos
+      if (response.status === 401) {
+        return {
+          error: data.error || data.message || "Token expirado o no autorizado. Por favor, inicia sesión nuevamente.",
+        };
+      }
+      if (response.status === 404) {
+        return {
+          error: data.error || data.message || "Recurso no encontrado",
+        };
+      }
+      if (response.status === 400) {
+        return {
+          error: data.error || data.message || "Solicitud inválida",
+        };
+      }
       return {
-        error: data.error || data.message || "Error en la petición",
+        error: data.error || data.message || `Error en la petición (${response.status})`,
       };
     }
 
     return { data };
   } catch (error: any) {
+    if (error.name === "AbortError") {
+      console.error("Timeout en API:", endpoint);
+      return {
+        error: "El servidor tardó demasiado en responder. Verifica que el backend esté corriendo.",
+      };
+    }
     console.error("Error en API:", error);
     return {
       error: error.message || "Error de conexión con el servidor",

@@ -2,6 +2,8 @@ import type React from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../stores/useAuthStore";
+import googleIcon from "/icons/google-icon.svg";
+import facebookIcon from "/icons/facebook-icon.svg";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
 import "./Login.scss";
@@ -138,7 +140,7 @@ const Login: React.FC = () => {
               disabled={isLoading}
               aria-label="Iniciar sesión con Google"
             >
-              <img src="/icons/google-icon.svg" alt="" aria-hidden="true" />
+              <img src={googleIcon} alt="" aria-hidden="true" />
               Google
             </button>
 
@@ -148,7 +150,7 @@ const Login: React.FC = () => {
               disabled={isLoading}
               aria-label="Iniciar sesión con Facebook"
             >
-              <img src="/icons/facebook-icon.svg" alt="" aria-hidden="true" />
+              <img src={facebookIcon} alt="" aria-hidden="true" />
               Facebook
             </button>
           </div>

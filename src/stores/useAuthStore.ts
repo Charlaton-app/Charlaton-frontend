@@ -11,15 +11,20 @@ interface User {
   photoURL: string | null;
   nickname?: string | null;
   role?: string | null;
+  createdAt?: any;
+  authProvider?: string | null;
 }
 
 type AuthStore = {
   user: User | null;
   isLoading: boolean;
   error: string | null;
+  isAuthenticated: boolean;
+  isInitialized: boolean;
   setUser: (user: User | null) => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
+  clearError: () => void;
   initAuthObserver: () => () => void;
   login: (
     email: string,
@@ -50,36 +55,66 @@ type AuthStore = {
   ) => Promise<{ success: boolean; error?: string }>;
 };
 
+const normalizeProvider = (providerId?: string | null) => {
+  if (!providerId) return "password";
+  if (providerId.includes("google")) return "google";
+  if (providerId.includes("facebook")) return "facebook";
+  if (providerId.includes("password")) return "password";
+  return providerId;
+};
+
 const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
       user: null,
       isLoading: false,
       error: null,
+      isAuthenticated: false,
+      isInitialized: false,
 
-      setUser: (user: User | null) => set({ user, error: null }),
+      setUser: (user: User | null) => 
+        set({ 
+          user, 
+          error: null,
+          isAuthenticated: !!user 
+        }),
       setLoading: (isLoading: boolean) => set({ isLoading }),
       setError: (error: string | null) => set({ error }),
+      clearError: () => set({ error: null }),
 
       initAuthObserver: () => {
+        set({ isInitialized: false });
         const unsubscribe = onAuthStateChanged(
           auth,
           async (fbUser) => {
             if (fbUser) {
               // Sincronizar con el backend para obtener datos completos
               try {
-                const response = await authService.getCurrentUser(fbUser.uid);
+                const response = await authService.getCurrentUser(
+                  fbUser.uid,
+                  fbUser.email || undefined
+                );
+                const providerId =
+                  fbUser.providerData?.[0]?.providerId || fbUser.providerId;
+                const authProvider = normalizeProvider(providerId);
 
                 if (response.data) {
                   const userLogged: User = {
-                    id: fbUser.uid,
+                    id: response.data.id || fbUser.uid,
                     displayName: fbUser.displayName,
                     email: fbUser.email,
                     photoURL: fbUser.photoURL,
                     nickname: response.data.nickname,
                     role: response.data.role,
+                    createdAt: response.data.createdAt || null,
+                    authProvider,
                   };
-                  set({ user: userLogged });
+                  set({ 
+                    user: userLogged,
+                    isAuthenticated: true,
+                    isInitialized: true,
+                    error: null
+                  });
                 } else {
                   // Si no hay datos en backend, usar solo Firebase
                   const userLogged: User = {
@@ -87,26 +122,56 @@ const useAuthStore = create<AuthStore>()(
                     displayName: fbUser.displayName,
                     email: fbUser.email,
                     photoURL: fbUser.photoURL,
+                    createdAt: null,
+                    authProvider,
                   };
-                  set({ user: userLogged });
+                  set({ 
+                    user: userLogged,
+                    isAuthenticated: true,
+                    isInitialized: true,
+                    error: null
+                  });
                 }
-              } catch (error) {
+              } catch (error: any) {
                 console.error("Error sincronizando usuario:", error);
+                // Si el error es 401, el token expiró pero Firebase está autenticado
+                // Continuar con los datos de Firebase
+                const providerId =
+                  fbUser.providerData?.[0]?.providerId || fbUser.providerId;
+                const authProvider = normalizeProvider(providerId);
                 const userLogged: User = {
                   id: fbUser.uid,
                   displayName: fbUser.displayName,
                   email: fbUser.email,
                   photoURL: fbUser.photoURL,
+                  createdAt: null,
+                  authProvider,
                 };
-                set({ user: userLogged });
+                set({ 
+                  user: userLogged,
+                  isAuthenticated: true,
+                  isInitialized: true,
+                  error: error.message?.includes("401") || error.message?.includes("Token") 
+                    ? "Token expirado. Por favor, recarga la página." 
+                    : null
+                });
               }
             } else {
-              set({ user: null });
+              set({ 
+                user: null,
+                isAuthenticated: false,
+                isInitialized: true,
+                error: null
+              });
             }
           },
           (err) => {
             console.error("Error en auth observer:", err);
-            set({ error: err.message });
+            set({ 
+              error: err.message,
+              isInitialized: true,
+              isAuthenticated: false
+            });
           }
         );
         return unsubscribe;
@@ -124,14 +189,21 @@ const useAuthStore = create<AuthStore>()(
 
           if (response.data) {
             const user: User = {
-              id: response.data.firebaseUser.uid,
+              id: response.data.user?.id || response.data.firebaseUser.uid,
               displayName: response.data.firebaseUser.displayName,
               email: response.data.firebaseUser.email,
               photoURL: response.data.firebaseUser.photoURL,
               nickname: response.data.user?.nickname,
               role: response.data.user?.role,
+              createdAt: response.data.user?.createdAt || null,
+              authProvider: "password",
             };
-            set({ user, isLoading: false });
+            set({ 
+              user, 
+              isLoading: false,
+              isAuthenticated: true,
+              error: null
+            });
             return { success: true };
           }
 
@@ -155,14 +227,21 @@ const useAuthStore = create<AuthStore>()(
 
           if (response.data) {
             const user: User = {
-              id: response.data.firebaseUser.uid,
+              id: response.data.user?.id || response.data.firebaseUser.uid,
               displayName: response.data.firebaseUser.displayName,
               email: response.data.firebaseUser.email,
               photoURL: response.data.firebaseUser.photoURL,
               nickname: response.data.user?.nickname,
               role: response.data.user?.role,
+              createdAt: response.data.user?.createdAt || null,
+              authProvider: "password",
             };
-            set({ user, isLoading: false });
+            set({ 
+              user, 
+              isLoading: false,
+              isAuthenticated: true,
+              error: null
+            });
             return { success: true };
           }
 
@@ -186,14 +265,21 @@ const useAuthStore = create<AuthStore>()(
 
           if (response.data) {
             const user: User = {
-              id: response.data.firebaseUser.uid,
+              id: response.data.user?.id || response.data.firebaseUser.uid,
               displayName: response.data.firebaseUser.displayName,
               email: response.data.firebaseUser.email,
               photoURL: response.data.firebaseUser.photoURL,
               nickname: response.data.user?.nickname,
               role: response.data.user?.role,
+              createdAt: response.data.user?.createdAt || null,
+              authProvider: "google",
             };
-            set({ user, isLoading: false });
+            set({ 
+              user, 
+              isLoading: false,
+              isAuthenticated: true,
+              error: null
+            });
             return { success: true };
           }
 
@@ -217,14 +303,21 @@ const useAuthStore = create<AuthStore>()(
 
           if (response.data) {
             const user: User = {
-              id: response.data.firebaseUser.uid,
+              id: response.data.user?.id || response.data.firebaseUser.uid,
               displayName: response.data.firebaseUser.displayName,
               email: response.data.firebaseUser.email,
               photoURL: response.data.firebaseUser.photoURL,
               nickname: response.data.user?.nickname,
               role: response.data.user?.role,
+              createdAt: response.data.user?.createdAt || null,
+              authProvider: "facebook",
             };
-            set({ user, isLoading: false });
+            set({ 
+              user, 
+              isLoading: false,
+              isAuthenticated: true,
+              error: null
+            });
             return { success: true };
           }
 
@@ -240,10 +333,21 @@ const useAuthStore = create<AuthStore>()(
         set({ isLoading: true, error: null });
         try {
           await authService.logout();
-          set({ user: null, isLoading: false });
+          set({ 
+            user: null, 
+            isLoading: false,
+            isAuthenticated: false,
+            error: null
+          });
         } catch (error: any) {
           console.error("Error al cerrar sesión:", error);
-          set({ error: error.message, isLoading: false });
+          // Aún así, limpiar el estado local
+          set({ 
+            user: null,
+            isLoading: false,
+            isAuthenticated: false,
+            error: error.message
+          });
         }
       },
 
@@ -284,6 +388,8 @@ const useAuthStore = create<AuthStore>()(
           set({
             user: { ...user, ...data },
             isLoading: false,
+            isAuthenticated: true,
+            error: null
           });
 
           return { success: true };
@@ -350,7 +456,10 @@ const useAuthStore = create<AuthStore>()(
     }),
     {
       name: "auth-storage", // Nombre para localStorage
-      partialize: (state) => ({ user: state.user }), // Solo persistir el usuario
+      partialize: (state) => ({ 
+        user: state.user,
+        isAuthenticated: state.isAuthenticated
+      }), // Solo persistir el usuario y estado de autenticación
     }
   )
 );
