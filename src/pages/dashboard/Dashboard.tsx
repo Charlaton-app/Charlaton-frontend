@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
@@ -19,7 +19,7 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const [toasts, setToasts] = useState<ToastState[]>([]);
-  const [shownToasts, setShownToasts] = useState<Set<string>>(new Set());
+  const shownToastsRef = useRef<Set<string>>(new Set());
 
   const handleLogout = () => {
     logout();
@@ -27,16 +27,14 @@ const Dashboard: React.FC = () => {
   };
 
   const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
-    setShownToasts(prev => {
-      // Verificar si ya se mostró este toast
-      if (prev.has(message)) {
-        return prev;
-      }
-      
-      const id = ++toastIdCounter;
-      setToasts(prevToasts => [...prevToasts, { id, message, type }]);
-      return new Set([...prev, message]);
-    });
+    // Verificar si ya se mostró este toast
+    if (shownToastsRef.current.has(message)) {
+      return;
+    }
+    
+    const id = ++toastIdCounter;
+    setToasts(prevToasts => [...prevToasts, { id, message, type }]);
+    shownToastsRef.current.add(message);
   }, []);
 
   const hideToast = useCallback((id: number) => {

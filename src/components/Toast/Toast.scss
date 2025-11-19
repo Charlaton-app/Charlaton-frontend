@@ -1,6 +1,11 @@
 @use 'sass:color';
 @import '../../index.scss';
 
+// Toast color variables
+$error-color: #ef4444;
+$warning-color: #f59e0b;
+$success-color: $secondary-color;
+
 .toast {
   position: fixed;
   bottom: 2rem;
@@ -75,11 +80,11 @@
 
   // Toast types
   &--success {
-    border-left-color: $secondary-color;
+    border-left-color: $success-color;
 
     .toast__icon {
-      background: color.adjust($secondary-color, $lightness: 45%);
-      color: $secondary-color;
+      background: color.adjust($success-color, $lightness: 45%);
+      color: $success-color;
     }
   }
 
