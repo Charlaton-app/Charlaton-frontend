@@ -27,21 +27,17 @@
     width: 64px;
     height: 64px;
     border-radius: 50%;
-    background: linear-gradient(
-      135deg,
-      var(--color-secondary) 0%,
-      #0099cc 100%
-    );
+    background: #1e40af;
     border: none;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2),
-      0 8px 24px rgba(16, 204, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
+      0 8px 24px rgba(30, 64, 175, 0.5);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1000;
-    color: var(--color-background);
+    color: white;
 
     // WCAG 2.4.7 - Focus Visible (4.5:1 contrast)
     &:focus {
@@ -51,8 +47,9 @@
 
     &:hover {
       transform: scale(1.1);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3),
-        0 12px 32px rgba(16, 204, 255, 0.4);
+      background: #1e3a8a;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4),
+        0 12px 32px rgba(30, 64, 175, 0.6);
     }
 
     &:active {
@@ -120,9 +117,10 @@
     right: 24px;
     width: 360px;
     max-width: calc(100vw - 48px);
-    background: var(--color-background);
+    background: #1e3a8a;
+    color: white;
     border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(16, 204, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(30, 58, 138, 0.8);
     padding: 24px;
     z-index: 999;
     animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -165,7 +163,7 @@
     font-size: 1.25rem;
     font-weight: 600;
     font-family: var(--font-heading);
-    color: var(--color-text);
+    color: white;
     line-height: 1.4;
   }
 
@@ -179,7 +177,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #b0b0b0;
+    color: white;
     transition: all 0.2s ease;
 
     svg {
@@ -188,8 +186,8 @@
     }
 
     &:hover {
-      background: rgba(255, 255, 255, 0.1);
-      color: #ffffff;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
     }
 
     // WCAG 2.4.7 - Focus Visible
@@ -230,8 +228,8 @@
     justify-content: center;
     gap: 8px;
     transition: all 0.2s ease;
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--color-text);
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
 
     svg {
       width: 18px;
@@ -239,7 +237,7 @@
     }
 
     &:hover:not(:disabled) {
-      background: rgba(16, 204, 255, 0.15);
+      background: rgba(255, 255, 255, 0.3);
       transform: translateY(-1px);
     }
 
@@ -260,16 +258,12 @@
 
     // Variante primaria
     &--primary {
-      background: linear-gradient(
-        135deg,
-        var(--color-secondary) 0%,
-        #0099cc 100%
-      );
-      color: var(--color-background);
+      background: rgba(255, 255, 255, 0.9);
+      color: #1e40af;
 
       &:hover:not(:disabled) {
-        background: linear-gradient(135deg, #33d4ff 0%, #00aadd 100%);
-        box-shadow: 0 4px 12px rgba(16, 204, 255, 0.3);
+        background: white;
+        box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
       }
     }
 
@@ -307,7 +301,7 @@
     font-size: 0.875rem;
     font-weight: 500;
     font-family: var(--font-body);
-    color: var(--color-text);
+    color: white;
     margin-bottom: 4px;
   }
 
@@ -381,29 +375,29 @@
     width: 100%;
     padding: 10px 12px;
     border-radius: 8px;
-    border: 1px solid rgba(16, 204, 255, 0.3);
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--color-text);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
     font-size: 0.875rem;
     font-family: var(--font-body);
     cursor: pointer;
     transition: all 0.2s ease;
 
     &:hover {
-      border-color: rgba(16, 204, 255, 0.5);
-      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.2);
     }
 
     // WCAG 2.4.7 - Focus Visible
     &:focus {
       outline: 2px solid #ffd700;
       outline-offset: 2px;
-      border-color: var(--color-secondary);
+      border-color: white;
     }
 
     option {
-      background: var(--color-background);
-      color: var(--color-text);
+      background: #1e3a8a;
+      color: white;
     }
   }
 
