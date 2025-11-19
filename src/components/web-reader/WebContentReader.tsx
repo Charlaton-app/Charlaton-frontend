@@ -153,9 +153,19 @@ const WebContentReader: React.FC = () => {
 
     // Remover elementos que no deben leerse
     const elementsToRemove = clone.querySelectorAll(
-      'script, style, [aria-hidden="true"], .web-content-reader, nav, footer'
+      'script, style, .web-content-reader, nav, footer'
     );
     elementsToRemove.forEach((el) => el.remove());
+    
+    // Remover solo íconos decorativos pero mantener su texto asociado
+    const decorativeIcons = clone.querySelectorAll('[aria-hidden="true"]');
+    decorativeIcons.forEach((el) => {
+      // Solo remover si es un elemento vacío o solo tiene emojis/símbolos
+      const text = el.textContent?.trim() || '';
+      if (text.length <= 2 || /^[\p{Emoji}\p{Emoji_Component}]+$/u.test(text)) {
+        el.remove();
+      }
+    });
 
     // Obtener texto visible
     let text = clone.innerText || clone.textContent || "";
