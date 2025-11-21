@@ -5,6 +5,32 @@ import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
 import "./Profile.scss";
 
+/**
+ * Página de Perfil del usuario autenticado.
+ * 
+ * Secciones:
+ * - Tarjeta de usuario: Avatar, nombre, email, estadísticas
+ * - Información personal: Formulario para editar nombre y email
+ * - Cambio de contraseña: Formulario de cambio de contraseña
+ * - Zona de peligro: Eliminación de cuenta
+ * 
+ * Funcionalidades:
+ * - Edición de información personal
+ * - Cambio de contraseña con validación
+ * - Eliminación de cuenta con confirmación
+ * - Feedback visual con alertas de error/éxito
+ * - Soporte para usuarios OAuth (email no editable)
+ * 
+ * Accesibilidad (WCAG 2.1):
+ * - Skip link para contenido principal
+ * - Formularios con labels asociados correctamente
+ * - aria-invalid en campos con error
+ * - aria-describedby para mensajes de error
+ * - Alertas con role="alert" y aria-live
+ * 
+ * @component
+ * @returns {JSX.Element} Página de perfil completa
+ */
 const Profile: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();

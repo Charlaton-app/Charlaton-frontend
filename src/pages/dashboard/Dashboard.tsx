@@ -5,10 +5,40 @@ import Footer from '../../components/Footer/Footer';
 import useAuthStore from '../../stores/useAuthStore';
 import './Dashboard.scss';
 
+
+/**
+ * Página principal del Dashboard del usuario autenticado.
+ * 
+ * Secciones:
+ * - Bienvenida personalizada con nombre del usuario
+ * - Acciones rápidas (Iniciar reunión, Unirse, Programar, Resúmenes)
+ * - Lista de reuniones recientes (mock data)
+ * - Estadísticas de uso (mock data)
+ * 
+ * Características:
+ * - Navegación a diferentes funcionalidades
+ * - Sistema de notificaciones toast
+ * - Diseño responsive
+ * - Integración con WebContentReader para accesibilidad
+ * 
+ * Accesibilidad (WCAG 2.1):
+ * - Skip link para contenido principal
+ * - Secciones con aria-labelledby
+ * - Roles de lista para grids de contenido
+ * - aria-labels descriptivos en elementos interactivos
+ * - Contenedor de toasts con aria-live
+ * 
+ * @component
+ * @returns {JSX.Element} Dashboard completo del usuario
+ */
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
 
+  /**
+   * Maneja el cierre de sesión del usuario.
+   * Ejecuta logout del store y navega a la página principal.
+   */
   const handleLogout = () => {
     logout();
     navigate('/');

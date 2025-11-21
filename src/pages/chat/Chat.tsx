@@ -7,6 +7,15 @@ import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
 import "./Chat.scss";
 
+/**
+ * Interfaz que representa un mensaje en el chat.
+ * 
+ * @interface Message
+ * @property {string} [id] - Identificador único del mensaje (opcional, generado por el servidor)
+ * @property {string} senderId - Identificador del remitente (email o nombre)
+ * @property {string} text - Contenido del mensaje
+ * @property {number} timestamp - Marca de tiempo Unix del mensaje
+ */
 interface Message {
   id?: string;
   senderId: string;
@@ -14,20 +23,61 @@ interface Message {
   timestamp: number;
 }
 
+/**
+ * Interfaz que representa un usuario conectado al chat.
+ * 
+ * @interface OnlineUser
+ * @property {string} socketId - ID del socket de conexión
+ * @property {string} userId - Identificador del usuario
+ */
 interface OnlineUser {
   socketId: string;
   userId: string;
 }
 
+/**
+ * Página de Chat Global de la aplicación.
+ * 
+ * Funcionalidades:
+ * - Conexión en tiempo real mediante Socket.IO
+ * - Envío y recepción de mensajes instantáneos
+ * - Historial de mensajes persistente
+ * - Lista de usuarios en línea
+ * - Conexión/desconexión manual del chat
+ * - Auto-scroll al recibir nuevos mensajes
+ * 
+ * Estados de conexión:
+ * - Conectado: El usuario puede enviar y recibir mensajes
+ * - Desconectado: El usuario no recibe mensajes ni puede enviar
+ * - Desconexión manual: El usuario eligió desconectarse
+ * 
+ * Accesibilidad (WCAG 2.1):
+ * - Skip link para saltar al contenido principal
+ * - role="log" en el contenedor de mensajes para lectores de pantalla
+ * - aria-live="polite" para anunciar nuevos mensajes
+ * - Estados de conexión anunciados con aria-live
+ * - Formulario con labels apropiados
+ * 
+ * @component
+ * @returns {JSX.Element} Página de chat completa
+ */
 const Chat: React.FC = () => {
   const navigate = useNavigate();
+   /** Usuario autenticado del store global */
   const { user } = useAuthStore();
+  /** Lista de mensajes del chat */
   const [messages, setMessages] = useState<Message[]>([]);
+  /** Lista de usuarios actualmente en línea */
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
+  /** Contenido del input de mensaje */
   const [messageInput, setMessageInput] = useState("");
+  /** Estado de conexión al servidor de chat */
   const [isConnected, setIsConnected] = useState(false);
+   /** Indica si el usuario se desconectó manualmente */
   const [isManuallyDisconnected, setIsManuallyDisconnected] = useState(false);
+  /** Referencia al contenedor de mensajes para auto-scroll */
   const messagesEndRef = useRef<HTMLDivElement>(null);
+   /** Flag para evitar cargar el historial múltiples veces */
   const hasLoadedHistory = useRef(false);
 
   // Scroll to top on component mount
@@ -35,6 +85,15 @@ const Chat: React.FC = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
+  /**
+   * Efecto principal para manejar la conexión del socket.
+   * 
+   * Acciones:
+   * - Verifica autenticación y redirige si no hay usuario
+   * - Conecta al socket si no está desconectado manualmente
+   * - Registra listeners para eventos del socket
+   * - Limpia listeners al desmontar el componente
+   */
   useEffect(() => {
     // Verificar autenticación
     if (!user) {
@@ -88,7 +147,10 @@ const Chat: React.FC = () => {
     };
   }, [user, navigate, isManuallyDisconnected]);
 
-  // Cargar historial de mensajes una sola vez
+  /**
+   * Efecto para cargar el historial de mensajes una sola vez.
+   * Se ejecuta cuando el usuario está conectado y no se ha cargado previamente.
+   */
   useEffect(() => {
     if (user && isConnected && !hasLoadedHistory.current) {
       loadChatHistory();
@@ -96,7 +158,13 @@ const Chat: React.FC = () => {
     }
   }, [user, isConnected]);
 
-  // Cargar historial de mensajes desde el API
+  /**
+   * Carga el historial de mensajes desde el API.
+   * Obtiene los últimos 100 mensajes del servidor.
+   * 
+   * @async
+   * @returns {Promise<void>}
+   */
   const loadChatHistory = async () => {
     try {
       const API_URL =
@@ -115,11 +183,20 @@ const Chat: React.FC = () => {
     }
   };
 
+  /**
+   * Efecto para hacer scroll automático al último mensaje.
+   * Se ejecuta cada vez que cambia la lista de mensajes.
+   */
   useEffect(() => {
-    // Scroll to bottom when new messages arrive
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  /**
+   * Maneja el envío de un nuevo mensaje.
+   * Valida que haya contenido, usuario y conexión activa.
+   * 
+   * @param {React.FormEvent} e - Evento del formulario
+   */
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!messageInput.trim() || !user || !isConnected) return;
@@ -135,11 +212,19 @@ const Chat: React.FC = () => {
     setMessageInput("");
   };
 
+  /**
+   * Maneja el cierre de sesión del usuario.
+   * Desconecta el socket y navega a login.
+   */
   const handleLogout = () => {
     socket.disconnect();
     navigate("/login");
   };
 
+   /**
+   * Alterna el estado de conexión del chat.
+   * Permite al usuario conectarse/desconectarse manualmente.
+   */
   const handleToggleConnection = () => {
     if (isConnected) {
       // Desconectar manualmente

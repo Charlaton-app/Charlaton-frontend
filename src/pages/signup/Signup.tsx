@@ -15,9 +15,46 @@ import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
 import "./Signup.scss";
 
+/**
+ * Página de registro de nuevos usuarios.
+ * 
+ * Métodos de registro soportados:
+ * - Formulario tradicional (nombre, email, contraseña)
+ * - Google OAuth
+ * - Facebook OAuth
+ * 
+ * Validaciones del formulario:
+ * - Todos los campos son requeridos
+ * - Las contraseñas deben coincidir
+ * - Contraseña mínima de 6 caracteres
+ * 
+ * Flujo de registro:
+ * 1. Usuario completa formulario o selecciona proveedor OAuth
+ * 2. Se validan los datos localmente
+ * 3. Se envía la solicitud de registro
+ * 4. En caso de éxito, se redirige a la página de éxito
+ * 5. En caso de error, se muestra mensaje descriptivo
+ * 
+ * Accesibilidad (WCAG 2.1):
+ * - Skip link para contenido principal
+ * - Labels asociados a inputs con htmlFor
+ * - aria-required en campos obligatorios
+ * - aria-invalid en campos con error
+ * - aria-describedby para asociar errores y ayudas
+ * - visually-hidden para mensajes de ayuda
+ * - role="alert" en mensajes de error
+ * 
+ * @component
+ * @returns {JSX.Element} Página de registro completa
+ */
 const Signup: React.FC = () => {
   const navigate = useNavigate();
   const { setUser } = useAuthStore();
+
+   /**
+   * Estado del formulario de registro.
+   * @type {{name: string, email: string, password: string, confirmPassword: string}}
+   */
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -27,6 +64,12 @@ const Signup: React.FC = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  /**
+   * Maneja cambios en los campos del formulario.
+   * Actualiza el estado correspondiente al campo modificado.
+   * 
+   * @param {React.ChangeEvent<HTMLInputElement>} e - Evento del input
+   */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
@@ -34,6 +77,19 @@ const Signup: React.FC = () => {
     });
   };
 
+  /**
+   * Maneja el envío del formulario de registro.
+   * Realiza validaciones locales antes de enviar al servidor.
+   * 
+   * Validaciones:
+   * - Todos los campos deben estar completos
+   * - Las contraseñas deben coincidir
+   * - La contraseña debe tener mínimo 6 caracteres
+   * 
+   * @async
+   * @param {React.FormEvent} e - Evento del formulario
+   * @returns {Promise<void>}
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -96,6 +152,13 @@ const Signup: React.FC = () => {
     }
   };
 
+  /**
+   * Maneja el registro con Google OAuth.
+   * Redirige a la página de éxito si el registro es exitoso.
+   * 
+   * @async
+   * @returns {Promise<void>}
+   */
   const handleGoogleSignup = async () => {
     setLoading(true);
     setError("");
@@ -118,6 +181,13 @@ const Signup: React.FC = () => {
     }
   };
 
+   /**
+   * Maneja el registro con Facebook OAuth.
+   * Redirige a la página de éxito si el registro es exitoso.
+   * 
+   * @async
+   * @returns {Promise<void>}
+   */
   const handleFacebookSignup = async () => {
     setLoading(true);
     setError("");

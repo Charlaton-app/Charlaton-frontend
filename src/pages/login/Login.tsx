@@ -12,6 +12,38 @@ import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
 import "./Login.scss";
 
+/**
+ * Página de inicio de sesión de la aplicación.
+ * 
+ * Métodos de autenticación soportados:
+ * - Email y contraseña tradicional
+ * - Google OAuth
+ * - Facebook OAuth
+ * 
+ * Flujo de autenticación:
+ * 1. Usuario ingresa credenciales o selecciona proveedor OAuth
+ * 2. Se validan las credenciales contra Firebase Auth
+ * 3. En caso de éxito, se redirige al dashboard
+ * 4. En caso de error, se muestra mensaje descriptivo
+ * 
+ * Características:
+ * - Validación de campos requeridos
+ * - Estado de carga durante autenticación
+ * - Enlaces a registro y recuperación de contraseña
+ * - Diseño responsive
+ * 
+ * Accesibilidad (WCAG 2.1):
+ * - Skip link para contenido principal
+ * - Labels asociados a inputs con htmlFor
+ * - aria-required en campos obligatorios
+ * - aria-invalid en campos con error
+ * - aria-describedby para asociar errores
+ * - role="alert" en mensajes de error
+ * - aria-labels descriptivos en botones sociales
+ * 
+ * @component
+ * @returns {JSX.Element} Página de login completa
+ */
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const { setUser } = useAuthStore();
@@ -20,6 +52,14 @@ const Login: React.FC = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  /**
+   * Maneja el inicio de sesión con Google OAuth.
+   * Redirige al dashboard en caso de éxito.
+   * 
+   * @async
+   * @param {React.FormEvent} e - Evento del botón
+   * @returns {Promise<void>}
+   */
   const handleLoginGoogle = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -43,6 +83,14 @@ const Login: React.FC = () => {
     }
   };
 
+  /**
+   * Maneja el inicio de sesión con Facebook OAuth.
+   * Redirige al dashboard en caso de éxito.
+   * 
+   * @async
+   * @param {React.FormEvent} e - Evento del botón
+   * @returns {Promise<void>}
+   */
   const handleLoginFacebook = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -66,6 +114,15 @@ const Login: React.FC = () => {
     }
   };
 
+  /**
+   * Maneja el inicio de sesión con email y contraseña.
+   * Valida que ambos campos estén completos antes de enviar.
+   * Redirige al dashboard en caso de éxito.
+   * 
+   * @async
+   * @param {React.FormEvent} e - Evento del formulario
+   * @returns {Promise<void>}
+   */
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
