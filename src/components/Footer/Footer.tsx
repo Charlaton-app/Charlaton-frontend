@@ -2,6 +2,12 @@ import React, { useState } from "react";
 import Modal from "../Modal/Modal";
 import "./Footer.scss";
 
+/**
+ * Tipo que define los identificadores de los modales disponibles en el Footer.
+ * Cada valor corresponde a un modal con contenido específico.
+ * 
+ * @typedef {("contact"|"faq"|"manual"|"speed-test"|"privacy"|"terms"|"cookies"|"accessibility"|null)} ModalContent
+ */
 type ModalContent =
   | "contact"
   | "faq"
@@ -13,12 +19,68 @@ type ModalContent =
   | "accessibility"
   | null;
 
+
+/**
+ * Componente Footer de la aplicación Charlaton.
+ * 
+ * Incluye:
+ * - Grid de enlaces organizados en 4 columnas: Navegación, Cuenta, Ayuda, Legal
+ * - Modales informativos para cada sección de ayuda y legal
+ * - Iconos de redes sociales
+ * - Copyright y información de la empresa
+ * 
+ * Los modales disponibles son:
+ * - contact: Información de contacto y soporte
+ * - faq: Preguntas frecuentes
+ * - manual: Manual de usuario completo
+ * - speed-test: Herramienta de prueba de velocidad
+ * - privacy: Política de privacidad
+ * - terms: Términos de uso
+ * - cookies: Política de cookies
+ * - accessibility: Declaración de accesibilidad
+ * 
+ * Accesibilidad (WCAG 2.1):
+ * - role="contentinfo" en el footer
+ * - aria-label en navegaciones
+ * - Botones accesibles para abrir modales
+ * - Enlaces de redes sociales con aria-label descriptivos
+ * 
+ * @component
+ * @returns {JSX.Element} Footer completo con modales
+ */
 const Footer: React.FC = () => {
+  /**
+   * Estado que controla qué modal está actualmente abierto.
+   * null indica que ningún modal está visible.
+   */
   const [activeModal, setActiveModal] = useState<ModalContent>(null);
 
+  /**
+   * Abre un modal específico.
+   * 
+   * @param {ModalContent} modal - Identificador del modal a abrir
+   */
   const openModal = (modal: ModalContent) => setActiveModal(modal);
+
+  /**
+   * Cierra el modal actualmente abierto.
+   */
   const closeModal = () => setActiveModal(null);
 
+  /**
+   * Renderiza el contenido del modal activo.
+   * Cada case corresponde a un modal con contenido específico:
+   * - contact: Información de contacto (emails, teléfonos, chat, redes sociales)
+   * - faq: Preguntas frecuentes sobre la plataforma
+   * - manual: Guía completa de uso de Charlaton
+   * - speed-test: Herramienta para verificar conexión a internet
+   * - privacy: Política de privacidad completa
+   * - terms: Términos y condiciones de uso
+   * - cookies: Política de cookies y configuración
+   * - accessibility: Declaración de accesibilidad WCAG 2.1
+   * 
+   * @returns {JSX.Element|null} Modal con contenido o null si no hay modal activo
+   */
   const renderModalContent = () => {
     switch (activeModal) {
       case "contact":

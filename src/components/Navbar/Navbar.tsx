@@ -3,19 +3,54 @@ import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../stores/useAuthStore";
 import "./Navbar.scss";
 
+/**
+ * Props para el componente Navbar.
+ * 
+ * @interface NavbarProps
+ * @property {boolean} [showAuthButtons=true] - Controla si se muestran los botones de autenticación
+ * @property {() => void} [onLogout] - Callback personalizado para el logout (opcional)
+ */
 interface NavbarProps {
   showAuthButtons?: boolean;
   onLogout?: () => void;
 }
 
+/**
+ * Componente de barra de navegación principal de la aplicación.
+ * 
+ * Características:
+ * - Logo y nombre de la aplicación
+ * - Navegación responsive con menú hamburguesa para móviles
+ * - Botones de autenticación (login/registro) cuando no hay usuario
+ * - Menú de usuario con avatar cuando hay sesión activa
+ * - Dropdown con opciones de perfil y logout
+ * 
+ * Accesibilidad (WCAG 2.1):
+ * - role="banner" en el header
+ * - aria-label en navegaciones
+ * - aria-expanded y aria-controls en menús desplegables
+ * - aria-haspopup para indicar menús
+ * - Navegación por teclado
+ * 
+ * @component
+ * @param {NavbarProps} props - Propiedades del componente
+ * @returns {JSX.Element} Barra de navegación renderizada
+ */
 const Navbar: React.FC<NavbarProps> = ({
   showAuthButtons = true,
   onLogout,
 }) => {
   const navigate = useNavigate();
+  /** Usuario autenticado del store global */
   const { user } = useAuthStore();
+   /** Estado del menú móvil */
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  /**
+   * Maneja el cierre de sesión del usuario.
+   * Cierra el menú de usuario y ejecuta el callback de logout.
+   * Si no hay callback personalizado, navega a la página de login.
+   */
   const handleLogout = () => {
     if (onLogout) {
       onLogout();
@@ -24,6 +59,9 @@ const Navbar: React.FC<NavbarProps> = ({
     }
   };
 
+   /**
+   * Alterna el estado del menú móvil.
+   */
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
