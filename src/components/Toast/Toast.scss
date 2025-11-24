@@ -1,5 +1,10 @@
-@use 'sass:color';
-@import '../../index.scss';
+@use "sass:color";
+@import "../../index.scss";
+
+// Toast color variables
+$error-color: #ef4444;
+$warning-color: #f59e0b;
+$success-color: $secondary-color;
 
 // Toast color variables
 $error-color: #ef4444;

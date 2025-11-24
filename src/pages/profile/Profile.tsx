@@ -4,6 +4,7 @@ import useAuthStore from "../../stores/useAuthStore";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
 import WebContentReader from '../../components/web-reader/WebContentReader';
+import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationModal";
 import "./Profile.scss";
 
 const parseCreatedAt = (value?: any): Date | null => {
@@ -54,6 +55,7 @@ const Profile: React.FC = () => {
     fullName: "",
     email: ""
   });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Cargar datos del usuario cuando el componente se monta o el usuario cambia
   useEffect(() => {
@@ -148,21 +150,10 @@ const Profile: React.FC = () => {
   };
 
   const handleDeleteAccount = async () => {
-    const password = window.prompt(
-      "Por seguridad, ingresa tu contraseña para confirmar la eliminación de tu cuenta:"
-    );
-
-    if (!password) return;
-
-    const confirmed = window.confirm(
-      "¿Estás ABSOLUTAMENTE seguro de que deseas eliminar tu cuenta? Esta acción es irreversible y perderás todos tus datos."
-    );
-
-    if (!confirmed) return;
-
     setError("");
+    setShowDeleteModal(false);
 
-    const result = await deleteAccount(password);
+    const result = await deleteAccount();
 
     if (result.success) {
       navigate("/");
@@ -184,6 +175,18 @@ const Profile: React.FC = () => {
       </a>
       
       <Navbar />
+      
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        title="Eliminar cuenta"
+        message="¿Estás ABSOLUTAMENTE seguro de que deseas eliminar tu cuenta? Esta acción es irreversible y perderás todos tus datos, incluyendo resúmenes, sesiones y configuraciones. No podrás recuperar tu cuenta después de eliminarla."
+        confirmText="Eliminar cuenta"
+        cancelText="Cancelar"
+        confirmButtonClass="btn-danger"
+        delaySeconds={3}
+        onConfirm={handleDeleteAccount}
+        onCancel={() => setShowDeleteModal(false)}
+      />
       
       <main id="main-content" className="profile-main">
         <div className="profile-container">
@@ -370,7 +373,7 @@ const Profile: React.FC = () => {
               <p className="danger-warning">Esta es una acción irreversible.</p>
               
               <button
-                onClick={handleDeleteAccount}
+                onClick={() => setShowDeleteModal(true)}
                 className="btn-delete"
                 disabled={isLoading}
                 aria-label="Eliminar cuenta permanentemente"
