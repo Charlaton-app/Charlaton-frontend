@@ -146,7 +146,7 @@ export const joinRoom = async (
     }
 
     // Create user connection
-    const response = await api.post("/userConnection", {
+    const response = await api.post("/connection", {
       userId,
       roomId,
     });
@@ -173,11 +173,12 @@ export const joinRoom = async (
  * @param {string} connectionId - Connection ID to close
  * @returns {Promise<{data?: any, error?: string}>} Response with success or error
  */
-export const leaveRoom = async (connectionId: string) => {
+export const leaveRoom = async (userId: string, roomId: string) => {
   try {
-    console.log(`[ROOM-SERVICE] Leaving room, connection ${connectionId}`);
-    const response = await api.patch(`/userConnection/${connectionId}`, {
-      leftAt: new Date().toISOString(),
+    console.log(`[ROOM-SERVICE] Leaving room, user ${userId} from room ${roomId}`);
+    const response = await api.put("/connection", {
+      userId,
+      roomId,
     });
 
     if (response.error) {
@@ -203,7 +204,7 @@ export const leaveRoom = async (connectionId: string) => {
 export const getRoomParticipants = async (roomId: string) => {
   try {
     console.log(`[ROOM-SERVICE] Fetching participants for room ${roomId}`);
-    const response = await api.get(`/userConnection?roomId=${roomId}`);
+    const response = await api.get(`/connection/room/${roomId}`);
 
     if (response.error) {
       console.log(

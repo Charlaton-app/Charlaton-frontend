@@ -106,10 +106,12 @@ $font-body: "Rubik", sans-serif;
 
       .meeting-id {
         font-size: 0.875rem;
-        color: $text-gray;
+        color: $text-white;
+        font-weight: 500;
         padding: 0.25rem 0.75rem;
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.15);
         border-radius: 12px;
+        letter-spacing: 0.5px;
       }
     }
 
@@ -240,8 +242,10 @@ $font-body: "Rubik", sans-serif;
             align-items: center;
             justify-content: center;
             font-size: 2rem;
-            font-weight: 600;
-            color: white;
+            font-weight: 700;
+            color: $text-white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            letter-spacing: 1px;
           }
 
           .participant-info {

@@ -203,15 +203,15 @@ const Meeting: React.FC = () => {
    * Handle leaving the meeting
    */
   const handleLeaveMeeting = async () => {
-    if (!connectionId) return;
+    if (!user?.id || !meetingId) return;
 
     try {
-      await leaveRoom(connectionId);
+      await leaveRoom(user.id, meetingId);
 
       // Emit to socket
       socket.emit("leaveRoom", {
         roomId: meetingId,
-        userId: user?.id,
+        userId: user.id,
       });
 
       socket.disconnect();
