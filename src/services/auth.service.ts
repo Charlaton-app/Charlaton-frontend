@@ -193,29 +193,6 @@ export const signup = async (data: SignupData) => {
     };
   }
 };
-        console.error("Error al sincronizar usuario:", syncError);
-        return { 
-          error: "El correo ya está registrado en Firebase. Si no puedes iniciar sesión, contacta al administrador." 
-        };
-      }
-    }
-    if (error.code === "auth/weak-password") {
-      return { error: "La contraseña debe tener al menos 6 caracteres" };
-    }
-    if (error.code === "auth/invalid-email") {
-      return { error: "El correo electrónico no es válido" };
-    }
-    if (error.code === "auth/operation-not-allowed") {
-      return { 
-        error: "El registro con email y contraseña no está habilitado. Por favor, contacta al administrador o usa Google/Facebook para registrarte." 
-      };
-    }
-
-    return {
-      error: error.message || "Error al registrarse",
-    };
-  }
-};
 
 /**
  * Google OAuth Login
