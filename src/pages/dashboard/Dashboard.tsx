@@ -5,6 +5,7 @@ import Footer from '../../components/Footer/Footer';
 import useAuthStore from '../../stores/useAuthStore';
 import WebContentReader from '../../components/web-reader/WebContentReader';
 import Toast from '../../components/Toast/Toast';
+import { createRoom, getRoomById } from '../../services/room.service';
 import './Dashboard.scss';
 
 interface ToastState {
@@ -20,6 +21,8 @@ const Dashboard: React.FC = () => {
   const { user, logout } = useAuthStore();
   const [toasts, setToasts] = useState<ToastState[]>([]);
   const shownToastsRef = useRef<Set<string>>(new Set());
+  const [joinMeetingId, setJoinMeetingId] = useState('');
+  const [isJoining, setIsJoining] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -40,6 +43,79 @@ const Dashboard: React.FC = () => {
   const hideToast = useCallback((id: number) => {
     setToasts(prev => prev.filter(toast => toast.id !== id));
   }, []);
+
+  /**
+   * Handle creating a new instant meeting
+   * Creates a room and navigates to it
+   */
+  const handleStartMeeting = async () => {
+    if (!user?.id) {
+      showToast('Debes iniciar sesión para crear una reunión', 'error');
+      return;
+    }
+
+    try {
+      console.log('[DASHBOARD] Creating new meeting');
+      const roomData = {
+        name: `Reunión de ${user.displayName || user.nickname || user.email}`,
+        creatorId: user.id,
+        private: false,
+      };
+
+      const response = await createRoom(roomData);
+      
+      if (response.error) {
+        showToast(response.error, 'error');
+        return;
+      }
+
+      if (response.data?.id) {
+        console.log(`[DASHBOARD] Meeting created with ID: ${response.data.id}`);
+        navigate(`/meet/${response.data.id}`);
+      }
+    } catch (error) {
+      console.error('[DASHBOARD] Error creating meeting:', error);
+      showToast('Error al crear la reunión', 'error');
+    }
+  };
+
+  /**
+   * Handle joining a meeting by ID
+   * Validates the meeting ID and navigates to the meeting
+   */
+  const handleJoinMeeting = async () => {
+    const meetingId = joinMeetingId.trim();
+    
+    if (!meetingId) {
+      showToast('Por favor ingresa un código de reunión', 'warning');
+      return;
+    }
+
+    if (!user?.id) {
+      showToast('Debes iniciar sesión para unirte a una reunión', 'error');
+      return;
+    }
+
+    setIsJoining(true);
+    
+    try {
+      console.log(`[DASHBOARD] Validating meeting ID: ${meetingId}`);
+      const response = await getRoomById(meetingId);
+      
+      if (response.error) {
+        showToast('Reunión no encontrada. Verifica el código e intenta de nuevo.', 'error');
+        setIsJoining(false);
+        return;
+      }
+
+      console.log(`[DASHBOARD] Meeting ${meetingId} found, navigating...`);
+      navigate(`/meet/${meetingId}`);
+    } catch (error) {
+      console.error('[DASHBOARD] Error joining meeting:', error);
+      showToast('Error al unirse a la reunión', 'error');
+      setIsJoining(false);
+    }
+  };
 
   const renderIcon = (iconType: string) => {
     switch (iconType) {
@@ -86,13 +162,16 @@ const Dashboard: React.FC = () => {
       title: 'Iniciar Reunión',
       description: 'Crea una nueva videoconferencia instantánea',
       icon: 'video',
-      action: () => navigate('/chat')
+      action: handleStartMeeting
     },
     {
       title: 'Unirse a Reunión',
       description: 'Ingresa con un código de reunión',
       icon: 'link',
-      action: () => showToast('Funcionalidad próximamente', 'info')
+      action: () => {
+        // Scroll to join meeting input
+        document.getElementById('join-meeting-input')?.focus();
+      }
     },
     {
       title: 'Programar',
@@ -170,6 +249,53 @@ const Dashboard: React.FC = () => {
                 </button>
               ))}
             </div>
+          </section>
+
+          {/* Join Meeting Section */}
+          <section className="join-meeting-section" aria-labelledby="join-meeting-title">
+            <h2 id="join-meeting-title">Unirse a una Reunión</h2>
+            <p className="join-meeting-description">
+              Ingresa el código de reunión para unirte
+            </p>
+            <div className="join-meeting-form">
+              <input
+                id="join-meeting-input"
+                type="text"
+                className="join-meeting-input"
+                placeholder="Código de reunión (ej: abc123xyz)"
+                value={joinMeetingId}
+                onChange={(e) => setJoinMeetingId(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && !isJoining) {
+                    handleJoinMeeting();
+                  }
+                }}
+                disabled={isJoining}
+                aria-label="Código de reunión"
+                aria-describedby="join-meeting-help"
+              />
+              <button
+                className="join-meeting-button"
+                onClick={handleJoinMeeting}
+                disabled={isJoining || !joinMeetingId.trim()}
+                aria-label="Unirse a la reunión"
+              >
+                {isJoining ? (
+                  <>
+                    <svg className="spinner" viewBox="0 0 24 24" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" opacity="0.25" />
+                      <path d="M12 2 A10 10 0 0 1 22 12" stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round" />
+                    </svg>
+                    Uniéndose...
+                  </>
+                ) : (
+                  'Unirse'
+                )}
+              </button>
+            </div>
+            <p id="join-meeting-help" className="join-meeting-help">
+              El código de reunión es proporcionado por el organizador
+            </p>
           </section>
 
           {/* Recent Meetings */}
