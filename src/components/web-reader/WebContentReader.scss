@@ -113,9 +113,8 @@
 
   &__panel {
     position: fixed;
-    bottom: 100px;
     right: 24px;
-    width: 360px;
+    margin-top: 80px;
     max-width: calc(100vw - 48px);
     background: #1e3a8a;
     color: white;
@@ -131,9 +130,6 @@
 
     // Responsive
     @media (max-width: 480px) {
-      bottom: 100px;
-      right: 12px;
-      left: 12px;
       width: auto;
     }
   }
@@ -179,6 +175,7 @@
     justify-content: center;
     color: white;
     transition: all 0.2s ease;
+    
 
     svg {
       width: 20px;
@@ -269,7 +266,7 @@
 
     // Variante peligro
     &--danger {
-      background: rgba(244, 67, 54, 0.2);
+      background: rgb(213 34 21 / 37%);
       color: #ff5252;
 
       &:hover:not(:disabled) {
