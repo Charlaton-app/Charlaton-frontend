@@ -76,129 +76,101 @@ export const login = async (credentials: LoginCredentials) => {
 };
 
 /**
- * Registro de nuevo usuario
- * Crea usuario en Firebase y luego en el backend
+ * User registration
+ * Creates user in Firebase first, then syncs with backend
+ * Auto-login after successful registration
+ *
+ * @param {SignupData} data - User registration data
+ * @returns {Promise<{data?: any, error?: string}>} Response with user data or error message
  */
 export const signup = async (data: SignupData) => {
   let firebaseUser = null;
   
   try {
-    // Validar que las contraseñas coincidan
-    if (data.password !== data.confirmPassword) {
+    console.log("[AUTH-SERVICE] Starting signup process");
+    
+    // Validate password match
+    if (data.confirmPassword && data.password !== data.confirmPassword) {
+      console.log("[AUTH-SERVICE] Signup failed: Passwords don't match");
       return { error: "Las contraseñas no coinciden" };
     }
 
-    // 1. Crear usuario en Firebase
-    console.log("Creando usuario en Firebase...");
+    // 1. Create user in Firebase Auth
+    console.log("[AUTH-SERVICE] Creating user in Firebase Auth...");
     const userCredential = await createUserWithEmailAndPassword(
       auth,
       data.email,
       data.password
     );
     firebaseUser = userCredential.user;
-    console.log("Usuario creado en Firebase:", firebaseUser.uid);
+    console.log(`[AUTH-SERVICE] User created in Firebase: ${firebaseUser.uid}`);
 
-    // 2. Crear usuario en backend (Firestore via API)
-    console.log("Creando usuario en backend...");
-    const response = await api.post("/user", {
-      id: userCredential.user.uid,
+    // 2. Create user in backend (Firestore via API)
+    console.log("[AUTH-SERVICE] Creating user in backend...");
+    const response = await api.post("/auth/signup", {
+      id: firebaseUser.uid, // Pass Firebase UID
       email: data.email,
       nickname: data.nickname || null,
       password: data.password,
-      rolId: data.rolId || 2, // 2 = usuario normal por defecto
+      rolId: data.rolId || 2, // 2 = regular user by default
     });
 
     if (response.error) {
-      console.error("Error al crear usuario en backend:", response.error);
-      // Si falla el backend, eliminar usuario de Firebase
+      console.error("[AUTH-SERVICE] Backend creation failed:", response.error);
+      // If backend fails, delete Firebase user
       if (firebaseUser) {
         try {
           await firebaseDeleteUser(firebaseUser);
-          console.log("Usuario eliminado de Firebase debido a error en backend");
+          console.log("[AUTH-SERVICE] Firebase user deleted due to backend error");
         } catch (deleteError) {
-          console.error("Error al eliminar usuario de Firebase:", deleteError);
+          console.error("[AUTH-SERVICE] Error deleting Firebase user:", deleteError);
         }
       }
       return { error: response.error };
     }
 
-    console.log("Usuario creado en backend exitosamente");
+    console.log("[AUTH-SERVICE] User created in backend successfully");
 
-    // 3. Hacer login automático después del registro
-    console.log("Iniciando sesión automática...");
-    const loginResponse = await login({
-      email: data.email,
-      password: data.password,
-    });
-
-    if (loginResponse.error) {
-      console.warn("Login automático falló, pero el usuario fue creado:", loginResponse.error);
-      // El usuario ya está creado, así que retornamos éxito pero sin datos de login
-      // El auth observer de Firebase manejará la autenticación
-      return {
-        data: {
-          user: response.data,
-          firebaseUser: firebaseUser,
-        },
-      };
-    }
-
-    return loginResponse;
+    // Backend auto-login is handled by signup endpoint (sets cookies)
+    // Just return the user data
+    return {
+      data: {
+        user: response.data?.user,
+        firebaseUser: firebaseUser,
+      },
+    };
   } catch (error: any) {
-    console.error("Error en signup:", error);
+    console.error("[AUTH-SERVICE] Error in signup:", error);
 
-    // Si el usuario fue creado en Firebase pero falló algo después, intentar limpiar
+    // If user was created in Firebase but something failed after, clean up
     if (firebaseUser) {
       try {
         await firebaseDeleteUser(firebaseUser);
-        console.log("Usuario eliminado de Firebase debido a error");
+        console.log("[AUTH-SERVICE] Firebase user deleted due to error");
       } catch (deleteError) {
-        console.error("Error al eliminar usuario de Firebase:", deleteError);
+        console.error("[AUTH-SERVICE] Error deleting Firebase user:", deleteError);
       }
     }
 
-    // Mensajes de error más amigables
+    // User-friendly error messages
     if (error.code === "auth/email-already-in-use") {
-      // El usuario existe en Firebase Auth pero puede que no en el backend
-      // Intentar hacer login para sincronizar
-      console.log("Usuario existe en Firebase Auth, intentando sincronizar con backend...");
-      try {
-        const loginResponse = await login({
-          email: data.email,
-          password: data.password,
-        });
-        
-        if (loginResponse.error) {
-          // Si el login falla, puede ser que el usuario no exista en el backend
-          // Intentar crear solo en el backend
-          console.log("Login falló, intentando crear usuario solo en backend...");
-          const backendResponse = await api.post("/user", {
-            email: data.email,
-            nickname: data.nickname || null,
-            password: data.password,
-            rolId: data.rolId || 2,
-          });
-          
-          if (backendResponse.error && backendResponse.error.includes("ya está registrado")) {
-            return { error: "El correo ya está registrado. Intenta iniciar sesión en lugar de registrarte." };
-          }
-          
-          if (backendResponse.error) {
-            return { error: `El correo ya existe en Firebase pero hubo un error al sincronizar: ${backendResponse.error}` };
-          }
-          
-          // Usuario creado en backend, ahora intentar login de nuevo
-          const retryLogin = await login({
-            email: data.email,
-            password: data.password,
-          });
-          
-          return retryLogin;
-        }
-        
-        // Login exitoso, usuario sincronizado
-        return loginResponse;
-      } catch (syncError: any) {
+      console.log("[AUTH-SERVICE] Email already exists in Firebase");
+      return { error: "El correo ya está registrado. Intenta iniciar sesión en lugar de registrarte." };
+    }
+
+    if (error.code === "auth/weak-password") {
+      return { error: "La contraseña es demasiado débil. Usa al menos 6 caracteres." };
+    }
+
+    if (error.code === "auth/invalid-email") {
+      return { error: "El correo electrónico no es válido." };
+    }
+
+    return {
+      error: error.message || "Error al crear cuenta",
+    };
+  }
+};
         console.error("Error al sincronizar usuario:", syncError);
         return { 
           error: "El correo ya está registrado en Firebase. Si no puedes iniciar sesión, contacta al administrador." 
@@ -224,95 +196,68 @@ export const signup = async (data: SignupData) => {
 };
 
 /**
- * Login con Google OAuth
+ * Google OAuth Login
+ * Authenticates with Google via Firebase, then syncs with backend using OAuth endpoint
+ *
+ * @returns {Promise<{data?: any, error?: string}>} Response with user data or error message
  */
 export const loginWithGoogle = async () => {
   try {
-    // 1. Autenticar con Google via Firebase
-    console.log("Autenticando con Google...");
+    console.log("[AUTH-SERVICE] Starting Google OAuth authentication");
+    
+    // 1. Authenticate with Google via Firebase
     const result = await signInWithPopup(auth, googleProvider);
     const user = result.user;
-    console.log("Usuario autenticado en Firebase:", user.email);
+    console.log(`[AUTH-SERVICE] User authenticated in Firebase: ${user.email}`);
 
     if (!user.email) {
       await firebaseSignOut(auth);
+      console.log("[AUTH-SERVICE] Failed: No email from Google");
       return { error: "No se pudo obtener el correo electrónico de Google" };
     }
 
-    // 2. Intentar crear o actualizar el usuario en el backend
-    let backendUser = null;
-    
-    // Intentar crear el usuario si no existe
-    console.log("Intentando crear/sincronizar usuario en backend...");
-    const createResponse = await api.post("/user", {
-      id: user.uid,
+    // 2. Get Firebase ID token
+    const idToken = await user.getIdToken();
+    console.log("[AUTH-SERVICE] Firebase ID token obtained");
+
+    // 3. Sync with backend using OAuth endpoint
+    console.log("[AUTH-SERVICE] Syncing with backend via OAuth endpoint");
+    const response = await api.post("/auth/login/OAuth", {
       email: user.email,
-      nickname: user.displayName || user.email.split("@")[0],
-      password: "GOOGLE_OAUTH_USER", // Contraseña placeholder
-      rolId: 2,
+      password: "GOOGLE_OAUTH_USER", // Placeholder for OAuth
+      idToken, // Send ID token for verification
     });
 
-    if (createResponse.error) {
-      // Si el error es que ya existe, intentar hacer login para obtener tokens
-      if (createResponse.error.includes("ya está registrado") || createResponse.error.includes("already")) {
-        console.log("Usuario ya existe en backend, intentando login para obtener tokens...");
-        // Intentar hacer login con la contraseña placeholder para obtener las cookies
-        const loginAttempt = await api.post("/auth/login", {
-          email: user.email,
-          password: "GOOGLE_OAUTH_USER",
-        });
-        
-        if (loginAttempt.error) {
-          console.warn("No se pudo hacer login automático, pero Firebase está autenticado:", loginAttempt.error);
-          // Continuar de todas formas porque Firebase está autenticado
-        } else {
-          console.log("Login exitoso, tokens obtenidos");
-          backendUser = loginAttempt.data?.user || backendUser;
-        }
-      } else {
-        console.error("Error al crear usuario en backend:", createResponse.error);
-        // Si es otro error, intentar continuar de todas formas
-        // porque el usuario ya está autenticado en Firebase
-      }
-    } else {
-      console.log("Usuario creado/sincronizado en backend exitosamente");
-      backendUser = createResponse.data;
-      // Intentar hacer login para obtener tokens
-      const loginAttempt = await api.post("/auth/login", {
-        email: user.email,
-        password: "GOOGLE_OAUTH_USER",
-      });
-      if (!loginAttempt.error) {
-        console.log("Login exitoso después de crear usuario");
-        backendUser = loginAttempt.data?.user || backendUser;
-      }
+    if (response.error) {
+      console.error("[AUTH-SERVICE] Backend OAuth sync failed:", response.error);
+      // Continue anyway since Firebase is authenticated
+      return {
+        data: {
+          user: {
+            email: user.email,
+            nickname: user.displayName || user.email.split("@")[0],
+          },
+          firebaseUser: user,
+        },
+      };
     }
 
-    // Si aún no tenemos info del backend, intentar obtenerla por email
-    if (!backendUser && user.email) {
-      const fallbackUser = await api.get(`/user?email=${encodeURIComponent(user.email)}`);
-      if (!fallbackUser.error) {
-        backendUser = fallbackUser.data;
-      }
-    }
-
-    // 3. Retornar éxito - el usuario ya está autenticado en Firebase
-    // No necesitamos hacer login en el backend porque OAuth no usa contraseña
+    console.log("[AUTH-SERVICE] Google OAuth login successful");
     return {
       data: {
-        user: backendUser || {
-          email: user.email,
-          nickname: user.displayName || user.email.split("@")[0],
-        },
+        user: response.data?.user,
         firebaseUser: user,
       },
     };
   } catch (error: any) {
-    console.error("Error en login con Google:", error);
+    console.error("[AUTH-SERVICE] Error in Google OAuth login:", error);
     
-    // Si el error es que el usuario canceló, no mostrar error
     if (error.code === "auth/popup-closed-by-user" || error.code === "auth/cancelled-popup-request") {
       return { error: "Inicio de sesión cancelado" };
+    }
+    
+    if (error.code === "auth/popup-blocked") {
+      return { error: "El navegador bloqueó la ventana emergente. Permite ventanas emergentes para continuar." };
     }
     
     return {
@@ -322,95 +267,72 @@ export const loginWithGoogle = async () => {
 };
 
 /**
- * Login con Facebook OAuth
+ * Facebook OAuth Login
+ * Authenticates with Facebook via Firebase, then syncs with backend using OAuth endpoint
+ *
+ * @returns {Promise<{data?: any, error?: string}>} Response with user data or error message
  */
 export const loginWithFacebook = async () => {
   try {
-    // 1. Autenticar con Facebook via Firebase
-    console.log("Autenticando con Facebook...");
+    console.log("[AUTH-SERVICE] Starting Facebook OAuth authentication");
+    
+    // 1. Authenticate with Facebook via Firebase
     const result = await signInWithPopup(auth, facebookProvider);
     const user = result.user;
-    console.log("Usuario autenticado en Firebase:", user.email);
+    console.log(`[AUTH-SERVICE] User authenticated in Firebase: ${user.email}`);
 
     if (!user.email) {
       await firebaseSignOut(auth);
+      console.log("[AUTH-SERVICE] Failed: No email from Facebook");
       return { error: "No se pudo obtener el correo electrónico de Facebook" };
     }
 
-    // 2. Intentar crear o actualizar el usuario en el backend
-    let backendUser = null;
-    
-    // Intentar crear el usuario si no existe
-    console.log("Intentando crear/sincronizar usuario en backend...");
-    const createResponse = await api.post("/user", {
-      id: user.uid,
+    // 2. Get Firebase ID token
+    const idToken = await user.getIdToken();
+    console.log("[AUTH-SERVICE] Firebase ID token obtained");
+
+    // 3. Sync with backend using OAuth endpoint
+    console.log("[AUTH-SERVICE] Syncing with backend via OAuth endpoint");
+    const response = await api.post("/auth/login/OAuth", {
       email: user.email,
-      nickname: user.displayName || user.email.split("@")[0],
-      password: "FACEBOOK_OAUTH_USER", // Contraseña placeholder
-      rolId: 2,
+      password: "FACEBOOK_OAUTH_USER", // Placeholder for OAuth
+      idToken, // Send ID token for verification
     });
 
-    if (createResponse.error) {
-      // Si el error es que ya existe, intentar hacer login para obtener tokens
-      if (createResponse.error.includes("ya está registrado") || createResponse.error.includes("already")) {
-        console.log("Usuario ya existe en backend, intentando login para obtener tokens...");
-        // Intentar hacer login con la contraseña placeholder para obtener las cookies
-        const loginAttempt = await api.post("/auth/login", {
-          email: user.email,
-          password: "FACEBOOK_OAUTH_USER",
-        });
-        
-        if (loginAttempt.error) {
-          console.warn("No se pudo hacer login automático, pero Firebase está autenticado:", loginAttempt.error);
-          // Continuar de todas formas porque Firebase está autenticado
-        } else {
-          console.log("Login exitoso, tokens obtenidos");
-          backendUser = loginAttempt.data?.user || backendUser;
-        }
-      } else {
-        console.error("Error al crear usuario en backend:", createResponse.error);
-        // Si es otro error, intentar continuar de todas formas
-        // porque el usuario ya está autenticado en Firebase
-      }
-    } else {
-      console.log("Usuario creado/sincronizado en backend exitosamente");
-      backendUser = createResponse.data;
-      // Intentar hacer login para obtener tokens
-      const loginAttempt = await api.post("/auth/login", {
-        email: user.email,
-        password: "FACEBOOK_OAUTH_USER",
-      });
-      if (!loginAttempt.error) {
-        console.log("Login exitoso después de crear usuario");
-        backendUser = loginAttempt.data?.user || backendUser;
-      }
+    if (response.error) {
+      console.error("[AUTH-SERVICE] Backend OAuth sync failed:", response.error);
+      // Continue anyway since Firebase is authenticated
+      return {
+        data: {
+          user: {
+            email: user.email,
+            nickname: user.displayName || user.email.split("@")[0],
+          },
+          firebaseUser: user,
+        },
+      };
     }
 
-    // Si aún no tenemos info del backend, intentar obtenerla por email
-    if (!backendUser && user.email) {
-      const fallbackUser = await api.get(`/user?email=${encodeURIComponent(user.email)}`);
-      if (!fallbackUser.error) {
-        backendUser = fallbackUser.data;
-      }
-    }
-
-    // 3. Retornar éxito - el usuario ya está autenticado en Firebase
-    // No necesitamos hacer login en el backend porque OAuth no usa contraseña
+    console.log("[AUTH-SERVICE] Facebook OAuth login successful");
     return {
       data: {
-        user: backendUser || {
-          email: user.email,
-          nickname: user.displayName || user.email.split("@")[0],
-        },
+        user: response.data?.user,
         firebaseUser: user,
       },
     };
   } catch (error: any) {
-    console.error("Error en login con Facebook:", error);
+    console.error("[AUTH-SERVICE] Error in Facebook OAuth login:", error);
     
-    // Si el error es que el usuario canceló, no mostrar error
     if (error.code === "auth/popup-closed-by-user" || error.code === "auth/cancelled-popup-request") {
       return { error: "Inicio de sesión cancelado" };
+    }
+    
+    if (error.code === "auth/popup-blocked") {
+      return { error: "El navegador bloqueó la ventana emergente. Permite ventanas emergentes para continuar." };
+    }
+    
+    if (error.code === "auth/account-exists-with-different-credential") {
+      return { error: "Ya existe una cuenta con este correo usando otro método de inicio de sesión." };
     }
     
     return {
