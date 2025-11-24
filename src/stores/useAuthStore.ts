@@ -50,9 +50,7 @@ type AuthStore = {
     newPassword: string,
     confirmPassword: string
   ) => Promise<{ success: boolean; error?: string }>;
-  deleteAccount: (
-    password: string
-  ) => Promise<{ success: boolean; error?: string }>;
+  deleteAccount: () => Promise<{ success: boolean; error?: string }>;
 };
 
 const normalizeProvider = (providerId?: string | null) => {
@@ -431,7 +429,7 @@ const useAuthStore = create<AuthStore>()(
         }
       },
 
-      deleteAccount: async (password: string) => {
+      deleteAccount: async () => {
         const user = get().user;
         if (!user || !user.id) {
           return { success: false, error: "No hay usuario autenticado" };
@@ -439,7 +437,7 @@ const useAuthStore = create<AuthStore>()(
 
         set({ isLoading: true, error: null });
         try {
-          const response = await authService.deleteAccount(user.id, password);
+          const response = await authService.deleteAccount(user.id);
 
           if (response.error) {
             set({ error: response.error, isLoading: false });

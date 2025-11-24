@@ -40,27 +40,37 @@ export interface UserResponse {
 // ============ AUTENTICACIÓN CON BACKEND ============
 
 /**
- * Login con credenciales (email y password)
- * Este método primero autentica con Firebase, luego sincroniza con el backend
+ * Login with email and password credentials
+ * Authenticates with Firebase first, then syncs with backend to create session
+ * 
+ * @param {LoginCredentials} credentials - User email and password
+ * @returns {Promise<{data?: any, error?: string}>} Response with user data or error message
  */
 export const login = async (credentials: LoginCredentials) => {
   try {
+    console.log("[AUTH-SERVICE] Starting login process");
+    
     // 1. Autenticar con Firebase Client
+    console.log(`[AUTH-SERVICE] Authenticating with Firebase for ${credentials.email}`);
     const userCredential = await signInWithEmailAndPassword(
       auth,
       credentials.email,
       credentials.password
     );
+    console.log(`[AUTH-SERVICE] Firebase authentication successful: ${userCredential.user.uid}`);
 
     // 2. Sincronizar con backend (obtener cookies de sesión)
+    console.log("[AUTH-SERVICE] Syncing with backend");
     const response = await api.post("/auth/login", credentials);
 
     if (response.error) {
+      console.log("[AUTH-SERVICE] Backend sync failed, signing out from Firebase");
       // Si falla el backend, cerrar sesión de Firebase
       await firebaseSignOut(auth);
       return { error: response.error };
     }
 
+    console.log(`[AUTH-SERVICE] Login successful for user ${response.data?.user?.id}`);
     return {
       data: {
         user: response.data?.user,
@@ -68,7 +78,19 @@ export const login = async (credentials: LoginCredentials) => {
       },
     };
   } catch (error: any) {
-    console.error("Error en login:", error);
+    console.error("[AUTH-SERVICE] Error in login:", error);
+    
+    // Handle specific Firebase error codes
+    if (error.code === "auth/invalid-credential" || error.code === "auth/wrong-password") {
+      return { error: "Credenciales inválidas. Verifica tu email y contraseña." };
+    }
+    if (error.code === "auth/user-not-found") {
+      return { error: "No existe una cuenta con este email." };
+    }
+    if (error.code === "auth/too-many-requests") {
+      return { error: "Demasiados intentos fallidos. Intenta más tarde." };
+    }
+    
     return {
       error: error.message || "Error al iniciar sesión",
     };
@@ -421,11 +443,20 @@ export const resetPassword = async (
 /**
  * Actualizar perfil de usuario
  */
+/**
+ * Update user profile information
+ * Updates user data in backend, handles token refresh if needed
+ * 
+ * @param {string} userId - User ID to update
+ * @param {Partial<UserResponse>} data - Partial user data to update
+ * @returns {Promise<{data?: any, error?: string}>} Response with updated user data or error
+ */
 export const updateProfile = async (
   userId: string,
   data: Partial<UserResponse>
 ) => {
   try {
+    console.log(`[AUTH-SERVICE] Updating profile for user ${userId}`);
     const response = await api.put(`/user/${userId}`, data);
 
     if (response.error) {
@@ -514,37 +545,48 @@ export const changePassword = async (
 };
 
 /**
- * Eliminar cuenta de usuario
+ * Delete user account
+ * Removes user from backend and Firebase Auth
+ * No password required - caller should handle confirmation UI
+ * 
+ * @param {string} userId - User ID to delete
+ * @returns {Promise<{data?: any, error?: string}>} Response with success message or error
  */
-export const deleteAccount = async (userId: string, password: string) => {
+export const deleteAccount = async (userId: string) => {
   try {
-    // 1. Re-autenticar con Firebase
+    console.log("[AUTH-SERVICE] Starting account deletion process");
+    
     const user = auth.currentUser;
-    if (!user || !user.email) {
+    if (!user) {
+      console.log("[AUTH-SERVICE] No authenticated user found");
       return { error: "No hay usuario autenticado" };
     }
 
-    const credential = EmailAuthProvider.credential(user.email, password);
-    await reauthenticateWithCredential(user, credential);
-
-    // 2. Eliminar en backend primero
+    console.log(`[AUTH-SERVICE] Deleting user ${userId} from backend`);
+    // 1. Eliminar en backend primero
     const response = await api.delete(`/user/${userId}`);
 
     if (response.error) {
+      console.log(`[AUTH-SERVICE] Backend deletion failed: ${response.error}`);
       return { error: response.error };
     }
 
-    // 3. Eliminar cuenta de Firebase
+    console.log(`[AUTH-SERVICE] Deleting Firebase user ${user.uid}`);
+    // 2. Eliminar cuenta de Firebase
     await firebaseDeleteUser(user);
 
+    console.log("[AUTH-SERVICE] Account deleted successfully");
     return {
       data: { message: "Cuenta eliminada exitosamente" },
     };
   } catch (error: any) {
-    console.error("Error en eliminar cuenta:", error);
+    console.error("[AUTH-SERVICE] Error deleting account:", error);
 
-    if (error.code === "auth/wrong-password") {
-      return { error: "La contraseña es incorrecta" };
+    // Handle Firebase errors
+    if (error.code === "auth/requires-recent-login") {
+      return { 
+        error: "Por seguridad, necesitas volver a iniciar sesión antes de eliminar tu cuenta." 
+      };
     }
 
     return {
