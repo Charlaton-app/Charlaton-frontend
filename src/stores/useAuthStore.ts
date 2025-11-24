@@ -10,6 +10,7 @@ interface User {
   email: string | null;
   photoURL: string | null;
   nickname?: string | null;
+  edad?: number;
   role?: string | null;
   createdAt?: any;
   authProvider?: string | null;
@@ -34,6 +35,7 @@ type AuthStore = {
     email: string;
     nickname?: string;
     password: string;
+    edad: number;
     confirmPassword: string;
   }) => Promise<{ success: boolean; error?: string }>;
   loginWithGoogle: () => Promise<{ success: boolean; error?: string }>;

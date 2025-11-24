@@ -48,6 +48,7 @@ const Profile: React.FC = () => {
   const [personalInfo, setPersonalInfo] = useState({
     fullName: "",
     email: "",
+    edad: "",
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -58,6 +59,7 @@ const Profile: React.FC = () => {
       setPersonalInfo({
         fullName: fullName,
         email: user.email || "",
+        edad: user.edad ? String(user.edad) : "",
       });
     }
   }, [user]);
@@ -97,10 +99,22 @@ const Profile: React.FC = () => {
       return;
     }
 
+    if (!personalInfo.edad || !personalInfo.edad.trim()) {
+      setError("La edad es requerida");
+      return;
+    }
+
+    const edadNum = parseInt(personalInfo.edad, 10);
+    if (isNaN(edadNum) || edadNum < 1 || edadNum > 120) {
+      setError("Por favor, ingresa una edad válida (entre 1 y 120)");
+      return;
+    }
+
     const result = await updateUserProfile({
       displayName: personalInfo.fullName.trim(),
       nickname: personalInfo.fullName.trim(),
       email: personalInfo.email.trim(),
+      edad: edadNum,
     });
 
     if (result.success) {
@@ -302,6 +316,29 @@ const Profile: React.FC = () => {
                       proveedor.
                     </p>
                   )}
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="edad">Edad</label>
+                  <input
+                    type="number"
+                    id="edad"
+                    name="edad"
+                    value={personalInfo.edad}
+                    onChange={handlePersonalInfoChange}
+                    placeholder="18"
+                    min="1"
+                    max="120"
+                    disabled={isLoading}
+                    aria-required="true"
+                    aria-invalid={
+                      error && !personalInfo.edad ? "true" : "false"
+                    }
+                    aria-describedby={error ? "profile-error edad-help" : "edad-help"}
+                  />
+                  <p id="edad-help" className="field-note">
+                    Edad entre 1 y 120 años
+                  </p>
                 </div>
 
                 <div className="member-info">

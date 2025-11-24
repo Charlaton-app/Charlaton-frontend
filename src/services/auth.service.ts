@@ -24,6 +24,7 @@ export interface SignupData {
   email: string;
   nickname?: string;
   password: string;
+  edad: number;
   confirmPassword?: string;
   rolId?: number;
 }
@@ -32,6 +33,7 @@ export interface UserResponse {
   id: string;
   email: string | null;
   nickname?: string | null;
+  edad: number;
   role?: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -147,6 +149,7 @@ export const signup = async (data: SignupData) => {
       email: data.email,
       nickname: data.nickname || null,
       password: data.password,
+      edad: data.edad,
       rolId: data.rolId || 2, // 2 = regular user by default
     });
 
