@@ -105,6 +105,7 @@ const useAuthStore = create<AuthStore>()(
                     email: fbUser.email,
                     photoURL: fbUser.photoURL,
                     nickname: response.data.nickname,
+                    edad: response.data.edad,
                     role: response.data.role,
                     createdAt: response.data.createdAt || null,
                     authProvider,
@@ -194,6 +195,7 @@ const useAuthStore = create<AuthStore>()(
               email: response.data.firebaseUser.email,
               photoURL: response.data.firebaseUser.photoURL,
               nickname: response.data.user?.nickname,
+              edad: response.data.user?.edad,
               role: response.data.user?.role,
               createdAt: response.data.user?.createdAt || null,
               authProvider: "password",
@@ -232,6 +234,7 @@ const useAuthStore = create<AuthStore>()(
               email: response.data.firebaseUser.email,
               photoURL: response.data.firebaseUser.photoURL,
               nickname: response.data.user?.nickname,
+              edad: response.data.user?.edad,
               role: response.data.user?.role,
               createdAt: response.data.user?.createdAt || null,
               authProvider: "password",
@@ -270,6 +273,7 @@ const useAuthStore = create<AuthStore>()(
               email: response.data.firebaseUser.email,
               photoURL: response.data.firebaseUser.photoURL,
               nickname: response.data.user?.nickname,
+              edad: response.data.user?.edad,
               role: response.data.user?.role,
               createdAt: response.data.user?.createdAt || null,
               authProvider: "google",
@@ -308,6 +312,7 @@ const useAuthStore = create<AuthStore>()(
               email: response.data.firebaseUser.email,
               photoURL: response.data.firebaseUser.photoURL,
               nickname: response.data.user?.nickname,
+              edad: response.data.user?.edad,
               role: response.data.user?.role,
               createdAt: response.data.user?.createdAt || null,
               authProvider: "facebook",
@@ -384,9 +389,17 @@ const useAuthStore = create<AuthStore>()(
             return { success: false, error: response.error };
           }
 
+          // Merge backend response data with local state to ensure all fields are updated
+          const updatedUser = {
+            ...user,
+            ...data,
+            // Ensure backend response data is used if available
+            ...(response.data || {})
+          } as User;
+
           // Actualizar usuario en el store
           set({
-            user: { ...user, ...data } as User,
+            user: updatedUser,
             isLoading: false,
             isAuthenticated: true,
             error: null

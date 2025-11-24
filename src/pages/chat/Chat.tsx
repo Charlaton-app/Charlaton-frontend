@@ -84,14 +84,6 @@ const Chat: React.FC = () => {
     };
   }, [user, navigate, isManuallyDisconnected]);
 
-  // Cargar historial de mensajes una sola vez
-  useEffect(() => {
-    if (user && isConnected && !hasLoadedHistory.current) {
-      loadChatHistory();
-      hasLoadedHistory.current = true;
-    }
-  }, [user, isConnected]);
-
   // Cargar historial de mensajes desde el API
   const loadChatHistory = async () => {
     try {
@@ -110,6 +102,17 @@ const Chat: React.FC = () => {
       console.error("❌ Error cargando historial:", error);
     }
   };
+
+  // Cargar historial de mensajes una sola vez
+  useEffect(() => {
+    if (user && isConnected && !hasLoadedHistory.current) {
+      // Defer the load to a microtask to avoid calling setState synchronously inside the effect
+      Promise.resolve().then(async () => {
+        await loadChatHistory();
+        hasLoadedHistory.current = true;
+      });
+    }
+  }, [user, isConnected]);
 
   useEffect(() => {
     // Scroll to bottom when new messages arrive
