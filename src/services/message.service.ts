@@ -31,7 +31,7 @@ export interface SendMessageData {
 /**
  * Get messages for a specific room
  * Fetches message history with pagination support
- * 
+ *
  * @param {string} roomId - Room ID to fetch messages for
  * @param {number} [limit=50] - Maximum number of messages to fetch
  * @param {number} [offset=0] - Offset for pagination
@@ -49,11 +49,15 @@ export const getRoomMessages = async (
     );
 
     if (response.error) {
-      console.log(`[MESSAGE-SERVICE] Error fetching messages: ${response.error}`);
+      console.log(
+        `[MESSAGE-SERVICE] Error fetching messages: ${response.error}`
+      );
       return { error: response.error };
     }
 
-    console.log(`[MESSAGE-SERVICE] Fetched ${response.data?.length || 0} messages`);
+    console.log(
+      `[MESSAGE-SERVICE] Fetched ${response.data?.length || 0} messages`
+    );
     return { data: response.data as Message[] };
   } catch (error: any) {
     console.error("[MESSAGE-SERVICE] Error in getRoomMessages:", error);
@@ -64,13 +68,15 @@ export const getRoomMessages = async (
 /**
  * Send a message to a room
  * Creates a new message in the backend (Socket.io will broadcast it)
- * 
+ *
  * @param {SendMessageData} messageData - Message data to send
  * @returns {Promise<{data?: Message, error?: string}>} Response with created message or error
  */
 export const sendMessage = async (messageData: SendMessageData) => {
   try {
-    console.log(`[MESSAGE-SERVICE] Sending message to room ${messageData.roomId}`);
+    console.log(
+      `[MESSAGE-SERVICE] Sending message to room ${messageData.roomId}`
+    );
     const response = await api.post("/message", {
       ...messageData,
       visibility: messageData.visibility || "public",
@@ -92,7 +98,7 @@ export const sendMessage = async (messageData: SendMessageData) => {
 /**
  * Update a message (edit)
  * Updates message content
- * 
+ *
  * @param {string} messageId - Message ID to update
  * @param {string} content - New message content
  * @returns {Promise<{data?: Message, error?: string}>} Response with updated message or error
@@ -106,7 +112,9 @@ export const updateMessage = async (messageId: string, content: string) => {
     });
 
     if (response.error) {
-      console.log(`[MESSAGE-SERVICE] Error updating message: ${response.error}`);
+      console.log(
+        `[MESSAGE-SERVICE] Error updating message: ${response.error}`
+      );
       return { error: response.error };
     }
 
@@ -121,7 +129,7 @@ export const updateMessage = async (messageId: string, content: string) => {
 /**
  * Delete a message
  * Removes a message from the room
- * 
+ *
  * @param {string} messageId - Message ID to delete
  * @returns {Promise<{data?: any, error?: string}>} Response with success or error
  */
@@ -131,7 +139,9 @@ export const deleteMessage = async (messageId: string) => {
     const response = await api.delete(`/message/${messageId}`);
 
     if (response.error) {
-      console.log(`[MESSAGE-SERVICE] Error deleting message: ${response.error}`);
+      console.log(
+        `[MESSAGE-SERVICE] Error deleting message: ${response.error}`
+      );
       return { error: response.error };
     }
 

@@ -99,6 +99,15 @@ export const api = {
     });
   },
 
+  // PATCH request
+  patch: <T = any>(endpoint: string, body?: any, options?: RequestInit) => {
+    return fetchWithConfig<T>(endpoint, {
+      ...options,
+      method: "PATCH",
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  },
+
   // DELETE request
   delete: <T = any>(endpoint: string, options?: RequestInit) => {
     return fetchWithConfig<T>(endpoint, {

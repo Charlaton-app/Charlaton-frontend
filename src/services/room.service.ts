@@ -43,7 +43,7 @@ export interface Participant {
 /**
  * Get all available rooms
  * Fetches list of rooms that are not deleted
- * 
+ *
  * @returns {Promise<{data?: Room[], error?: string}>} Response with rooms array or error
  */
 export const getAllRooms = async () => {
@@ -67,7 +67,7 @@ export const getAllRooms = async () => {
 /**
  * Get room by ID
  * Fetches detailed information about a specific room including participants
- * 
+ *
  * @param {string} roomId - Room ID to fetch
  * @returns {Promise<{data?: Room, error?: string}>} Response with room data or error
  */
@@ -92,7 +92,7 @@ export const getRoomById = async (roomId: string) => {
 /**
  * Create a new room/meeting
  * Creates a new meeting room in the backend
- * 
+ *
  * @param {CreateRoomData} roomData - Room creation data
  * @returns {Promise<{data?: Room, error?: string}>} Response with created room or error
  */
@@ -117,16 +117,20 @@ export const createRoom = async (roomData: CreateRoomData) => {
 /**
  * Join a room by ID
  * Validates room existence and creates user connection
- * 
+ *
  * @param {string} roomId - Room ID to join
  * @param {string} userId - User ID joining the room
  * @param {string} [password] - Optional room password if required
  * @returns {Promise<{data?: any, error?: string}>} Response with connection data or error
  */
-export const joinRoom = async (roomId: string, userId: string, password?: string) => {
+export const joinRoom = async (
+  roomId: string,
+  userId: string,
+  password?: string
+) => {
   try {
     console.log(`[ROOM-SERVICE] User ${userId} joining room ${roomId}`);
-    
+
     // First check if room exists
     const roomResponse = await getRoomById(roomId);
     if (roomResponse.error) {
@@ -134,7 +138,7 @@ export const joinRoom = async (roomId: string, userId: string, password?: string
     }
 
     const room = roomResponse.data;
-    
+
     // Check password if room is private
     if (room?.password && room.password !== password) {
       console.log("[ROOM-SERVICE] Invalid room password");
@@ -152,7 +156,9 @@ export const joinRoom = async (roomId: string, userId: string, password?: string
       return { error: response.error };
     }
 
-    console.log(`[ROOM-SERVICE] User ${userId} joined room ${roomId} successfully`);
+    console.log(
+      `[ROOM-SERVICE] User ${userId} joined room ${roomId} successfully`
+    );
     return { data: response.data };
   } catch (error: any) {
     console.error("[ROOM-SERVICE] Error in joinRoom:", error);
@@ -163,7 +169,7 @@ export const joinRoom = async (roomId: string, userId: string, password?: string
 /**
  * Leave a room
  * Updates user connection with leftAt timestamp
- * 
+ *
  * @param {string} connectionId - Connection ID to close
  * @returns {Promise<{data?: any, error?: string}>} Response with success or error
  */
@@ -190,7 +196,7 @@ export const leaveRoom = async (connectionId: string) => {
 /**
  * Get participants in a room
  * Fetches all active connections for a room
- * 
+ *
  * @param {string} roomId - Room ID to get participants for
  * @returns {Promise<{data?: Participant[], error?: string}>} Response with participants array or error
  */
@@ -200,7 +206,9 @@ export const getRoomParticipants = async (roomId: string) => {
     const response = await api.get(`/userConnection?roomId=${roomId}`);
 
     if (response.error) {
-      console.log(`[ROOM-SERVICE] Error fetching participants: ${response.error}`);
+      console.log(
+        `[ROOM-SERVICE] Error fetching participants: ${response.error}`
+      );
       return { error: response.error };
     }
 
@@ -209,7 +217,9 @@ export const getRoomParticipants = async (roomId: string) => {
       (p) => !p.leftAt
     );
 
-    console.log(`[ROOM-SERVICE] Found ${activeParticipants.length} active participants`);
+    console.log(
+      `[ROOM-SERVICE] Found ${activeParticipants.length} active participants`
+    );
     return { data: activeParticipants };
   } catch (error: any) {
     console.error("[ROOM-SERVICE] Error in getRoomParticipants:", error);
@@ -220,7 +230,7 @@ export const getRoomParticipants = async (roomId: string) => {
 /**
  * Delete/end a room (host only)
  * Soft deletes the room by setting deletedAt
- * 
+ *
  * @param {string} roomId - Room ID to delete
  * @returns {Promise<{data?: any, error?: string}>} Response with success or error
  */

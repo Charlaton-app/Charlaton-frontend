@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../stores/useAuthStore";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
-import WebContentReader from '../../components/web-reader/WebContentReader';
+import WebContentReader from "../../components/web-reader/WebContentReader";
 import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationModal";
 import "./Profile.scss";
 
@@ -38,22 +38,16 @@ const formatMemberSince = (value?: any) => {
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();
-  const {
-    user,
-    updateUserProfile,
-    changePassword,
-    deleteAccount,
-    isLoading,
-  } = useAuthStore();
+  const { user, updateUserProfile, changePassword, deleteAccount, isLoading } =
+    useAuthStore();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const isOAuthUser =
-    user?.authProvider && user.authProvider !== "password";
+  const isOAuthUser = user?.authProvider && user.authProvider !== "password";
 
   // Personal Info State
   const [personalInfo, setPersonalInfo] = useState({
     fullName: "",
-    email: ""
+    email: "",
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -63,7 +57,7 @@ const Profile: React.FC = () => {
       const fullName = user.displayName || user.nickname || "";
       setPersonalInfo({
         fullName: fullName,
-        email: user.email || ""
+        email: user.email || "",
       });
     }
   }, [user]);
@@ -72,20 +66,20 @@ const Profile: React.FC = () => {
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
-    confirmPassword: ""
+    confirmPassword: "",
   });
 
   const handlePersonalInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPersonalInfo({
       ...personalInfo,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPasswordData({
       ...passwordData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -106,7 +100,7 @@ const Profile: React.FC = () => {
     const result = await updateUserProfile({
       displayName: personalInfo.fullName.trim(),
       nickname: personalInfo.fullName.trim(),
-      email: personalInfo.email.trim()
+      email: personalInfo.email.trim(),
     });
 
     if (result.success) {
@@ -142,7 +136,7 @@ const Profile: React.FC = () => {
       setPasswordData({
         currentPassword: "",
         newPassword: "",
-        confirmPassword: ""
+        confirmPassword: "",
       });
     } else {
       setError(result.error || "Error al cambiar la contraseña");
@@ -173,9 +167,9 @@ const Profile: React.FC = () => {
       <a href="#main-content" className="skip-to-main">
         Saltar al contenido principal
       </a>
-      
+
       <Navbar />
-      
+
       <ConfirmationModal
         isOpen={showDeleteModal}
         title="Eliminar cuenta"
@@ -187,7 +181,7 @@ const Profile: React.FC = () => {
         onConfirm={handleDeleteAccount}
         onCancel={() => setShowDeleteModal(false)}
       />
-      
+
       <main id="main-content" className="profile-main">
         <div className="profile-container">
           <div className="profile-header">
@@ -201,13 +195,23 @@ const Profile: React.FC = () => {
           </div>
 
           {error && (
-            <div id="profile-error" className="alert alert-error" role="alert" aria-live="assertive">
+            <div
+              id="profile-error"
+              className="alert alert-error"
+              role="alert"
+              aria-live="assertive"
+            >
               {error}
             </div>
           )}
 
           {success && (
-            <div id="profile-success" className="alert alert-success" role="status" aria-live="polite">
+            <div
+              id="profile-success"
+              className="alert alert-success"
+              role="status"
+              aria-live="polite"
+            >
               {success}
             </div>
           )}
@@ -220,9 +224,14 @@ const Profile: React.FC = () => {
                   <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                 </svg>
               </div>
-              <h2 className="user-name">{personalInfo.fullName || user?.displayName || user?.nickname || "Usuario"}</h2>
+              <h2 className="user-name">
+                {personalInfo.fullName ||
+                  user?.displayName ||
+                  user?.nickname ||
+                  "Usuario"}
+              </h2>
               <p className="user-email">{personalInfo.email}</p>
-              
+
               <div className="user-stats">
                 <div className="stat-item">
                   <div className="stat-value">{resumeCount}</div>
@@ -243,7 +252,7 @@ const Profile: React.FC = () => {
             {/* Personal Information Card */}
             <div className="profile-card info-card">
               <h2>Información personal</h2>
-              
+
               <form className="info-form">
                 <div className="form-group">
                   <label htmlFor="fullName">Nombre completo</label>
@@ -256,7 +265,9 @@ const Profile: React.FC = () => {
                     placeholder="Juan Pérez"
                     disabled={isLoading}
                     aria-required="true"
-                    aria-invalid={error && !personalInfo.fullName.trim() ? "true" : "false"}
+                    aria-invalid={
+                      error && !personalInfo.fullName.trim() ? "true" : "false"
+                    }
                     aria-describedby={error ? "profile-error" : undefined}
                   />
                 </div>
@@ -272,13 +283,23 @@ const Profile: React.FC = () => {
                     placeholder="user@email.com"
                     disabled={isLoading || Boolean(isOAuthUser)}
                     aria-required="true"
-                    aria-invalid={error && !personalInfo.email.trim() ? "true" : "false"}
-                    aria-describedby={isOAuthUser ? "email-help" : error ? "profile-error" : undefined}
+                    aria-invalid={
+                      error && !personalInfo.email.trim() ? "true" : "false"
+                    }
+                    aria-describedby={
+                      isOAuthUser
+                        ? "email-help"
+                        : error
+                        ? "profile-error"
+                        : undefined
+                    }
                   />
                   {isOAuthUser && (
                     <p id="email-help" className="field-note">
-                      Este correo proviene de {user?.authProvider?.toUpperCase()} y no puede
-                      editarse. Si necesitas cambiarlo, actualízalo directamente en el proveedor.
+                      Este correo proviene de{" "}
+                      {user?.authProvider?.toUpperCase()} y no puede editarse.
+                      Si necesitas cambiarlo, actualízalo directamente en el
+                      proveedor.
                     </p>
                   )}
                 </div>
@@ -305,10 +326,15 @@ const Profile: React.FC = () => {
             {/* Change Password Card */}
             <div className="profile-card password-card">
               <h2>Cambia tu contraseña</h2>
-              
-              <form onSubmit={handleChangePasswordSubmit} className="password-form">
+
+              <form
+                onSubmit={handleChangePasswordSubmit}
+                className="password-form"
+              >
                 <div className="form-group">
-                  <label htmlFor="currentPassword">Digita tu contraseña actual</label>
+                  <label htmlFor="currentPassword">
+                    Digita tu contraseña actual
+                  </label>
                   <input
                     type="password"
                     id="currentPassword"
@@ -324,7 +350,9 @@ const Profile: React.FC = () => {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="newPassword">Digita tu nueva contraseña</label>
+                  <label htmlFor="newPassword">
+                    Digita tu nueva contraseña
+                  </label>
                   <input
                     type="password"
                     id="newPassword"
@@ -334,14 +362,28 @@ const Profile: React.FC = () => {
                     placeholder="Nueva contraseña"
                     disabled={isLoading}
                     aria-required="true"
-                    aria-invalid={error && passwordData.newPassword.length < 6 && passwordData.newPassword.length > 0 ? "true" : "false"}
-                    aria-describedby={error ? "profile-error password-length-help" : "password-length-help"}
+                    aria-invalid={
+                      error &&
+                      passwordData.newPassword.length < 6 &&
+                      passwordData.newPassword.length > 0
+                        ? "true"
+                        : "false"
+                    }
+                    aria-describedby={
+                      error
+                        ? "profile-error password-length-help"
+                        : "password-length-help"
+                    }
                   />
-                  <span id="password-length-help" className="visually-hidden">La contraseña debe tener al menos 6 caracteres</span>
+                  <span id="password-length-help" className="visually-hidden">
+                    La contraseña debe tener al menos 6 caracteres
+                  </span>
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="confirmPassword">Confirma tu nueva contraseña</label>
+                  <label htmlFor="confirmPassword">
+                    Confirma tu nueva contraseña
+                  </label>
                   <input
                     type="password"
                     id="confirmPassword"
@@ -351,7 +393,14 @@ const Profile: React.FC = () => {
                     placeholder="Confirmar contraseña"
                     disabled={isLoading}
                     aria-required="true"
-                    aria-invalid={error && passwordData.newPassword !== passwordData.confirmPassword && passwordData.confirmPassword.length > 0 ? "true" : "false"}
+                    aria-invalid={
+                      error &&
+                      passwordData.newPassword !==
+                        passwordData.confirmPassword &&
+                      passwordData.confirmPassword.length > 0
+                        ? "true"
+                        : "false"
+                    }
                     aria-describedby={error ? "profile-error" : undefined}
                   />
                 </div>
@@ -371,7 +420,7 @@ const Profile: React.FC = () => {
             <div className="profile-card danger-card">
               <h2>Zona de peligro</h2>
               <p className="danger-warning">Esta es una acción irreversible.</p>
-              
+
               <button
                 onClick={() => setShowDeleteModal(true)}
                 className="btn-delete"

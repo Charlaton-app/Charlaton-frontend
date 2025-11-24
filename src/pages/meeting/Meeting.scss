@@ -1,17 +1,17 @@
 // src/pages/meeting/Meeting.scss
 // Google Meet-style meeting page styles
 
-$primary-color: #0D5E9E;
-$secondary-color: #24C4E8;
-$accent-color: #F7941D;
+$primary-color: #0d5e9e;
+$secondary-color: #24c4e8;
+$accent-color: #f7941d;
 $bg-dark: #202124;
-$bg-darker: #18191A;
-$bg-light: #F0F8FF;
-$text-white: #FFFFFF;
-$text-gray: #9AA0A6;
-$text-dark: #1A1A1A;
-$font-title: 'Days One', sans-serif;
-$font-body: 'Rubik', sans-serif;
+$bg-darker: #18191a;
+$bg-light: #f0f8ff;
+$text-white: #ffffff;
+$text-gray: #9aa0a6;
+$text-dark: #1a1a1a;
+$font-title: "Days One", sans-serif;
+$font-body: "Rubik", sans-serif;
 
 .meeting-page {
   display: flex;
@@ -22,11 +22,13 @@ $font-body: 'Rubik', sans-serif;
   font-family: $font-body;
   overflow: hidden;
 
-  &.loading, &.error {
+  &.loading,
+  &.error {
     align-items: center;
     justify-content: center;
 
-    .spinner-container, .error-container {
+    .spinner-container,
+    .error-container {
       text-align: center;
       padding: 2rem;
 
@@ -45,7 +47,11 @@ $font-body: 'Rubik', sans-serif;
       button {
         font-family: $font-body;
         padding: 0.75rem 2rem;
-        background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+        background: linear-gradient(
+          135deg,
+          $primary-color 0%,
+          $secondary-color 100%
+        );
         color: white;
         border: none;
         border-radius: 8px;
@@ -70,7 +76,9 @@ $font-body: 'Rubik', sans-serif;
     }
 
     @keyframes spin {
-      to { transform: rotate(360deg); }
+      to {
+        transform: rotate(360deg);
+      }
     }
   }
 
@@ -222,7 +230,11 @@ $font-body: 'Rubik', sans-serif;
           .participant-avatar {
             width: 80px;
             height: 80px;
-            background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+            background: linear-gradient(
+              135deg,
+              $primary-color 0%,
+              $secondary-color 100%
+            );
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -313,7 +325,7 @@ $font-body: 'Rubik', sans-serif;
             position: absolute;
             top: -4px;
             right: -4px;
-            background: #EA4335;
+            background: #ea4335;
             color: white;
             font-size: 0.75rem;
             font-weight: 600;
@@ -385,7 +397,11 @@ $font-body: 'Rubik', sans-serif;
               .participant-avatar-small {
                 width: 40px;
                 height: 40px;
-                background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+                background: linear-gradient(
+                  135deg,
+                  $primary-color 0%,
+                  $secondary-color 100%
+                );
                 border-radius: 50%;
                 display: flex;
                 align-items: center;
@@ -451,7 +467,11 @@ $font-body: 'Rubik', sans-serif;
               .message-avatar {
                 width: 32px;
                 height: 32px;
-                background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+                background: linear-gradient(
+                  135deg,
+                  $primary-color 0%,
+                  $secondary-color 100%
+                );
                 border-radius: 50%;
                 display: flex;
                 align-items: center;
