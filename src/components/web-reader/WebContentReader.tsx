@@ -25,7 +25,7 @@ interface ReaderPreferences {
   voice: string;
 }
 
-type Position = 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
+type Position = "bottom-right" | "bottom-left" | "top-right" | "top-left";
 
 const WebContentReader: React.FC = () => {
   // Estados principales
@@ -38,20 +38,28 @@ const WebContentReader: React.FC = () => {
   const [pitch, setPitch] = useState(1.0); // Tono de voz (0 - 2)
   const [notification, setNotification] = useState<string>("");
   const [isSupported, setIsSupported] = useState(true);
-  const [position, setPosition] = useState<Position>('bottom-right');
-  
+  const [position, setPosition] = useState<Position>("bottom-right");
+  const [isDragging, setIsDragging] = useState(false);
+
   // Referencias
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const textChunksRef = useRef<string[]>([]);
   const currentChunkIndexRef = useRef<number>(0);
+  const fabRef = useRef<HTMLButtonElement>(null);
+  const dragStartPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   /**
    * Load saved position from localStorage
    */
   useEffect(() => {
-    const savedPosition = localStorage.getItem('webReaderPosition');
-    if (savedPosition && ['bottom-right', 'bottom-left', 'top-right', 'top-left'].includes(savedPosition)) {
+    const savedPosition = localStorage.getItem("webReaderPosition");
+    if (
+      savedPosition &&
+      ["bottom-right", "bottom-left", "top-right", "top-left"].includes(
+        savedPosition
+      )
+    ) {
       setPosition(savedPosition as Position);
     }
   }, []);
@@ -60,11 +68,16 @@ const WebContentReader: React.FC = () => {
    * Cycle through positions clockwise: BR -> BL -> TL -> TR -> BR
    */
   const cyclePosition = () => {
-    const positions: Position[] = ['bottom-right', 'bottom-left', 'top-left', 'top-right'];
+    const positions: Position[] = [
+      "bottom-right",
+      "bottom-left",
+      "top-left",
+      "top-right",
+    ];
     const currentIndex = positions.indexOf(position);
     const nextPosition = positions[(currentIndex + 1) % positions.length];
     setPosition(nextPosition);
-    localStorage.setItem('webReaderPosition', nextPosition);
+    localStorage.setItem("webReaderPosition", nextPosition);
     showNotification(`Posici\u00f3n: ${getPositionLabel(nextPosition)}`);
   };
 
@@ -73,13 +86,52 @@ const WebContentReader: React.FC = () => {
    */
   const getPositionLabel = (pos: Position): string => {
     const labels: Record<Position, string> = {
-      'bottom-right': 'Abajo Derecha',
-      'bottom-left': 'Abajo Izquierda',
-      'top-right': 'Arriba Derecha',
-      'top-left': 'Arriba Izquierda'
+      "bottom-right": "Abajo Derecha",
+      "bottom-left": "Abajo Izquierda",
+      "top-right": "Arriba Derecha",
+      "top-left": "Arriba Izquierda",
     };
     return labels[pos];
-  };  /**
+  };
+
+  /**
+   * Handle drag start
+   */
+  const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+    setIsDragging(true);
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    dragStartPos.current = { x: clientX, y: clientY };
+  };
+
+  /**
+   * Handle drag end - determine new position based on final location
+   */
+  const handleDragEnd = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDragging) return;
+    setIsDragging(false);
+
+    const clientX = 'changedTouches' in e ? e.changedTouches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'changedTouches' in e ? e.changedTouches[0].clientY : (e as React.MouseEvent).clientY;
+
+    // Determine position based on which quadrant of screen
+    const isLeft = clientX < window.innerWidth / 2;
+    const isTop = clientY < window.innerHeight / 2;
+
+    let newPosition: Position;
+    if (isTop && !isLeft) newPosition = "top-right";
+    else if (isTop && isLeft) newPosition = "top-left";
+    else if (!isTop && isLeft) newPosition = "bottom-left";
+    else newPosition = "bottom-right";
+
+    if (newPosition !== position) {
+      setPosition(newPosition);
+      localStorage.setItem("webReaderPosition", newPosition);
+      showNotification(`Posición: ${getPositionLabel(newPosition)}`);
+    }
+  };
+
+  /**
    * Verificar compatibilidad del navegador
    * La Web Speech API requiere HTTPS en producción
    */
@@ -191,15 +243,15 @@ const WebContentReader: React.FC = () => {
 
     // Remover elementos que no deben leerse
     const elementsToRemove = clone.querySelectorAll(
-      'script, style, .web-content-reader, nav, footer'
+      "script, style, .web-content-reader, nav, footer"
     );
     elementsToRemove.forEach((el) => el.remove());
-    
+
     // Remover solo íconos decorativos pero mantener su texto asociado
     const decorativeIcons = clone.querySelectorAll('[aria-hidden="true"]');
     decorativeIcons.forEach((el) => {
       // Solo remover si es un elemento vacío o solo tiene emojis/símbolos
-      const text = el.textContent?.trim() || '';
+      const text = el.textContent?.trim() || "";
       if (text.length <= 2 || /^[\p{Emoji}\p{Emoji_Component}]+$/u.test(text)) {
         el.remove();
       }
@@ -219,7 +271,10 @@ const WebContentReader: React.FC = () => {
    * La Web Speech API tiene un límite (generalmente 4000-32000 caracteres)
    * Dividimos por oraciones para mantener la naturalidad
    */
-  const splitTextIntoChunks = (text: string, maxChunkSize: number = 200): string[] => {
+  const splitTextIntoChunks = (
+    text: string,
+    maxChunkSize: number = 200
+  ): string[] => {
     // Dividir por oraciones (punto, signo de interrogación, exclamación)
     const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
     const chunks: string[] = [];
@@ -227,7 +282,10 @@ const WebContentReader: React.FC = () => {
 
     sentences.forEach((sentence) => {
       // Si agregar la oración excede el límite, guardar chunk actual
-      if ((currentChunk + sentence).length > maxChunkSize && currentChunk.length > 0) {
+      if (
+        (currentChunk + sentence).length > maxChunkSize &&
+        currentChunk.length > 0
+      ) {
         chunks.push(currentChunk.trim());
         currentChunk = sentence;
       } else {
@@ -246,64 +304,67 @@ const WebContentReader: React.FC = () => {
   /**
    * Leer un fragmento específico de texto
    */
-  const speakChunk = useCallback((chunkIndex: number) => {
-    const chunks = textChunksRef.current;
-    
-    if (chunkIndex >= chunks.length) {
-      // Terminar lectura
-      setIsReading(false);
-      setIsPaused(false);
-      currentChunkIndexRef.current = 0;
-      showNotification("Lectura finalizada");
-      return;
-    }
+  const speakChunk = useCallback(
+    (chunkIndex: number) => {
+      const chunks = textChunksRef.current;
 
-    const chunk = chunks[chunkIndex];
-    const utterance = new SpeechSynthesisUtterance(chunk);
-
-    // Configurar voz seleccionada
-    const voice = voices.find((v) => v.voiceURI === selectedVoice);
-    if (voice) {
-      utterance.voice = voice;
-      utterance.lang = voice.lang;
-    } else {
-      utterance.lang = "es-ES";
-    }
-
-    // Aplicar configuraciones
-    utterance.rate = rate;
-    utterance.pitch = pitch;
-
-    // Evento al terminar este fragmento: leer el siguiente
-    utterance.onend = () => {
-      currentChunkIndexRef.current = chunkIndex + 1;
-      
-      // Si hay más fragmentos, continuar leyendo
-      if (currentChunkIndexRef.current < chunks.length) {
-        // Pequeña pausa entre fragmentos para evitar problemas
-        setTimeout(() => {
-          speakChunk(currentChunkIndexRef.current);
-        }, 100);
-      } else {
+      if (chunkIndex >= chunks.length) {
         // Terminar lectura
         setIsReading(false);
         setIsPaused(false);
         currentChunkIndexRef.current = 0;
         showNotification("Lectura finalizada");
+        return;
       }
-    };
 
-    utterance.onerror = (event) => {
-      console.error("Error en lectura del fragmento:", event);
-      setIsReading(false);
-      setIsPaused(false);
-      currentChunkIndexRef.current = 0;
-      showNotification("Error en la lectura");
-    };
+      const chunk = chunks[chunkIndex];
+      const utterance = new SpeechSynthesisUtterance(chunk);
 
-    utteranceRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
-  }, [voices, selectedVoice, rate, pitch]);
+      // Configurar voz seleccionada
+      const voice = voices.find((v) => v.voiceURI === selectedVoice);
+      if (voice) {
+        utterance.voice = voice;
+        utterance.lang = voice.lang;
+      } else {
+        utterance.lang = "es-ES";
+      }
+
+      // Aplicar configuraciones
+      utterance.rate = rate;
+      utterance.pitch = pitch;
+
+      // Evento al terminar este fragmento: leer el siguiente
+      utterance.onend = () => {
+        currentChunkIndexRef.current = chunkIndex + 1;
+
+        // Si hay más fragmentos, continuar leyendo
+        if (currentChunkIndexRef.current < chunks.length) {
+          // Pequeña pausa entre fragmentos para evitar problemas
+          setTimeout(() => {
+            speakChunk(currentChunkIndexRef.current);
+          }, 100);
+        } else {
+          // Terminar lectura
+          setIsReading(false);
+          setIsPaused(false);
+          currentChunkIndexRef.current = 0;
+          showNotification("Lectura finalizada");
+        }
+      };
+
+      utterance.onerror = (event) => {
+        console.error("Error en lectura del fragmento:", event);
+        setIsReading(false);
+        setIsPaused(false);
+        currentChunkIndexRef.current = 0;
+        showNotification("Error en la lectura");
+      };
+
+      utteranceRef.current = utterance;
+      window.speechSynthesis.speak(utterance);
+    },
+    [voices, selectedVoice, rate, pitch]
+  );
 
   /**
    * Iniciar lectura del contenido
@@ -368,11 +429,11 @@ const WebContentReader: React.FC = () => {
     window.speechSynthesis.cancel();
     setIsReading(false);
     setIsPaused(false);
-    
+
     // Limpiar referencias de fragmentos
     textChunksRef.current = [];
     currentChunkIndexRef.current = 0;
-    
+
     showNotification("Lectura detenida");
   };
 
@@ -389,12 +450,12 @@ const WebContentReader: React.FC = () => {
       // Reiniciar desde el fragmento actual con nueva velocidad
       const currentIndex = currentChunkIndexRef.current;
       stopReading();
-      
+
       setTimeout(() => {
         // Restaurar índice y continuar
         currentChunkIndexRef.current = currentIndex;
         const chunks = textChunksRef.current;
-        
+
         if (chunks.length > 0) {
           textChunksRef.current = chunks;
           setIsReading(true);
@@ -456,20 +517,26 @@ const WebContentReader: React.FC = () => {
         Botón flotante principal con posicionamiento dinámico
         WCAG 2.4.7 - Focus Visible
         WCAG 4.1.2 - Name, Role, Value
+        Drag & Drop enabled
       */}
       <button
-        className={`web-content-reader__fab web-content-reader__fab--${position}`}
+        ref={fabRef}
+        className={`web-content-reader__fab web-content-reader__fab--${position} ${isDragging ? 'web-content-reader__fab--dragging' : ''}`}
         onClick={togglePanel}
         onContextMenu={(e) => {
           e.preventDefault();
           cyclePosition();
         }}
+        onMouseDown={handleDragStart}
+        onMouseUp={handleDragEnd}
+        onTouchStart={handleDragStart}
+        onTouchEnd={handleDragEnd}
         aria-label={
           isOpen ? "Cerrar panel de lectura" : "Abrir panel de lectura"
         }
         aria-expanded={isOpen}
         aria-controls="reader-panel"
-        title="Lector de contenido web (Click derecho para mover)"
+        title="Lector de contenido web (Arrastra para mover, Click derecho para cambiar posición)"
         type="button"
       >
         <svg

@@ -27,8 +27,7 @@
     border-radius: 50%;
     background: #1e40af;
     border: none;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
-      0 8px 24px rgba(30, 64, 175, 0.5);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(30, 64, 175, 0.5);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -73,6 +72,14 @@
 
     &:active {
       transform: scale(0.95);
+    }
+
+    // Dragging state
+    &--dragging {
+      cursor: grabbing !important;
+      transform: scale(1.05);
+      opacity: 0.8;
+      transition: none;
     }
 
     // Estado deshabilitado
@@ -194,7 +201,6 @@
     justify-content: center;
     color: white;
     transition: all 0.2s ease;
-    
 
     svg {
       width: 20px;
