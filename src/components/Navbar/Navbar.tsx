@@ -192,6 +192,23 @@ const Navbar: React.FC<NavbarProps> = ({
                     </div>
                   )}
                 </div>
+                {/* Mobile: Show profile and logout buttons directly in hamburger menu */}
+                <div className="mobile-menu-items mobile-only">
+                  <button
+                    className="btn-outline"
+                    onClick={handleProfileClick}
+                    aria-label="Ir a mi perfil"
+                  >
+                    MI PERFIL
+                  </button>
+                  <button
+                    className="btn-primary"
+                    onClick={handleLogout}
+                    aria-label="Cerrar sesión"
+                  >
+                    CERRAR SESIÓN
+                  </button>
+                </div>
               </>
             ) : (
               <>

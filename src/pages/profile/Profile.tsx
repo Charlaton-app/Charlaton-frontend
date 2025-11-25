@@ -111,6 +111,17 @@ const Profile: React.FC = () => {
       return;
     }
 
+    if (!personalInfo.edad || !personalInfo.edad.trim()) {
+      setError("La edad es requerida");
+      return;
+    }
+
+    const edadNum = parseInt(personalInfo.edad, 10);
+    if (isNaN(edadNum) || edadNum < 1 || edadNum > 120) {
+      setError("Por favor, ingresa una edad válida (entre 1 y 120)");
+      return;
+    }
+
     const result = await updateUserProfile({
       displayName: personalInfo.fullName.trim(),
       nickname: personalInfo.fullName.trim(),

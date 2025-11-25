@@ -211,6 +211,33 @@ $font-body: "Rubik", sans-serif;
         position: relative;
       }
 
+      // Desktop only - hide on mobile
+      .desktop-only {
+        @media (max-width: 768px) {
+          display: none;
+        }
+      }
+
+      // Mobile only - hide on desktop
+      .mobile-only {
+        display: none;
+        
+        @media (max-width: 768px) {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          width: 100%;
+        }
+      }
+
+      // Mobile menu items container
+      .mobile-menu-items {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        width: 100%;
+      }
+
       // Botón del icono de usuario
       .user-icon-btn {
         background: transparent;

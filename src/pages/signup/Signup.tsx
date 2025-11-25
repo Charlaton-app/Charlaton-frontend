@@ -69,6 +69,12 @@ const Signup: React.FC = () => {
       return;
     }
 
+    const edadNum = parseInt(formData.edad, 10);
+    if (isNaN(edadNum) || edadNum < 1 || edadNum > 120) {
+      setError("Por favor, ingresa una edad válida (entre 1 y 120)");
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       toast.error("Las contraseñas no coinciden");
       return;

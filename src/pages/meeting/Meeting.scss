@@ -305,6 +305,7 @@ $font-body: "Rubik", sans-serif;
 
         @media (max-width: 640px) {
           grid-template-columns: 1fr;
+          
           .video-tile {
             aspect-ratio: 16 / 11;
           }
@@ -541,7 +542,8 @@ $font-body: "Rubik", sans-serif;
                   margin-top: 0.25rem;
                 }
               }
-
+            }
+            
               .participant-media-status {
                 display: flex;
                 gap: 0.5rem;
