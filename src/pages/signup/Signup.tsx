@@ -1,23 +1,15 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../stores/useAuthStore";
-import {
-  createUserWithEmailAndPassword,
-  signInWithPopup,
-  updateProfile,
-} from "firebase/auth";
-import {
-  auth,
-  googleProvider,
-  facebookProvider,
-} from "../../lib/firebase.config";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
+import WebContentReader from '../../components/web-reader/WebContentReader';
 import "./Signup.scss";
 
 const Signup: React.FC = () => {
   const navigate = useNavigate();
-  const { setUser } = useAuthStore();
+  const { signup, loginWithGoogle, loginWithFacebook, isLoading } =
+    useAuthStore();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -25,7 +17,6 @@ const Signup: React.FC = () => {
     confirmPassword: "",
   });
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -36,7 +27,6 @@ const Signup: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
 
     if (
@@ -46,102 +36,58 @@ const Signup: React.FC = () => {
       !formData.confirmPassword
     ) {
       setError("Por favor, completa todos los campos");
-      setLoading(false);
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
       setError("Las contraseñas no coinciden");
-      setLoading(false);
       return;
     }
 
     if (formData.password.length < 6) {
       setError("La contraseña debe tener al menos 6 caracteres");
-      setLoading(false);
       return;
     }
 
-    try {
-      const result = await createUserWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
+    const result = await signup({
+      email: formData.email,
+      nickname: formData.name,
+      password: formData.password,
+      confirmPassword: formData.confirmPassword,
+    });
 
-      await updateProfile(result.user, {
-        displayName: formData.name,
-      });
-
-      const user = {
-        displayName: formData.name,
-        email: result.user.email,
-        photoURL: result.user.photoURL,
-      };
-      setUser(user);
+    if (result.success) {
       navigate("/signup-success");
-    } catch (error: any) {
-      console.error("Error al registrar:", error);
-      if (error.code === "auth/email-already-in-use") {
-        setError("Este correo ya está registrado");
-      } else if (error.code === "auth/invalid-email") {
-        setError("Correo electrónico inválido");
-      } else if (error.code === "auth/weak-password") {
-        setError("La contraseña es muy débil");
-      } else {
-        setError("Error al crear la cuenta. Por favor, intenta nuevamente.");
-      }
-    } finally {
-      setLoading(false);
+    } else {
+      setError(result.error || "Error al registrarse");
     }
   };
 
   const handleGoogleSignup = async () => {
-    setLoading(true);
     setError("");
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = {
-        displayName: result.user.displayName,
-        email: result.user.email,
-        photoURL: result.user.photoURL,
-      };
-      setUser(user);
+
+    const result = await loginWithGoogle();
+    if (result.success) {
       navigate("/signup-success");
-    } catch (error: any) {
-      console.error("Error con Google:", error);
-      setError(
-        "Error al registrarse con Google. Por favor, intenta nuevamente."
-      );
-    } finally {
-      setLoading(false);
+    } else {
+      setError(result.error || "Error al registrarse con Google");
     }
   };
 
   const handleFacebookSignup = async () => {
-    setLoading(true);
     setError("");
-    try {
-      const result = await signInWithPopup(auth, facebookProvider);
-      const user = {
-        displayName: result.user.displayName,
-        email: result.user.email,
-        photoURL: result.user.photoURL,
-      };
-      setUser(user);
+
+    const result = await loginWithFacebook();
+    if (result.success) {
       navigate("/signup-success");
-    } catch (error: any) {
-      console.error("Error con Facebook:", error);
-      setError(
-        "Error al registrarse con Facebook. Por favor, intenta nuevamente."
-      );
-    } finally {
-      setLoading(false);
+    } else {
+      setError(result.error || "Error al registrarse con Facebook");
     }
   };
 
   return (
     <div className="signup-page">
+      <WebContentReader />
       <a href="#main-content" className="skip-to-main">
         Saltar al contenido principal
       </a>
@@ -162,7 +108,7 @@ const Signup: React.FC = () => {
           <p className="subtitle">Únete a Charlaton y comienza a colaborar</p>
 
           {error && (
-            <div className="error-message" role="alert" aria-live="polite">
+            <div id="signup-error" className="error-message" role="alert" aria-live="polite">
               {error}
             </div>
           )}
@@ -177,8 +123,10 @@ const Signup: React.FC = () => {
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="Juan Pérez"
-                disabled={loading}
+                disabled={isLoading}
                 aria-required="true"
+                aria-invalid={error && !formData.name ? "true" : "false"}
+                aria-describedby={error ? "signup-error" : undefined}
               />
             </div>
 
@@ -191,8 +139,10 @@ const Signup: React.FC = () => {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="tu@ejemplo.com"
-                disabled={loading}
+                disabled={isLoading}
                 aria-required="true"
+                aria-invalid={error && !formData.email ? "true" : "false"}
+                aria-describedby={error ? "signup-error" : undefined}
               />
             </div>
 
@@ -205,9 +155,12 @@ const Signup: React.FC = () => {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="Mínimo 6 caracteres"
-                disabled={loading}
+                disabled={isLoading}
                 aria-required="true"
+                aria-invalid={error && formData.password.length < 6 && formData.password.length > 0 ? "true" : "false"}
+                aria-describedby={error ? "signup-error password-help" : "password-help"}
               />
+              <span id="password-help" className="visually-hidden">La contraseña debe tener al menos 6 caracteres</span>
             </div>
 
             <div className="form-group">
@@ -219,18 +172,20 @@ const Signup: React.FC = () => {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 placeholder="Repite tu contraseña"
-                disabled={loading}
+                disabled={isLoading}
                 aria-required="true"
+                aria-invalid={error && formData.password !== formData.confirmPassword && formData.confirmPassword.length > 0 ? "true" : "false"}
+                aria-describedby={error ? "signup-error" : undefined}
               />
             </div>
 
             <button
               type="submit"
               className="submit-btn"
-              disabled={loading}
+              disabled={isLoading}
               aria-label="Crear cuenta"
             >
-              {loading ? "Creando cuenta..." : "CREAR CUENTA"}
+              {isLoading ? "Creando cuenta..." : "CREAR CUENTA"}
             </button>
           </form>
 
@@ -242,7 +197,7 @@ const Signup: React.FC = () => {
             <button
               onClick={handleGoogleSignup}
               className="social-btn google-btn"
-              disabled={loading}
+              disabled={isLoading}
               aria-label="Registrarse con Google"
             >
               <img src="/icons/google-icon.svg" alt="" aria-hidden="true" />
@@ -252,7 +207,7 @@ const Signup: React.FC = () => {
             <button
               onClick={handleFacebookSignup}
               className="social-btn facebook-btn"
-              disabled={loading}
+              disabled={isLoading}
               aria-label="Registrarse con Facebook"
             >
               <img src="/icons/facebook-icon.svg" alt="" aria-hidden="true" />

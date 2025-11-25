@@ -2,102 +2,65 @@ import type React from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../stores/useAuthStore";
-import { signInWithPopup, signInWithEmailAndPassword } from "firebase/auth";
-import {
-  auth,
-  googleProvider,
-  facebookProvider,
-} from "../../lib/firebase.config";
+import googleIcon from "/icons/google-icon.svg";
+import facebookIcon from "/icons/facebook-icon.svg";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
+import WebContentReader from '../../components/web-reader/WebContentReader';
 import "./Login.scss";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { setUser } = useAuthStore();
+  const { login, loginWithGoogle, loginWithFacebook, isLoading } =
+    useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const handleLoginGoogle = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = {
-        displayName: result.user.displayName,
-        email: result.user.email,
-        photoURL: result.user.photoURL,
-      };
-      setUser(user);
+
+    const result = await loginWithGoogle();
+    if (result.success) {
       navigate("/dashboard");
-    } catch (error: any) {
-      console.error("Error al iniciar sesión con Google:", error);
-      setError(
-        "Error al iniciar sesión con Google. Por favor, intenta nuevamente."
-      );
-    } finally {
-      setLoading(false);
+    } else {
+      setError(result.error || "Error al iniciar sesión con Google");
     }
   };
 
   const handleLoginFacebook = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
-    try {
-      const result = await signInWithPopup(auth, facebookProvider);
-      const user = {
-        displayName: result.user.displayName,
-        email: result.user.email,
-        photoURL: result.user.photoURL,
-      };
-      setUser(user);
+
+    const result = await loginWithFacebook();
+    if (result.success) {
       navigate("/dashboard");
-    } catch (error: any) {
-      console.error("Error al iniciar sesión con Facebook:", error);
-      setError(
-        "Error al iniciar sesión con Facebook. Por favor, intenta nuevamente."
-      );
-    } finally {
-      setLoading(false);
+    } else {
+      setError(result.error || "Error al iniciar sesión con Facebook");
     }
   };
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
 
     if (!email || !password) {
       setError("Por favor, completa todos los campos");
-      setLoading(false);
       return;
     }
 
-    try {
-      const result = await signInWithEmailAndPassword(auth, email, password);
-      const user = {
-        displayName: result.user.displayName,
-        email: result.user.email,
-        photoURL: result.user.photoURL,
-      };
-      setUser(user);
+    const result = await login(email, password);
+    if (result.success) {
       navigate("/dashboard");
-    } catch (error: any) {
-      console.error("Error al iniciar sesión:", error);
-      setError(
-        "Credenciales incorrectas. Por favor, verifica tu correo y contraseña."
-      );
-    } finally {
-      setLoading(false);
+    } else {
+      setError(result.error || "Error al iniciar sesión");
     }
   };
 
   return (
     <div className="login-page">
+      <WebContentReader />
       <a href="#main-content" className="skip-to-main">
         Saltar al contenido principal
       </a>
@@ -123,7 +86,7 @@ const Login: React.FC = () => {
 
           {/* Error Message */}
           {error && (
-            <div className="error-message" role="alert" aria-live="polite">
+            <div id="login-error" className="error-message" role="alert" aria-live="polite">
               {error}
             </div>
           )}
@@ -138,8 +101,10 @@ const Login: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="tu@ejemplo.com"
-                disabled={loading}
+                disabled={isLoading}
                 aria-required="true"
+                aria-invalid={error ? "true" : "false"}
+                aria-describedby={error ? "login-error" : undefined}
               />
             </div>
 
@@ -151,18 +116,20 @@ const Login: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                disabled={loading}
+                disabled={isLoading}
                 aria-required="true"
+                aria-invalid={error ? "true" : "false"}
+                aria-describedby={error ? "login-error" : undefined}
               />
             </div>
 
             <button
               type="submit"
               className="submit-btn"
-              disabled={loading}
+              disabled={isLoading}
               aria-label="Iniciar sesión con correo electrónico"
             >
-              {loading ? "Ingresando..." : "INICIAR SESIÓN"}
+              {isLoading ? "Ingresando..." : "INICIAR SESIÓN"}
             </button>
           </form>
 
@@ -176,20 +143,20 @@ const Login: React.FC = () => {
             <button
               onClick={handleLoginGoogle}
               className="social-btn google-btn"
-              disabled={loading}
+              disabled={isLoading}
               aria-label="Iniciar sesión con Google"
             >
-              <img src="/icons/google-icon.svg" alt="" aria-hidden="true" />
+              <img src={googleIcon} alt="" aria-hidden="true" />
               Google
             </button>
 
             <button
               onClick={handleLoginFacebook}
               className="social-btn facebook-btn"
-              disabled={loading}
+              disabled={isLoading}
               aria-label="Iniciar sesión con Facebook"
             >
-              <img src="/icons/facebook-icon.svg" alt="" aria-hidden="true" />
+              <img src={facebookIcon} alt="" aria-hidden="true" />
               Facebook
             </button>
           </div>

@@ -1,47 +1,37 @@
 import React, { useState } from "react";
-import { sendPasswordResetEmail } from "firebase/auth";
-import { auth } from "../../lib/firebase.config";
+import useAuthStore from "../../stores/useAuthStore";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
+import WebContentReader from '../../components/web-reader/WebContentReader';
 import "./Recovery.scss";
 
 const Recovery: React.FC = () => {
+  const { recoverPassword, isLoading } = useAuthStore();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
     setSuccess(false);
 
     if (!email) {
       setError("Por favor, ingresa tu correo electrónico");
-      setLoading(false);
       return;
     }
 
-    try {
-      await sendPasswordResetEmail(auth, email);
+    const result = await recoverPassword(email);
+    if (result.success) {
       setSuccess(true);
-    } catch (error: any) {
-      console.error("Error al enviar correo:", error);
-      if (error.code === "auth/user-not-found") {
-        setError("No existe una cuenta con este correo electrónico");
-      } else if (error.code === "auth/invalid-email") {
-        setError("Correo electrónico inválido");
-      } else {
-        setError("Error al enviar el correo. Por favor, intenta nuevamente.");
-      }
-    } finally {
-      setLoading(false);
+    } else {
+      setError(result.error || "Error al enviar el correo");
     }
   };
 
   return (
     <div className="recovery-page">
+      <WebContentReader />
       <a href="#main-content" className="skip-to-main">
         Saltar al contenido principal
       </a>
@@ -65,13 +55,13 @@ const Recovery: React.FC = () => {
           </p>
 
           {error && (
-            <div className="error-message" role="alert" aria-live="polite">
+            <div id="recovery-error" className="error-message" role="alert" aria-live="assertive">
               {error}
             </div>
           )}
 
           {success && (
-            <div className="success-message" role="alert" aria-live="polite">
+            <div className="success-message" role="status" aria-live="polite" aria-atomic="true">
               <div className="success-icon">
                 <svg fill="currentColor" viewBox="0 0 24 24">
                   <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
@@ -104,8 +94,10 @@ const Recovery: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@ejemplo.com"
-                  disabled={loading}
+                  disabled={isLoading}
                   aria-required="true"
+                  aria-invalid={error ? "true" : "false"}
+                  aria-describedby={error ? "recovery-error" : undefined}
                   autoFocus
                 />
               </div>
@@ -113,13 +105,13 @@ const Recovery: React.FC = () => {
               <button
                 type="submit"
                 className="submit-btn"
-                disabled={loading}
+                disabled={isLoading}
                 aria-label="Enviar enlace de recuperación"
               >
-                {loading ? "Enviando..." : "ENVIAR ENLACE DE RECUPERACIÓN"}
+                {isLoading ? "Enviando..." : "ENVIAR ENLACE DE RECUPERACIÓN"}
               </button>
 
-              <a href="/login" className="back-link">
+              <a href="/login" className="back-link" aria-label="Regresar a la página de inicio de sesión">
                 ← Volver al inicio de sesión
               </a>
             </form>

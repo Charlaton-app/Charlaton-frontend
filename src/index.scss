@@ -2,10 +2,21 @@
 $primary-color: #0d5e9e; // Blue from design
 $secondary-color: #24c4e8; // Light blue
 $accent-color: #f7941d; // Orange accent
+
+// Background Colors
+$primary-background: #f0f8ff;
+$secondary-background: #ffffff;
 $bg-light: #f0f8ff;
 $bg-white: #ffffff;
+
+// Text Colors
+$text-primary: #1a1a1a;
+$text-secondary: #5a5a5a;
+$text-tertiary: #9ca3af;
 $text-dark: #1a1a1a;
 $text-gray: #5a5a5a;
+
+// Border Colors
 $border-color: #e5e5e5;
 
 // Typography
@@ -94,7 +105,7 @@ button {
   font-weight: 500;
   border-radius: 8px;
   border: none;
-  padding: 0.75rem 1.5rem;
+  padding: 0.4rem 0.4rem;
   font-size: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;

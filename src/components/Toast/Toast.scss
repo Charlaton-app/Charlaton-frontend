@@ -1,0 +1,126 @@
+@use "sass:color";
+@import "../../index.scss";
+
+// Toast color variables
+$error-color: #ef4444;
+$warning-color: #f59e0b;
+$success-color: $secondary-color;
+
+.toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: white;
+  border-left: 4px solid;
+  max-width: 400px;
+  min-width: 280px;
+  animation: slideIn 0.3s ease-out;
+  z-index: 9999;
+  font-family: $font-body;
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  &__icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  &__message {
+    flex: 1;
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    color: $text-primary;
+  }
+
+  &__close {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    color: $text-secondary;
+    font-size: 1.25rem;
+    line-height: 1;
+    transition: color 0.2s ease;
+    border-radius: 4px;
+
+    &:hover {
+      color: $text-primary;
+      background: color.adjust($primary-background, $lightness: 3%);
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary-color;
+      outline-offset: 2px;
+    }
+  }
+
+  // Toast types
+  &--success {
+    border-left-color: $success-color;
+
+    .toast__icon {
+      background: color.adjust($success-color, $lightness: 45%);
+      color: $success-color;
+    }
+  }
+
+  &--error {
+    border-left-color: $error-color;
+
+    .toast__icon {
+      background: color.adjust($error-color, $lightness: 35%);
+      color: color.adjust($error-color, $lightness: -10%);
+    }
+  }
+
+  &--warning {
+    border-left-color: $warning-color;
+
+    .toast__icon {
+      background: color.adjust($warning-color, $lightness: 30%);
+      color: color.adjust($warning-color, $lightness: -15%);
+    }
+  }
+
+  &--info {
+    border-left-color: $primary-color;
+
+    .toast__icon {
+      background: color.adjust($primary-color, $lightness: 45%);
+      color: $primary-color;
+    }
+  }
+
+  // Responsive
+  @media (max-width: 768px) {
+    right: 1rem;
+    left: 1rem;
+    bottom: 1rem;
+    max-width: none;
+    min-width: 0;
+  }
+}
