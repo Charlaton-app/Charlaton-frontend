@@ -84,8 +84,6 @@ const Meeting: React.FC = () => {
           return;
         }
 
-        setConnectionId(joinResponse.data?.id);
-
         // Load participants
         const participantsResponse = await getRoomParticipants(meetingId);
         if (!participantsResponse.error && participantsResponse.data) {
