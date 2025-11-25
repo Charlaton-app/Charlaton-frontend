@@ -19,7 +19,8 @@ import {
   sendMessage,
   type Message,
 } from "../../services/message.service";
-import { socket } from "../../lib/socket.config";
+import { socket, connectToChat, disconnectFromChat } from "../../lib/socket.config";
+import { getAccessToken } from "../../lib/getAccessToken";
 import "./Meeting.scss";
 
 const Meeting: React.FC = () => {
@@ -108,51 +109,95 @@ const Meeting: React.FC = () => {
   }, [meetingId, user?.id]);
 
   /**
-   * Setup Socket.io listeners
+   * Setup Socket.io listeners and connect to chat server
    */
   useEffect(() => {
     if (!meetingId || !user?.id) return;
 
-    console.log("[MEETING] Setting up Socket.io listeners");
-    socket.connect();
+    const setupChatConnection = async () => {
+      console.log("[MEETING] Setting up Socket.io connection");
 
-    // Join room in socket
-    socket.emit("joinRoom", { roomId: meetingId, userId: user.id });
+      // Get access token for authentication
+      const token = await getAccessToken();
+      if (!token) {
+        console.error("[MEETING] No access token available, cannot connect to chat");
+        setError("Error de autenticación. Por favor, recarga la página.");
+        return;
+      }
 
-    // Listen for new participants
-    socket.on("userJoined", (data: any) => {
-      console.log("[MEETING] User joined:", data);
-      setParticipants((prev) => [...prev, data.participant]);
+      // Connect to chat server with JWT authentication
+      connectToChat(token);
+
+      // Wait for connection before joining room
+      socket.once("connect", () => {
+        console.log("[MEETING] ✅ Connected to chat server");
+        // Join room in socket (using join_room event from chat server)
+        console.log(`[MEETING] Joining room: ${meetingId}`);
+        socket.emit("join_room", meetingId);
+      });
+
+      socket.on("connect_error", (error) => {
+        console.error("[MEETING] ❌ Connection error:", error.message);
+        setError("Error al conectar con el servidor de chat");
+      });
+    };
+
+    setupChatConnection();
+
+    // Listen for successful room join
+    socket.on("join_room_success", (response: any) => {
+      console.log("[MEETING] ✅ Successfully joined room:", response);
     });
 
-    // Listen for participants leaving
-    socket.on("userLeft", (data: any) => {
-      console.log("[MEETING] User left:", data);
-      setParticipants((prev) => prev.filter((p) => p.userId !== data.userId));
+    socket.on("join_room_error", (response: any) => {
+      console.error("[MEETING] ❌ Failed to join room:", response);
+      setError(response.message || "No se pudo unir a la sala");
+    });
+
+    // Listen for online users in room
+    socket.on("usersOnline", (users: any[]) => {
+      console.log("[MEETING] 👥 Users online:", users);
+      // Update participants based on online users
+      // Note: This updates the participant count, not full participant data
     });
 
     // Listen for new messages
-    socket.on("newMessage", (message: Message) => {
-      console.log("[MEETING] New message received:", message);
+    socket.on("newMessage", (socketMessage: any) => {
+      console.log("[MEETING] New message received:", socketMessage);
+      
+      // Convert socket message format to our Message format
+      const message: Message = {
+        id: socketMessage.id || `temp-${Date.now()}`,
+        userId: socketMessage.senderId || socketMessage.userId || "",
+        roomId: socketMessage.roomId || meetingId || "",
+        content: socketMessage.text || socketMessage.content || "",
+        visibility: "public",
+        createdAt: socketMessage.createAt || socketMessage.createdAt || new Date().toISOString(),
+        createAt: socketMessage.createAt,
+        user: socketMessage.user,
+      };
+      
       setMessages((prev) => [...prev, message]);
       scrollToBottom();
     });
 
-    // Listen for meeting end
-    socket.on("meetingEnded", () => {
-      console.log("[MEETING] Meeting ended by host");
-      alert("La reunión ha sido finalizada por el anfitrión");
-      navigate("/dashboard");
-    });
-
     return () => {
       console.log("[MEETING] Cleaning up Socket.io listeners");
-      socket.off("userJoined");
-      socket.off("userLeft");
+      socket.off("connect");
+      socket.off("connect_error");
+      socket.off("join_room_success");
+      socket.off("join_room_error");
+      socket.off("usersOnline");
       socket.off("newMessage");
-      socket.off("meetingEnded");
+      
+      // Leave room and disconnect
+      if (socket.connected) {
+        console.log("[MEETING] Leaving room and disconnecting");
+        socket.emit("leaveRoom", { roomId: meetingId, userId: user.id });
+        disconnectFromChat();
+      }
     };
-  }, [meetingId, user?.id, navigate, scrollToBottom]);
+  }, [meetingId, user?.id, navigate]);
 
   /**
    * Auto-scroll when new messages arrive
@@ -171,26 +216,21 @@ const Meeting: React.FC = () => {
     if (!content || !meetingId || !user?.id) return;
 
     try {
-      const response = await sendMessage({
-        userId: user.id,
-        roomId: meetingId,
-        content,
-        visibility: "public",
-      });
-
-      if (response.error) {
-        console.error("[MEETING] Error sending message:", response.error);
-        return;
+      // Send message via Socket.IO to chat server
+      if (socket.connected) {
+        console.log("[MEETING] 📤 Sending message via socket");
+        socket.emit("sendMessage", {
+          senderId: user.id,
+          roomId: meetingId,
+          text: content,
+        });
+        
+        setMessageInput("");
+        chatInputRef.current?.focus();
+      } else {
+        console.error("[MEETING] ❌ Socket not connected, cannot send message");
+        setError("No estás conectado al chat. Recarga la página.");
       }
-
-      // Emit to socket for real-time update
-      socket.emit("sendMessage", {
-        roomId: meetingId,
-        message: response.data,
-      });
-
-      setMessageInput("");
-      chatInputRef.current?.focus();
     } catch (err) {
       console.error("[MEETING] Error sending message:", err);
     }
@@ -551,9 +591,9 @@ const Meeting: React.FC = () => {
               <div className="sidebar-section chat-section">
                 <h2 className="sidebar-title">Chat</h2>
                 <div className="chat-messages">
-                  {messages.map((message) => (
+                  {messages.map((message, index) => (
                     <div
-                      key={message.id}
+                      key={message.id || `msg-${index}-${message.createAt || Date.now()}`}
                       className={`chat-message ${
                         message.userId === user?.id ? "own-message" : ""
                       }`}
