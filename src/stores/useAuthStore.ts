@@ -39,7 +39,7 @@ type AuthStore = {
     confirmPassword: string;
   }) => Promise<{ success: boolean; error?: string }>;
   loginWithGoogle: () => Promise<{ success: boolean; error?: string }>;
-  loginWithFacebook: () => Promise<{ success: boolean; error?: string }>;
+  loginWithGithub: () => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   recoverPassword: (
     email: string
@@ -58,7 +58,7 @@ type AuthStore = {
 const normalizeProvider = (providerId?: string | null) => {
   if (!providerId) return "password";
   if (providerId.includes("google")) return "google";
-  if (providerId.includes("facebook")) return "facebook";
+  if (providerId.includes("github")) return "github";
   if (providerId.includes("password")) return "password";
   return providerId;
 };
@@ -295,10 +295,10 @@ const useAuthStore = create<AuthStore>()(
         }
       },
 
-      loginWithFacebook: async () => {
+      loginWithGithub: async () => {
         set({ isLoading: true, error: null });
         try {
-          const response = await authService.loginWithFacebook();
+          const response = await authService.loginWithGithub();
 
           if (response.error) {
             set({ error: response.error, isLoading: false });
@@ -315,7 +315,7 @@ const useAuthStore = create<AuthStore>()(
               edad: response.data.user?.edad,
               role: response.data.user?.role,
               createdAt: response.data.user?.createdAt || null,
-              authProvider: "facebook",
+              authProvider: "github",
             };
             set({ 
               user, 

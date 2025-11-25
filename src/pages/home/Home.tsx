@@ -14,7 +14,7 @@ const Home: React.FC = () => {
   const faqs = [
     {
       question: '¿Cómo me registro?',
-      answer: 'Crear una cuenta en Charlaton es muy sencillo. Haz clic en el botón "REGISTRARSE" en la parte superior, completa el formulario con tus datos o inicia sesión con Google o Facebook. Recibirás un correo de confirmación y podrás comenzar a usar la plataforma de inmediato.'
+      answer: 'Crear una cuenta en Charlaton es muy sencillo. Haz clic en el botón "REGISTRARSE" en la parte superior, completa el formulario con tus datos o inicia sesión con Google o GitHub. Recibirás un correo de confirmación y podrás comenzar a usar la plataforma de inmediato.'
     },
     {
       question: '¿Dónde y cómo puedo unirme?',

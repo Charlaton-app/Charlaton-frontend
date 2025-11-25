@@ -8,7 +8,7 @@ import "./Signup.scss";
 
 const Signup: React.FC = () => {
   const navigate = useNavigate();
-  const { signup, loginWithGoogle, loginWithFacebook, isLoading } =
+  const { signup, loginWithGoogle, loginWithGithub, isLoading } =
     useAuthStore();
   const [formData, setFormData] = useState({
     name: "",
@@ -83,14 +83,14 @@ const Signup: React.FC = () => {
     }
   };
 
-  const handleFacebookSignup = async () => {
+  const handleGithubSignup = async () => {
     setError("");
 
-    const result = await loginWithFacebook();
+    const result = await loginWithGithub();
     if (result.success) {
       navigate("/signup-success");
     } else {
-      setError(result.error || "Error al registrarse con Facebook");
+      setError(result.error || "Error al registrarse con GitHub");
     }
   };
 
@@ -233,13 +233,13 @@ const Signup: React.FC = () => {
             </button>
 
             <button
-              onClick={handleFacebookSignup}
-              className="social-btn facebook-btn"
+              onClick={handleGithubSignup}
+              className="social-btn github-btn"
               disabled={isLoading}
-              aria-label="Registrarse con Facebook"
+              aria-label="Registrarse con GitHub"
             >
-              <img src="/icons/facebook-icon.svg" alt="" aria-hidden="true" />
-              Facebook
+              <img src="/icons/github-icon.svg" alt="" aria-hidden="true" />
+              GitHub
             </button>
           </div>
 

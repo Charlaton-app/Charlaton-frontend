@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../stores/useAuthStore";
 import googleIcon from "/icons/google-icon.svg";
-import facebookIcon from "/icons/facebook-icon.svg";
+import githubIcon from "/icons/github-icon.svg";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
 import WebContentReader from '../../components/web-reader/WebContentReader';
@@ -11,7 +11,7 @@ import "./Login.scss";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { login, loginWithGoogle, loginWithFacebook, isLoading } =
+  const { login, loginWithGoogle, loginWithGithub, isLoading } =
     useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,15 +29,15 @@ const Login: React.FC = () => {
     }
   };
 
-  const handleLoginFacebook = async (e: React.FormEvent) => {
+  const handleLoginGithub = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    const result = await loginWithFacebook();
+    const result = await loginWithGithub();
     if (result.success) {
       navigate("/dashboard");
     } else {
-      setError(result.error || "Error al iniciar sesión con Facebook");
+      setError(result.error || "Error al iniciar sesión con GitHub");
     }
   };
 
@@ -151,13 +151,13 @@ const Login: React.FC = () => {
             </button>
 
             <button
-              onClick={handleLoginFacebook}
-              className="social-btn facebook-btn"
+              onClick={handleLoginGithub}
+              className="social-btn github-btn"
               disabled={isLoading}
-              aria-label="Iniciar sesión con Facebook"
+              aria-label="Iniciar sesión con GitHub"
             >
-              <img src={facebookIcon} alt="" aria-hidden="true" />
-              Facebook
+              <img src={githubIcon} alt="" aria-hidden="true" />
+              GitHub
             </button>
           </div>
 
