@@ -106,8 +106,8 @@ const Navbar: React.FC<NavbarProps> = ({
           <div id="mobile-menu" className={`auth-section ${isMenuOpen ? "mobile-open" : ""}`} aria-label="Sección de autenticación">
             {user ? (
               <>
-                {/* Desktop: Show user icon with dropdown */}
-                <div className="user-menu-container desktop-only" ref={userMenuRef}>
+                {/* User icon with dropdown */}
+                <div className="user-menu-container" ref={userMenuRef}>
                   <button
                     className="user-icon-btn"
                     onClick={toggleUserMenu}
@@ -138,23 +138,6 @@ const Navbar: React.FC<NavbarProps> = ({
                       </button>
                     </div>
                   )}
-                </div>
-                {/* Mobile: Show profile and logout buttons directly in hamburger menu */}
-                <div className="mobile-menu-items mobile-only">
-                  <button
-                    className="btn-outline"
-                    onClick={handleProfileClick}
-                    aria-label="Ir a mi perfil"
-                  >
-                    MI PERFIL
-                  </button>
-                  <button
-                    className="btn-primary"
-                    onClick={handleLogout}
-                    aria-label="Cerrar sesión"
-                  >
-                    CERRAR SESIÓN
-                  </button>
                 </div>
               </>
             ) : (

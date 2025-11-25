@@ -384,6 +384,13 @@ export const loginWithFacebook = async () => {
       };
     }
 
+    // Manejar errores específicos de Facebook
+    if (error.message?.includes("dominio") || error.message?.includes("domain")) {
+      return {
+        error: "Error de configuración de Facebook: El dominio no está autorizado. Contacta al administrador.",
+      };
+    }
+
     return {
       error: error.message || "Error al iniciar sesión con Facebook",
     };
