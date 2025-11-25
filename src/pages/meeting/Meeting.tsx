@@ -118,18 +118,23 @@ const Meeting: React.FC = () => {
             "[MEETING] Participants loaded:",
             participantsResponse.data
           );
-          
+
           // Log detailed user data for debugging
-          participantsResponse.data.forEach((p: Participant) => {
-            console.log(`[MEETING] Participant ${p.userId}:`, {
-              userId: p.userId,
-              user: p.user,
-              displayName: p.user?.displayName,
-              nickname: p.user?.nickname,
-              email: p.user?.email
-            });
+          console.log("[MEETING] Total participants:", participantsResponse.data.length);
+          participantsResponse.data.forEach((p: Participant, index) => {
+            console.log(`[MEETING] Participant ${index + 1} (userId: ${p.userId}):`);
+            console.log("  - Full participant object:", p);
+            console.log("  - Has user object?", !!p.user);
+            if (p.user) {
+              console.log("  - user.id:", p.user.id);
+              console.log("  - user.email:", p.user.email);
+              console.log("  - user.nickname:", p.user.nickname);
+              console.log("  - user.displayName:", p.user.displayName);
+            } else {
+              console.error("  ❌ NO USER DATA - This is the problem!");
+            }
           });
-          
+
           setParticipants(participantsResponse.data);
 
           // Initialize mic/camera states for all participants
@@ -211,7 +216,9 @@ const Meeting: React.FC = () => {
     socket.on("userLeft", (data: any) => {
       console.log("[MEETING] User left:", data);
       const leftUserId = String(data.userId);
-      setParticipants((prev) => prev.filter((p) => String(p.userId) !== leftUserId));
+      setParticipants((prev) =>
+        prev.filter((p) => String(p.userId) !== leftUserId)
+      );
       notificationSounds.userLeft();
       toast.info("Un usuario salió de la reunión");
     });
@@ -247,10 +254,16 @@ const Meeting: React.FC = () => {
       "cameraStateChanged",
       (data: { userId: string; isOn: boolean }) => {
         const userId = String(data.userId);
-        console.log("[MEETING] Camera state changed:", { userId, isOn: data.isOn });
+        console.log("[MEETING] Camera state changed:", {
+          userId,
+          isOn: data.isOn,
+        });
         setCameraStates((prev) => {
           const updated = { ...prev, [userId]: data.isOn };
-          console.log("[MEETING] Updated cameraStates after socket event:", updated);
+          console.log(
+            "[MEETING] Updated cameraStates after socket event:",
+            updated
+          );
           return updated;
         });
       }
@@ -594,26 +607,33 @@ const Meeting: React.FC = () => {
               const participantUserId = String(participant.userId);
               const currentUserId = String(user?.id);
               const isCurrentUser = participantUserId === currentUserId;
+
+              // Determine display name with detailed logging
+              let displayName: string;
+              if (isCurrentUser) {
+                displayName = user?.nickname || user?.displayName || user?.email?.split('@')[0] || "Usuario";
+                console.log(`[MEETING] Current user name: "${displayName}" (from: ${user?.nickname ? 'nickname' : user?.displayName ? 'displayName' : user?.email ? 'email' : 'fallback'})`);
+              } else {
+                // Use participant.user data from backend
+                const pUser = participant.user;
+                displayName = pUser?.nickname || pUser?.displayName || pUser?.email?.split('@')[0] || "Usuario";
+                console.log(`[MEETING] Participant ${participantUserId} name: "${displayName}"`);
+                console.log(`  - participant.user:`, pUser);
+                console.log(`  - nickname: "${pUser?.nickname}", displayName: "${pUser?.displayName}", email: "${pUser?.email}"`);
+                
+                if (displayName === "Usuario") {
+                  console.error(`  ❌ PROBLEMA: No se encontró nombre para userId ${participantUserId}`);
+                  console.error(`  - participant.user existe?:`, !!pUser);
+                  console.error(`  - Objeto completo:`, participant);
+                }
+              }
               
-              const displayName = isCurrentUser
-                ? user?.displayName ||
-                  user?.nickname ||
-                  user?.email ||
-                  "Usuario"
-                : participant.user?.displayName ||
-                  participant.user?.nickname ||
-                  participant.user?.email ||
-                  "Usuario";
               const initial = displayName[0].toUpperCase();
-              
-              // Log for debugging
-              console.log(`[MEETING] Rendering video tile for ${participantUserId}:`, {
-                isCurrentUser,
-                displayName,
-                micState: micStates[participantUserId],
-                cameraState: cameraStates[participantUserId],
-                participantData: participant
-              });
+
+              // Log mic/camera states
+              console.log(
+                `[MEETING] Video tile ${participantUserId}: mic=${micStates[participantUserId]}, camera=${cameraStates[participantUserId]}`
+              );
 
               return (
                 <div key={participant.id} className="video-tile">
@@ -831,18 +851,15 @@ const Meeting: React.FC = () => {
                     const currentUserId = String(user?.id);
                     const isCurrentUser = participantUserId === currentUserId;
                     
-                    const displayName = isCurrentUser
-                      ? user?.displayName ||
-                        user?.nickname ||
-                        user?.email ||
-                        "Usuario"
-                      : participant.user?.displayName ||
-                        participant.user?.nickname ||
-                        participant.user?.email ||
-                        "Usuario";
-                    const initial = displayName[0].toUpperCase();
-
-                    return (
+                    // Use same logic as video tiles for consistency
+                    let displayName: string;
+                    if (isCurrentUser) {
+                      displayName = user?.nickname || user?.displayName || user?.email?.split('@')[0] || "Usuario";
+                    } else {
+                      const pUser = participant.user;
+                      displayName = pUser?.nickname || pUser?.displayName || pUser?.email?.split('@')[0] || "Usuario";
+                    }
+                    const initial = displayName[0].toUpperCase();                    return (
                       <div key={participant.id} className="participant-item">
                         <div className="participant-avatar-small">
                           {initial}
@@ -887,9 +904,7 @@ const Meeting: React.FC = () => {
                           </div>
                           <div
                             className={`status-icon ${
-                              cameraStates[participantUserId]
-                                ? "active"
-                                : "off"
+                              cameraStates[participantUserId] ? "active" : "off"
                             }`}
                             title="Cámara"
                           >
