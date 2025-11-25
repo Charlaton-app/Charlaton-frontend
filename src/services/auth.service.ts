@@ -378,6 +378,21 @@ export const loginWithGithub = async () => {
     }
 
     if (error.code === "auth/account-exists-with-different-credential") {
+      console.log("[AUTH-SERVICE] Account exists with different credential, attempting auto-login");
+      // Get Firebase current user if authenticated
+      const currentUser = auth.currentUser;
+      if (currentUser && currentUser.email) {
+        // Auto-login with existing credentials
+        return {
+          data: {
+            user: {
+              email: currentUser.email,
+              nickname: currentUser.displayName || currentUser.email.split("@")[0],
+            },
+            firebaseUser: currentUser,
+          },
+        };
+      }
       return {
         error:
           "Ya existe una cuenta con este correo usando otro método de inicio de sesión.",

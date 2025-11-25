@@ -93,7 +93,7 @@ const Navbar: React.FC<NavbarProps> = ({
           </span>
         </button>
 
-        {/* Navegación - solo visible cuando NO hay usuario autenticado */}
+        {/* Navegación desktop - solo visible cuando NO hay usuario */}
         {!user && (
           <nav className="nav-links" aria-label="Navegación principal">
             <a href="/">Inicio</a>
@@ -104,6 +104,13 @@ const Navbar: React.FC<NavbarProps> = ({
         {/* Sección de autenticación */}
         {showAuthButtons && (
           <div id="mobile-menu" className={`auth-section ${isMenuOpen ? "mobile-open" : ""}`} aria-label="Sección de autenticación">
+            {/* Navegación - visible en mobile menu cuando NO hay usuario */}
+            {!user && (
+              <nav className="nav-links-mobile" aria-label="Navegación principal">
+                <a href="/" onClick={() => setIsMenuOpen(false)}>Inicio</a>
+                <a href="/about" onClick={() => setIsMenuOpen(false)}>Sobre nosotros</a>
+              </nav>
+            )}
             {user ? (
               <>
                 {/* User icon with dropdown */}
