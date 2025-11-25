@@ -4,7 +4,7 @@ import { confirmPasswordReset, verifyPasswordResetCode } from "firebase/auth";
 import { auth } from "../../lib/firebase.config";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
-import WebContentReader from '../../components/web-reader/WebContentReader';
+import WebContentReader from "../../components/web-reader/WebContentReader";
 import { useToastContext } from "../../contexts/ToastContext";
 import "./ResetPassword.scss";
 
@@ -161,7 +161,9 @@ const ResetPassword: React.FC = () => {
               </svg>
             </div>
             <h1>Enlace inválido</h1>
-            <p className="error-text">El enlace de restablecimiento es inválido o ha expirado</p>
+            <p className="error-text">
+              El enlace de restablecimiento es inválido o ha expirado
+            </p>
             <a href="/recovery" className="back-btn">
               Solicitar nuevo enlace
             </a>
@@ -244,9 +246,11 @@ const ResetPassword: React.FC = () => {
                 aria-required="true"
                 autoFocus
               />
-              {passwordError && formData.password.length > 0 && formData.password.length < 6 && (
-                <span className="field-error">{passwordError}</span>
-              )}
+              {passwordError &&
+                formData.password.length > 0 &&
+                formData.password.length < 6 && (
+                  <span className="field-error">{passwordError}</span>
+                )}
             </div>
 
             <div className="form-group">
@@ -263,9 +267,11 @@ const ResetPassword: React.FC = () => {
                 disabled={loading}
                 aria-required="true"
               />
-              {passwordError && formData.confirmPassword.length > 0 && formData.password !== formData.confirmPassword && (
-                <span className="field-error">{passwordError}</span>
-              )}
+              {passwordError &&
+                formData.confirmPassword.length > 0 &&
+                formData.password !== formData.confirmPassword && (
+                  <span className="field-error">{passwordError}</span>
+                )}
             </div>
 
             <div className="password-requirements">

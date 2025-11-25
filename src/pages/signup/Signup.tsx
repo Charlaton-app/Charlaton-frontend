@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../stores/useAuthStore";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
-import WebContentReader from '../../components/web-reader/WebContentReader';
+import WebContentReader from "../../components/web-reader/WebContentReader";
 import { useToastContext } from "../../contexts/ToastContext";
 import "./Signup.scss";
 
@@ -178,7 +178,9 @@ const Signup: React.FC = () => {
                 aria-required="true"
                 aria-describedby="edad-help"
               />
-              <span id="edad-help" className="visually-hidden">Ingresa tu edad (entre 1 y 120 años)</span>
+              <span id="edad-help" className="visually-hidden">
+                Ingresa tu edad (entre 1 y 120 años)
+              </span>
             </div>
 
             <div className="form-group">
@@ -194,10 +196,14 @@ const Signup: React.FC = () => {
                 aria-required="true"
                 aria-describedby="password-help"
               />
-              {passwordError && formData.password.length > 0 && formData.password.length < 6 && (
-                <span className="field-error">{passwordError}</span>
-              )}
-              <span id="password-help" className="visually-hidden">La contraseña debe tener al menos 6 caracteres</span>
+              {passwordError &&
+                formData.password.length > 0 &&
+                formData.password.length < 6 && (
+                  <span className="field-error">{passwordError}</span>
+                )}
+              <span id="password-help" className="visually-hidden">
+                La contraseña debe tener al menos 6 caracteres
+              </span>
             </div>
 
             <div className="form-group">
@@ -212,9 +218,11 @@ const Signup: React.FC = () => {
                 disabled={isLoading}
                 aria-required="true"
               />
-              {passwordError && formData.confirmPassword.length > 0 && formData.password !== formData.confirmPassword && (
-                <span className="field-error">{passwordError}</span>
-              )}
+              {passwordError &&
+                formData.confirmPassword.length > 0 &&
+                formData.password !== formData.confirmPassword && (
+                  <span className="field-error">{passwordError}</span>
+                )}
             </div>
 
             <button

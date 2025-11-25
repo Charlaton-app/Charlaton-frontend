@@ -219,7 +219,11 @@ $font-body: "Rubik", sans-serif;
         width: 2.5rem;
         height: 2.5rem;
         border-radius: 50%;
-        background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+        background: linear-gradient(
+          135deg,
+          $primary-color 0%,
+          $secondary-color 100%
+        );
         color: white;
         display: flex;
         align-items: center;
@@ -244,7 +248,8 @@ $font-body: "Rubik", sans-serif;
         right: 0;
         background: white;
         border-radius: 0.5rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06);
         min-width: 180px;
         z-index: 50;
         overflow: hidden;
@@ -298,7 +303,6 @@ $font-body: "Rubik", sans-serif;
           border-bottom-left-radius: 0.5rem;
           border-bottom-right-radius: 0.5rem;
         }
-
       }
 
       button {

@@ -13,7 +13,7 @@ if (import.meta.env.DEV) {
     API_URL,
     normalizedApiUrl,
     API_BASE,
-    hasViteApiUrl: !!import.meta.env.VITE_API_URL
+    hasViteApiUrl: !!import.meta.env.VITE_API_URL,
   });
 }
 
@@ -30,13 +30,14 @@ const fetchWithConfig = async <T = any>(
   retryOn401: boolean = true
 ): Promise<ApiResponse<T>> => {
   // Timeout más largo para endpoints de autenticación que pueden tardar más
-  const isAuthEndpoint = endpoint.includes('/auth/login') || endpoint.includes('/auth/signup');
+  const isAuthEndpoint =
+    endpoint.includes("/auth/login") || endpoint.includes("/auth/signup");
   const timeout = isAuthEndpoint ? 30000 : 15000; // 30s para auth, 15s para otros
-  
+
   try {
     const fullUrl = `${API_BASE}${endpoint}`;
     console.log(`[API] Making request to: ${fullUrl}`);
-    
+
     // Crear un AbortController para el timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
@@ -80,22 +81,34 @@ const fetchWithConfig = async <T = any>(
               // Reintentar la petición original después de refrescar
               return fetchWithConfig<T>(endpoint, options, false);
             } else {
-              console.error("[API] Error al refrescar token:", refreshData.error);
+              console.error(
+                "[API] Error al refrescar token:",
+                refreshData.error
+              );
               // Si el refresh falla, podría ser que la sesión expiró completamente
               // En este caso, el usuario necesita volver a iniciar sesión
               return {
-                error: refreshData.error || "Tu sesión ha expirado. Por favor, recarga la página o inicia sesión nuevamente.",
+                error:
+                  refreshData.error ||
+                  "Tu sesión ha expirado. Por favor, recarga la página o inicia sesión nuevamente.",
               };
             }
           } catch (refreshError) {
-            console.error("[API] Error en el proceso de refresh:", refreshError);
+            console.error(
+              "[API] Error en el proceso de refresh:",
+              refreshError
+            );
             return {
-              error: "Error al refrescar la sesión. Por favor, recarga la página o inicia sesión nuevamente.",
+              error:
+                "Error al refrescar la sesión. Por favor, recarga la página o inicia sesión nuevamente.",
             };
           }
         }
         return {
-          error: data.error || data.message || "Token expirado o no autorizado. Por favor, inicia sesión nuevamente.",
+          error:
+            data.error ||
+            data.message ||
+            "Token expirado o no autorizado. Por favor, inicia sesión nuevamente.",
         };
       }
       if (response.status === 404) {
@@ -109,7 +122,10 @@ const fetchWithConfig = async <T = any>(
         };
       }
       return {
-        error: data.error || data.message || `Error en la petición (${response.status})`,
+        error:
+          data.error ||
+          data.message ||
+          `Error en la petición (${response.status})`,
       };
     }
 
@@ -119,7 +135,9 @@ const fetchWithConfig = async <T = any>(
       console.error(`[API] Timeout after ${timeout}ms:`, endpoint);
       console.error(`[API] Full URL was: ${API_BASE}${endpoint}`);
       return {
-        error: `El servidor tardó demasiado en responder (${timeout/1000}s). Verifica que el backend esté corriendo en ${API_BASE}`,
+        error: `El servidor tardó demasiado en responder (${
+          timeout / 1000
+        }s). Verifica que el backend esté corriendo en ${API_BASE}`,
       };
     }
     console.error("[API] Error:", error);

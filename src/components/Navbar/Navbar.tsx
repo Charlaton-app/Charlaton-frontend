@@ -43,7 +43,10 @@ const Navbar: React.FC<NavbarProps> = ({
   // Cerrar el menú de usuario al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
         setIsUserMenuOpen(false);
       }
     };
@@ -82,11 +85,18 @@ const Navbar: React.FC<NavbarProps> = ({
         <button
           className="hamburger-btn"
           onClick={toggleMenu}
-          aria-label={isMenuOpen ? "Cerrar menú de navegación" : "Abrir menú de navegación"}
+          aria-label={
+            isMenuOpen
+              ? "Cerrar menú de navegación"
+              : "Abrir menú de navegación"
+          }
           aria-expanded={isMenuOpen}
           aria-controls="mobile-menu"
         >
-          <span className={`hamburger-icon ${isMenuOpen ? "open" : ""}`} aria-hidden="true">
+          <span
+            className={`hamburger-icon ${isMenuOpen ? "open" : ""}`}
+            aria-hidden="true"
+          >
             <span></span>
             <span></span>
             <span></span>
@@ -103,12 +113,23 @@ const Navbar: React.FC<NavbarProps> = ({
 
         {/* Sección de autenticación */}
         {showAuthButtons && (
-          <div id="mobile-menu" className={`auth-section ${isMenuOpen ? "mobile-open" : ""}`} aria-label="Sección de autenticación">
+          <div
+            id="mobile-menu"
+            className={`auth-section ${isMenuOpen ? "mobile-open" : ""}`}
+            aria-label="Sección de autenticación"
+          >
             {/* Navegación - visible en mobile menu cuando NO hay usuario */}
             {!user && (
-              <nav className="nav-links-mobile" aria-label="Navegación principal">
-                <a href="/" onClick={() => setIsMenuOpen(false)}>Inicio</a>
-                <a href="/about" onClick={() => setIsMenuOpen(false)}>Sobre nosotros</a>
+              <nav
+                className="nav-links-mobile"
+                aria-label="Navegación principal"
+              >
+                <a href="/" onClick={() => setIsMenuOpen(false)}>
+                  Inicio
+                </a>
+                <a href="/about" onClick={() => setIsMenuOpen(false)}>
+                  Sobre nosotros
+                </a>
               </nav>
             )}
             {user ? (
@@ -128,7 +149,12 @@ const Navbar: React.FC<NavbarProps> = ({
                     </div>
                   </button>
                   {isUserMenuOpen && (
-                    <div id="user-dropdown-menu" className="user-dropdown" role="menu" aria-label="Opciones de usuario">
+                    <div
+                      id="user-dropdown-menu"
+                      className="user-dropdown"
+                      role="menu"
+                      aria-label="Opciones de usuario"
+                    >
                       <button
                         className="dropdown-item"
                         onClick={handleProfileClick}

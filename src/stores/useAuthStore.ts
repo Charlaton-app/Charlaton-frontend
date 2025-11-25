@@ -72,11 +72,11 @@ const useAuthStore = create<AuthStore>()(
       isAuthenticated: false,
       isInitialized: false,
 
-      setUser: (user: User | null) => 
-        set({ 
-          user, 
+      setUser: (user: User | null) =>
+        set({
+          user,
           error: null,
-          isAuthenticated: !!user 
+          isAuthenticated: !!user,
         }),
       setLoading: (isLoading: boolean) => set({ isLoading }),
       setError: (error: string | null) => set({ error }),
@@ -110,11 +110,11 @@ const useAuthStore = create<AuthStore>()(
                     createdAt: response.data.createdAt || null,
                     authProvider,
                   };
-                  set({ 
+                  set({
                     user: userLogged,
                     isAuthenticated: true,
                     isInitialized: true,
-                    error: null
+                    error: null,
                   });
                 } else {
                   // Si no hay datos en backend, usar solo Firebase
@@ -126,11 +126,11 @@ const useAuthStore = create<AuthStore>()(
                     createdAt: null,
                     authProvider,
                   };
-                  set({ 
+                  set({
                     user: userLogged,
                     isAuthenticated: true,
                     isInitialized: true,
-                    error: null
+                    error: null,
                   });
                 }
               } catch (error: any) {
@@ -148,30 +148,32 @@ const useAuthStore = create<AuthStore>()(
                   createdAt: null,
                   authProvider,
                 };
-                set({ 
+                set({
                   user: userLogged,
                   isAuthenticated: true,
                   isInitialized: true,
-                  error: error.message?.includes("401") || error.message?.includes("Token") 
-                    ? "Token expirado. Por favor, recarga la página." 
-                    : null
+                  error:
+                    error.message?.includes("401") ||
+                    error.message?.includes("Token")
+                      ? "Token expirado. Por favor, recarga la página."
+                      : null,
                 });
               }
             } else {
-              set({ 
+              set({
                 user: null,
                 isAuthenticated: false,
                 isInitialized: true,
-                error: null
+                error: null,
               });
             }
           },
           (err) => {
             console.error("Error en auth observer:", err);
-            set({ 
+            set({
               error: err.message,
               isInitialized: true,
-              isAuthenticated: false
+              isAuthenticated: false,
             });
           }
         );
@@ -200,11 +202,11 @@ const useAuthStore = create<AuthStore>()(
               createdAt: response.data.user?.createdAt || null,
               authProvider: "password",
             };
-            set({ 
-              user, 
+            set({
+              user,
               isLoading: false,
               isAuthenticated: true,
-              error: null
+              error: null,
             });
             return { success: true };
           }
@@ -239,11 +241,11 @@ const useAuthStore = create<AuthStore>()(
               createdAt: response.data.user?.createdAt || null,
               authProvider: "password",
             };
-            set({ 
-              user, 
+            set({
+              user,
               isLoading: false,
               isAuthenticated: true,
-              error: null
+              error: null,
             });
             return { success: true };
           }
@@ -278,11 +280,11 @@ const useAuthStore = create<AuthStore>()(
               createdAt: response.data.user?.createdAt || null,
               authProvider: "google",
             };
-            set({ 
-              user, 
+            set({
+              user,
               isLoading: false,
               isAuthenticated: true,
-              error: null
+              error: null,
             });
             return { success: true };
           }
@@ -317,11 +319,11 @@ const useAuthStore = create<AuthStore>()(
               createdAt: response.data.user?.createdAt || null,
               authProvider: "github",
             };
-            set({ 
-              user, 
+            set({
+              user,
               isLoading: false,
               isAuthenticated: true,
-              error: null
+              error: null,
             });
             return { success: true };
           }
@@ -338,20 +340,20 @@ const useAuthStore = create<AuthStore>()(
         set({ isLoading: true, error: null });
         try {
           await authService.logout();
-          set({ 
-            user: null, 
+          set({
+            user: null,
             isLoading: false,
             isAuthenticated: false,
-            error: null
+            error: null,
           });
         } catch (error: any) {
           console.error("Error al cerrar sesión:", error);
           // Aún así, limpiar el estado local
-          set({ 
+          set({
             user: null,
             isLoading: false,
             isAuthenticated: false,
-            error: error.message
+            error: error.message,
           });
         }
       },
@@ -394,7 +396,7 @@ const useAuthStore = create<AuthStore>()(
             ...user,
             ...data,
             // Ensure backend response data is used if available
-            ...(response.data || {})
+            ...(response.data || {}),
           } as User;
 
           // Actualizar usuario en el store
@@ -402,7 +404,7 @@ const useAuthStore = create<AuthStore>()(
             user: updatedUser,
             isLoading: false,
             isAuthenticated: true,
-            error: null
+            error: null,
           });
 
           return { success: true };
@@ -469,9 +471,9 @@ const useAuthStore = create<AuthStore>()(
     }),
     {
       name: "auth-storage", // Nombre para localStorage
-      partialize: (state) => ({ 
+      partialize: (state) => ({
         user: state.user,
-        isAuthenticated: state.isAuthenticated
+        isAuthenticated: state.isAuthenticated,
       }), // Solo persistir el usuario y estado de autenticación
     }
   )

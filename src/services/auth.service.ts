@@ -378,7 +378,9 @@ export const loginWithGithub = async () => {
     }
 
     if (error.code === "auth/account-exists-with-different-credential") {
-      console.log("[AUTH-SERVICE] Account exists with different credential, attempting auto-login");
+      console.log(
+        "[AUTH-SERVICE] Account exists with different credential, attempting auto-login"
+      );
       // Get Firebase current user if authenticated
       const currentUser = auth.currentUser;
       if (currentUser && currentUser.email) {
@@ -387,7 +389,8 @@ export const loginWithGithub = async () => {
           data: {
             user: {
               email: currentUser.email,
-              nickname: currentUser.displayName || currentUser.email.split("@")[0],
+              nickname:
+                currentUser.displayName || currentUser.email.split("@")[0],
             },
             firebaseUser: currentUser,
           },

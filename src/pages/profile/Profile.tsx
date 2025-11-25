@@ -269,11 +269,7 @@ const Profile: React.FC = () => {
                     placeholder="user@email.com"
                     disabled={isLoading || Boolean(isOAuthUser)}
                     aria-required="true"
-                    aria-describedby={
-                      isOAuthUser
-                        ? "email-help"
-                        : undefined
-                    }
+                    aria-describedby={isOAuthUser ? "email-help" : undefined}
                   />
                   {isOAuthUser && (
                     <p id="email-help" className="field-note">

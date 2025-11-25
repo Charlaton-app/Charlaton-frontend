@@ -3,32 +3,37 @@
 ## ✅ Fixes Implemented
 
 ### 1. API Configuration ✅
+
 - **Issue**: API calls returning "Route not found"
 - **Fix**: Updated `api.ts` to use `API_BASE = ${API_URL}/api`
 - **Status**: Fixed - Backend routes properly prefixed with `/api`
 
 ### 2. Home Page CTA Button ✅
+
 - **Issue**: "COMIENZA YA" button had no navigation
 - **Fix**: Added `onClick={() => window.location.href = '/signup'}`
 - **Status**: Fixed - Button now navigates to signup page
 
 ### 3. Mobile Menu UX ✅
+
 - **Issue**: Hamburger menu showed unnecessary intermediate step (user icon)
-- **Fix**: 
+- **Fix**:
   - Desktop: Show user icon with dropdown (unchanged)
   - Mobile: Show "MI PERFIL" and "CERRAR SESIÓN" buttons directly
   - Added `.desktop-only` and `.mobile-only` CSS classes
 - **Status**: Fixed - Mobile users see profile/logout directly
 
 ### 4. Profile Update Persistence ✅
+
 - **Issue**: Profile changes didn't persist after reload
-- **Fix**: 
+- **Fix**:
   - Updated `updateUserProfile` in useAuthStore to merge backend response data
   - Ensured `edad` field is included in all auth flows (login, signup, OAuth)
   - Fixed `initAuthObserver` to load `edad` from backend response
 - **Status**: Fixed - Profile updates now persist correctly
 
 ### 5. Account Deletion ✅
+
 - **Issue**: Backend deletion failed with "Route not found"
 - **Fix**: Fixed by correcting API_URL configuration (same as issue #1)
 - **Status**: Fixed - DELETE /api/user/:id endpoint accessible
@@ -38,11 +43,13 @@
 ## 🧪 Manual Testing Guide
 
 ### Backend Status
+
 - **URL**: http://localhost:3000
 - **Health Check**: http://localhost:3000/ → `{"message":"API up"}`
 - **User Endpoint**: http://localhost:3000/api/user → Returns users array
 
 ### Frontend Status
+
 - **URL**: http://localhost:5174
 - **Branch**: feature/api-patch-method
 - **Latest Commit**: 70b14b2
@@ -52,7 +59,9 @@
 ## Test Scenarios
 
 ### ✅ Test 1: User Registration
+
 **Steps:**
+
 1. Go to http://localhost:5174
 2. Click "COMIENZA YA" button (should navigate to /signup)
 3. Fill registration form:
@@ -63,6 +72,7 @@
 4. Click "REGISTRARSE"
 
 **Expected Result:**
+
 - User created in Firebase Auth
 - User created in Firestore
 - Auto-login successful
@@ -73,7 +83,9 @@
 ---
 
 ### ✅ Test 2: User Login (Email/Password)
+
 **Steps:**
+
 1. Logout if logged in
 2. Go to /login
 3. Enter credentials:
@@ -82,6 +94,7 @@
 4. Click "INICIAR SESIÓN"
 
 **Expected Result:**
+
 - Firebase authentication successful
 - Backend session created (cookies set)
 - User data loaded including `edad` field
@@ -92,13 +105,16 @@
 ---
 
 ### ✅ Test 3: Google OAuth Login
+
 **Steps:**
+
 1. Go to /login
 2. Click "Continuar con Google"
 3. Select Google account
 4. Grant permissions
 
 **Expected Result:**
+
 - Firebase OAuth successful
 - Backend OAuth sync successful
 - User data synced (or created if new)
@@ -109,7 +125,9 @@
 ---
 
 ### ✅ Test 4: Create New Meeting/Room
+
 **Steps:**
+
 1. Login successfully
 2. Go to /dashboard
 3. Click "Crear nueva reunión"
@@ -119,6 +137,7 @@
 5. Click "Crear"
 
 **Expected Result:**
+
 - POST /api/room successful
 - Room created in Firestore
 - Navigate to /meeting/:roomId
@@ -129,7 +148,9 @@
 ---
 
 ### ✅ Test 5: Profile Update
+
 **Steps:**
+
 1. Login successfully
 2. Go to /profile
 3. Update information:
@@ -139,6 +160,7 @@
 5. Reload page (F5)
 
 **Expected Result:**
+
 - PUT /api/user/:id successful
 - User data updated in Firestore
 - useAuthStore updated with new data
@@ -150,7 +172,9 @@
 ---
 
 ### ✅ Test 6: Account Deletion
+
 **Steps:**
+
 1. Login with test account
 2. Go to /profile
 3. Scroll to "Zona de peligro"
@@ -159,6 +183,7 @@
 6. Click "Eliminar cuenta" in modal
 
 **Expected Result:**
+
 - DELETE /api/user/:id successful
 - User removed from Firestore
 - User removed from Firebase Auth
@@ -170,12 +195,15 @@
 ---
 
 ### ✅ Test 7: Mobile Menu (Responsive)
+
 **Steps:**
+
 1. Login successfully
 2. Resize browser to mobile width (< 768px) or use DevTools
 3. Click hamburger menu (☰)
 
 **Expected Result:**
+
 - Menu slides out from right
 - Shows "MI PERFIL" button
 - Shows "CERRAR SESIÓN" button
@@ -188,6 +216,7 @@
 ## Known Issues (Non-Critical)
 
 ### TypeScript Lint Warnings
+
 - `any` types in room.service.ts, message.service.ts
 - `any` types in Meeting.tsx for socket events
 - Profile.tsx: setState in useEffect (performance warning)
@@ -200,6 +229,7 @@
 ## API Endpoints Verified
 
 ### ✅ Working Endpoints
+
 - `GET /` → Health check
 - `GET /api/user` → Get all users
 - `POST /api/auth/login` → Login with email/password
@@ -214,6 +244,7 @@
 ## Environment Configuration
 
 ### Backend (.env)
+
 ```
 ACCESS_SECRET="your_access_secret_here"
 REFRESH_SECRET="your_refresh_secret_here"
@@ -223,6 +254,7 @@ SENDGRID_FROM_EMAIL="your_email@example.com"
 ```
 
 ### Frontend (.env)
+
 ```
 VITE_API_URL=http://localhost:3000
 VITE_FIREBASE_API=your_firebase_api_key
@@ -250,27 +282,29 @@ VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
 
 ## Test Results Summary
 
-| Test Case | Status | Notes |
-|-----------|--------|-------|
-| User Registration | ⏳ Pending | - |
-| Email/Password Login | ⏳ Pending | - |
-| Google OAuth Login | ✅ Working | Reported by user |
-| Create Meeting/Room | ⏳ Pending | Was failing, now fixed |
-| Profile Update | ⏳ Pending | Was not persisting, now fixed |
-| Account Deletion | ⏳ Pending | Was failing, now fixed |
-| Mobile Menu UX | ⏳ Pending | Improved UX |
-| Home CTA Button | ✅ Fixed | Now navigates to signup |
+| Test Case            | Status     | Notes                         |
+| -------------------- | ---------- | ----------------------------- |
+| User Registration    | ⏳ Pending | -                             |
+| Email/Password Login | ⏳ Pending | -                             |
+| Google OAuth Login   | ✅ Working | Reported by user              |
+| Create Meeting/Room  | ⏳ Pending | Was failing, now fixed        |
+| Profile Update       | ⏳ Pending | Was not persisting, now fixed |
+| Account Deletion     | ⏳ Pending | Was failing, now fixed        |
+| Mobile Menu UX       | ⏳ Pending | Improved UX                   |
+| Home CTA Button      | ✅ Fixed   | Now navigates to signup       |
 
 ---
 
 ## Commits
 
 ### Frontend (feature/api-patch-method)
+
 **Commit**: 70b14b2
 **Message**: "fix: correct API URL configuration and improve UX"
 **Changes**: 6 files, 112 insertions, 44 deletions
 
 ### Backend (feature/fixing-documentation)
+
 **Commit**: bde6cf0
 **Message**: "docs: translate all JSDoc comments to English and fix Socket.io configuration"
 **Changes**: 15 files, 637 insertions, 269 deletions

@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
-import WebContentReader from '../../components/web-reader/WebContentReader';
+import WebContentReader from "../../components/web-reader/WebContentReader";
 import "./About.scss";
 
 const About: React.FC = () => {
@@ -69,23 +69,50 @@ const About: React.FC = () => {
         {/* Stats Section */}
         <section className="stats-section" aria-labelledby="stats-title">
           <div className="container">
-            <h2 id="stats-title" className="visually-hidden">Estadísticas de rendimiento</h2>
+            <h2 id="stats-title" className="visually-hidden">
+              Estadísticas de rendimiento
+            </h2>
             <div className="stats-grid" role="list">
               <div className="stat-card" role="listitem">
-                <div className="stat-number" aria-label="Más de un millón de usuarios activos">1M+</div>
-                <div className="stat-label" aria-hidden="true">Usuarios activos</div>
+                <div
+                  className="stat-number"
+                  aria-label="Más de un millón de usuarios activos"
+                >
+                  1M+
+                </div>
+                <div className="stat-label" aria-hidden="true">
+                  Usuarios activos
+                </div>
               </div>
               <div className="stat-card" role="listitem">
-                <div className="stat-number" aria-label="99 por ciento de tiempo de actividad">99%</div>
-                <div className="stat-label" aria-hidden="true">Tiempo de actividad</div>
+                <div
+                  className="stat-number"
+                  aria-label="99 por ciento de tiempo de actividad"
+                >
+                  99%
+                </div>
+                <div className="stat-label" aria-hidden="true">
+                  Tiempo de actividad
+                </div>
               </div>
               <div className="stat-card" role="listitem">
-                <div className="stat-number" aria-label="Más de 50 países">50+</div>
-                <div className="stat-label" aria-hidden="true">Países</div>
+                <div className="stat-number" aria-label="Más de 50 países">
+                  50+
+                </div>
+                <div className="stat-label" aria-hidden="true">
+                  Países
+                </div>
               </div>
               <div className="stat-card" role="listitem">
-                <div className="stat-number" aria-label="Soporte disponible 24 horas al día, 7 días a la semana">24/7</div>
-                <div className="stat-label" aria-hidden="true">Soporte</div>
+                <div
+                  className="stat-number"
+                  aria-label="Soporte disponible 24 horas al día, 7 días a la semana"
+                >
+                  24/7
+                </div>
+                <div className="stat-label" aria-hidden="true">
+                  Soporte
+                </div>
               </div>
             </div>
           </div>
@@ -257,10 +284,18 @@ const About: React.FC = () => {
                 sus comunicaciones
               </p>
               <div className="cta-buttons">
-                <a href="/signup" className="btn-primary" aria-label="Registrarse gratis en Charlaton">
+                <a
+                  href="/signup"
+                  className="btn-primary"
+                  aria-label="Registrarse gratis en Charlaton"
+                >
                   REGISTRARSE GRATIS
                 </a>
-                <a href="/login" className="btn-outline" aria-label="Iniciar sesión en cuenta existente">
+                <a
+                  href="/login"
+                  className="btn-outline"
+                  aria-label="Iniciar sesión en cuenta existente"
+                >
                   INICIAR SESIÓN
                 </a>
               </div>

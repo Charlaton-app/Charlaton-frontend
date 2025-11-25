@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import useAuthStore from "../../stores/useAuthStore";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
-import WebContentReader from '../../components/web-reader/WebContentReader';
+import WebContentReader from "../../components/web-reader/WebContentReader";
 import { useToastContext } from "../../contexts/ToastContext";
 import "./Recovery.scss";
 
@@ -59,7 +59,12 @@ const Recovery: React.FC = () => {
           </p>
 
           {success && (
-            <div className="success-message" role="status" aria-live="polite" aria-atomic="true">
+            <div
+              className="success-message"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            >
               <div className="success-icon">
                 <svg fill="currentColor" viewBox="0 0 24 24">
                   <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
@@ -107,7 +112,11 @@ const Recovery: React.FC = () => {
                 {isLoading ? "Enviando..." : "ENVIAR ENLACE DE RECUPERACIÓN"}
               </button>
 
-              <a href="/login" className="back-link" aria-label="Regresar a la página de inicio de sesión">
+              <a
+                href="/login"
+                className="back-link"
+                aria-label="Regresar a la página de inicio de sesión"
+              >
                 ← Volver al inicio de sesión
               </a>
             </form>

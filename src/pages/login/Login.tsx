@@ -7,13 +7,12 @@ import googleIcon from "/icons/google-icon.svg";
 import githubIcon from "/icons/github-icon.svg";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
-import WebContentReader from '../../components/web-reader/WebContentReader';
+import WebContentReader from "../../components/web-reader/WebContentReader";
 import "./Login.scss";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { login, loginWithGoogle, loginWithGithub, isLoading } =
-    useAuthStore();
+  const { login, loginWithGoogle, loginWithGithub, isLoading } = useAuthStore();
   const toast = useToastContext();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
