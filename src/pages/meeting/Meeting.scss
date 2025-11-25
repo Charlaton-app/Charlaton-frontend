@@ -324,54 +324,54 @@ $font-body: "Rubik", sans-serif;
         border-radius: 24px;
         margin-top: 1rem;
 
-          .control-btn {
-            width: 56px;
-            height: 56px;
-            border: none;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-            position: relative;
+        .control-btn {
+          width: 56px;
+          height: 56px;
+          border: none;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.1);
+          color: white;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+          position: relative;
 
-            svg {
-              width: 24px;
-              height: 24px;
-              stroke: currentColor;
-            }
+          svg {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+          }
+
+          &:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+          }
+
+          &:active {
+            transform: scale(0.95);
+          }
+
+          &.active {
+            background: $secondary-color;
 
             &:hover {
-              background: rgba(255, 255, 255, 0.2);
-              transform: scale(1.05);
+              background: darken($secondary-color, 10%);
             }
+          }
 
-            &:active {
-              transform: scale(0.95);
+          &.muted,
+          &.camera-off {
+            background: rgba(234, 67, 53, 0.9);
+            color: white;
+
+            &:hover {
+              background: rgba(234, 67, 53, 1);
             }
+          }
 
-            &.active {
-              background: $secondary-color;
-
-              &:hover {
-                background: darken($secondary-color, 10%);
-              }
-            }
-
-            &.muted,
-            &.camera-off {
-              background: rgba(234, 67, 53, 0.9);
-              color: white;
-
-              &:hover {
-                background: rgba(234, 67, 53, 1);
-              }
-            }
-
-            .badge {
+          .badge {
             &.camera-off {
               background: rgba(234, 67, 53, 0.9);
               color: white;
@@ -395,7 +395,7 @@ $font-body: "Rubik", sans-serif;
               text-align: center;
             }
           }
-          }
+        }
         @media (max-width: 640px) {
           gap: 0.75rem;
           padding: 1rem;
