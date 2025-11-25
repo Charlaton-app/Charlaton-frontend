@@ -13,7 +13,7 @@ import {
   EmailAuthProvider,
   deleteUser as firebaseDeleteUser,
 } from "firebase/auth";
-import { auth, googleProvider, facebookProvider } from "../lib/firebase.config";
+import { auth, googleProvider, githubProvider } from "../lib/firebase.config";
 
 export interface LoginCredentials {
   email: string;
@@ -304,24 +304,24 @@ export const loginWithGoogle = async () => {
 };
 
 /**
- * Facebook OAuth Login
- * Authenticates with Facebook via Firebase, then syncs with backend using OAuth endpoint
+ * GitHub OAuth Login
+ * Authenticates with GitHub via Firebase, then syncs with backend using OAuth endpoint
  *
  * @returns {Promise<{data?: any, error?: string}>} Response with user data or error message
  */
-export const loginWithFacebook = async () => {
+export const loginWithGithub = async () => {
   try {
-    console.log("[AUTH-SERVICE] Starting Facebook OAuth authentication");
+    console.log("[AUTH-SERVICE] Starting GitHub OAuth authentication");
 
-    // 1. Authenticate with Facebook via Firebase
-    const result = await signInWithPopup(auth, facebookProvider);
+    // 1. Authenticate with GitHub via Firebase
+    const result = await signInWithPopup(auth, githubProvider);
     const user = result.user;
     console.log(`[AUTH-SERVICE] User authenticated in Firebase: ${user.email}`);
 
     if (!user.email) {
       await firebaseSignOut(auth);
-      console.log("[AUTH-SERVICE] Failed: No email from Facebook");
-      return { error: "No se pudo obtener el correo electrónico de Facebook" };
+      console.log("[AUTH-SERVICE] Failed: No email from GitHub");
+      return { error: "No se pudo obtener el correo electrónico de GitHub" };
     }
 
     // 2. Get Firebase ID token
@@ -332,7 +332,7 @@ export const loginWithFacebook = async () => {
     console.log("[AUTH-SERVICE] Syncing with backend via OAuth endpoint");
     const response = await api.post("/auth/login/OAuth", {
       email: user.email,
-      password: "FACEBOOK_OAUTH_USER", // Placeholder for OAuth
+      password: "GITHUB_OAUTH_USER", // Placeholder for OAuth
       idToken, // Send ID token for verification
     });
 
@@ -353,7 +353,7 @@ export const loginWithFacebook = async () => {
       };
     }
 
-    console.log("[AUTH-SERVICE] Facebook OAuth login successful");
+    console.log("[AUTH-SERVICE] GitHub OAuth login successful");
     return {
       data: {
         user: response.data?.user,
@@ -361,7 +361,7 @@ export const loginWithFacebook = async () => {
       },
     };
   } catch (error: any) {
-    console.error("[AUTH-SERVICE] Error in Facebook OAuth login:", error);
+    console.error("[AUTH-SERVICE] Error in GitHub OAuth login:", error);
 
     if (
       error.code === "auth/popup-closed-by-user" ||
@@ -378,6 +378,24 @@ export const loginWithFacebook = async () => {
     }
 
     if (error.code === "auth/account-exists-with-different-credential") {
+      console.log(
+        "[AUTH-SERVICE] Account exists with different credential, attempting auto-login"
+      );
+      // Get Firebase current user if authenticated
+      const currentUser = auth.currentUser;
+      if (currentUser && currentUser.email) {
+        // Auto-login with existing credentials
+        return {
+          data: {
+            user: {
+              email: currentUser.email,
+              nickname:
+                currentUser.displayName || currentUser.email.split("@")[0],
+            },
+            firebaseUser: currentUser,
+          },
+        };
+      }
       return {
         error:
           "Ya existe una cuenta con este correo usando otro método de inicio de sesión.",
@@ -385,7 +403,7 @@ export const loginWithFacebook = async () => {
     }
 
     return {
-      error: error.message || "Error al iniciar sesión con Facebook",
+      error: error.message || "Error al iniciar sesión con GitHub",
     };
   }
 };
@@ -663,7 +681,7 @@ export default {
   login,
   signup,
   loginWithGoogle,
-  loginWithFacebook,
+  loginWithGithub,
   logout,
   recoverPassword,
   resetPassword,

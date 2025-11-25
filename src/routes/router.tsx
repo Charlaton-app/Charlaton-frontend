@@ -11,6 +11,7 @@ import Profile from "../pages/profile/Profile";
 import Chat from "../pages/chat/Chat";
 import Meeting from "../pages/meeting/Meeting";
 import JoinMeeting from "../pages/join/JoinMeeting";
+import Resumenes from "../pages/resumenes/Resumenes";
 
 export const routes = [
   {
@@ -48,6 +49,10 @@ export const routes = [
   {
     path: "/profile",
     element: <Profile />,
+  },
+  {
+    path: "/resumenes",
+    element: <Resumenes />,
   },
   {
     path: "/chat",

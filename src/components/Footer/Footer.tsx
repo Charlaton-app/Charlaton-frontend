@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Modal from "../Modal/Modal";
 import "./Footer.scss";
+import useAuthStore from "../../stores/useAuthStore";
 
 type ModalContent =
   | "contact"
@@ -15,6 +16,7 @@ type ModalContent =
 
 const Footer: React.FC = () => {
   const [activeModal, setActiveModal] = useState<ModalContent>(null);
+  const { user } = useAuthStore();
 
   const openModal = (modal: ModalContent) => setActiveModal(modal);
   const closeModal = () => setActiveModal(null);
@@ -890,32 +892,44 @@ const Footer: React.FC = () => {
                   <a href="/">Inicio</a>
                 </li>
                 <li>
-                  <a href="/dashboard">Dashboard</a>
-                </li>
-                <li>
-                  <a href="#producto">Producto</a>
-                </li>
-                <li>
-                  <a href="#nosotros">Sobre nosotros</a>
+                  <a href="/#nosotros">Sobre nosotros</a>
                 </li>
               </ul>
             </nav>
           </div>
 
-          {/* Cuenta */}
+          {/* Cuenta - Solo mostrar Dashboard cuando está autenticado */}
           <div className="footer-column">
             <h3>Cuenta</h3>
             <nav aria-label="Enlaces de cuenta">
               <ul>
-                <li>
-                  <a href="/login">Iniciar sesión</a>
-                </li>
-                <li>
-                  <a href="/register">Registrarte</a>
-                </li>
-                <li>
-                  <a href="/forgot-password">Recuperar Contraseña</a>
-                </li>
+                {user ? (
+                  // Usuario autenticado - mostrar Dashboard, Perfil y Resúmenes
+                  <>
+                    <li>
+                      <a href="/dashboard">Dashboard</a>
+                    </li>
+                    <li>
+                      <a href="/profile">Perfil</a>
+                    </li>
+                    <li>
+                      <a href="/resumenes">Resúmenes</a>
+                    </li>
+                  </>
+                ) : (
+                  // Usuario no autenticado - mostrar opciones de inicio de sesión
+                  <>
+                    <li>
+                      <a href="/login">Iniciar sesión</a>
+                    </li>
+                    <li>
+                      <a href="/signup">Registrarte</a>
+                    </li>
+                    <li>
+                      <a href="/recovery">Recuperar Contraseña</a>
+                    </li>
+                  </>
+                )}
               </ul>
             </nav>
           </div>

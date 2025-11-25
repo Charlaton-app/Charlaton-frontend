@@ -4,6 +4,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import useAuthStore from "../../stores/useAuthStore";
+import { useToastContext } from "../../contexts/ToastContext";
+import { notificationSounds } from "../../utils/notificationSounds";
 import WebContentReader from "../../components/web-reader/WebContentReader";
 import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationModal";
 import {
@@ -26,21 +28,31 @@ const Meeting: React.FC = () => {
   const { meetingId } = useParams<{ meetingId: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const toast = useToastContext();
+
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   // State
   const [room, setRoom] = useState<any>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState("");
-  const [connectionId, setConnectionId] = useState<string | null>(null);
   const [isHost, setIsHost] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showEndModal, setShowEndModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [showChat, setShowChat] = useState(false);
-  const [showParticipants, setShowParticipants] = useState(true);
+  const [showParticipants, setShowParticipants] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  // Media state management
+  const [micStates, setMicStates] = useState<Record<string, boolean>>({});
+  const [cameraStates, setCameraStates] = useState<Record<string, boolean>>({});
+  const [isMicOn, setIsMicOn] = useState(false);
+  const [isCameraOn, setIsCameraOn] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLInputElement>(null);
@@ -57,11 +69,25 @@ const Meeting: React.FC = () => {
    */
   useEffect(() => {
     const initializeMeeting = async () => {
-      if (!meetingId || !user?.id) {
-        setError("ID de reunión o usuario no válido");
+      if (!user?.id) {
+        console.log("[MEETING] No authenticated user, redirecting to login");
+        toast.error("Debes iniciar sesión para unirte a la reunión");
+        navigate("/login");
+        return;
+      }
+
+      if (!meetingId) {
+        setError("ID de reunión no válido");
         setLoading(false);
         return;
       }
+
+      console.log("[MEETING] User authenticated:", {
+        id: user.id,
+        email: user.email,
+        displayName: user.displayName,
+        nickname: user.nickname,
+      });
 
       console.log(`[MEETING] Initializing meeting ${meetingId}`);
 
@@ -85,12 +111,54 @@ const Meeting: React.FC = () => {
           return;
         }
 
-        setConnectionId(joinResponse.data?.id);
-
         // Load participants
         const participantsResponse = await getRoomParticipants(meetingId);
         if (!participantsResponse.error && participantsResponse.data) {
+          console.log(
+            "[MEETING] Participants loaded:",
+            participantsResponse.data
+          );
+
+          // Log detailed user data for debugging
+          console.log(
+            "[MEETING] Total participants:",
+            participantsResponse.data.length
+          );
+          participantsResponse.data.forEach((p: Participant, index) => {
+            console.log(
+              `[MEETING] Participant ${index + 1} (userId: ${p.userId}):`
+            );
+            console.log("  - Full participant object:", p);
+            console.log("  - Has user object?", !!p.user);
+            if (p.user) {
+              console.log("  - user.id:", p.user.id);
+              console.log("  - user.email:", p.user.email);
+              console.log("  - user.nickname:", p.user.nickname);
+              console.log("  - user.displayName:", p.user.displayName);
+            } else {
+              console.error("  ❌ NO USER DATA - This is the problem!");
+            }
+          });
+
           setParticipants(participantsResponse.data);
+
+          // Initialize mic/camera states for all participants
+          const initialMicStates: Record<string, boolean> = {};
+          const initialCameraStates: Record<string, boolean> = {};
+          participantsResponse.data.forEach((p: Participant) => {
+            // Ensure userId is string for consistency
+            const userId = String(p.userId);
+            const isCurrentUser = userId === String(user.id);
+            initialMicStates[userId] = isCurrentUser ? isMicOn : false;
+            initialCameraStates[userId] = isCurrentUser ? isCameraOn : false;
+          });
+          setMicStates(initialMicStates);
+          setCameraStates(initialCameraStates);
+          console.log("[MEETING] Initialized states:", {
+            currentUserId: user.id,
+            micStates: initialMicStates,
+            cameraStates: initialCameraStates,
+          });
         }
 
         // Load messages
@@ -99,6 +167,7 @@ const Meeting: React.FC = () => {
           setMessages(messagesResponse.data);
         }
 
+        notificationSounds.success();
         setLoading(false);
       } catch (err) {
         console.error("[MEETING] Error initializing meeting:", err);
@@ -108,6 +177,7 @@ const Meeting: React.FC = () => {
     };
 
     initializeMeeting();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [meetingId, user?.id]);
 
   /**
@@ -125,28 +195,84 @@ const Meeting: React.FC = () => {
     // Listen for new participants
     socket.on("userJoined", (data: any) => {
       console.log("[MEETING] User joined:", data);
-      setParticipants((prev) => [...prev, data.participant]);
+      const newParticipant = data.participant;
+      setParticipants((prev) => [...prev, newParticipant]);
+
+      // Initialize states for new participant (ensure string userId)
+      const participantUserId = String(newParticipant.userId);
+      setMicStates((prev) => ({ ...prev, [participantUserId]: false }));
+      setCameraStates((prev) => ({ ...prev, [participantUserId]: false }));
+
+      notificationSounds.userJoined();
+      const userName =
+        newParticipant.user?.displayName ||
+        newParticipant.user?.nickname ||
+        newParticipant.user?.email ||
+        "Usuario";
+      console.log(
+        "[MEETING] User joined - displaying:",
+        userName,
+        newParticipant.user
+      );
+      toast.info(`${userName} se unió a la reunión`);
     });
 
     // Listen for participants leaving
     socket.on("userLeft", (data: any) => {
       console.log("[MEETING] User left:", data);
-      setParticipants((prev) => prev.filter((p) => p.userId !== data.userId));
+      const leftUserId = String(data.userId);
+      setParticipants((prev) =>
+        prev.filter((p) => String(p.userId) !== leftUserId)
+      );
+      notificationSounds.userLeft();
+      toast.info("Un usuario salió de la reunión");
     });
 
     // Listen for new messages
     socket.on("newMessage", (message: Message) => {
       console.log("[MEETING] New message received:", message);
       setMessages((prev) => [...prev, message]);
+      notificationSounds.newMessage();
       scrollToBottom();
     });
 
     // Listen for meeting end
     socket.on("meetingEnded", () => {
       console.log("[MEETING] Meeting ended by host");
-      alert("La reunión ha sido finalizada por el anfitrión");
+      toast.warning("La reunión ha sido finalizada por el anfitrión");
       navigate("/dashboard");
     });
+
+    // Listen for mic state changes
+    socket.on("micStateChanged", (data: { userId: string; isOn: boolean }) => {
+      const userId = String(data.userId);
+      console.log("[MEETING] Mic state changed:", { userId, isOn: data.isOn });
+      setMicStates((prev) => {
+        const updated = { ...prev, [userId]: data.isOn };
+        console.log("[MEETING] Updated micStates after socket event:", updated);
+        return updated;
+      });
+    });
+
+    // Listen for camera state changes
+    socket.on(
+      "cameraStateChanged",
+      (data: { userId: string; isOn: boolean }) => {
+        const userId = String(data.userId);
+        console.log("[MEETING] Camera state changed:", {
+          userId,
+          isOn: data.isOn,
+        });
+        setCameraStates((prev) => {
+          const updated = { ...prev, [userId]: data.isOn };
+          console.log(
+            "[MEETING] Updated cameraStates after socket event:",
+            updated
+          );
+          return updated;
+        });
+      }
+    );
 
     return () => {
       console.log("[MEETING] Cleaning up Socket.io listeners");
@@ -154,8 +280,10 @@ const Meeting: React.FC = () => {
       socket.off("userLeft");
       socket.off("newMessage");
       socket.off("meetingEnded");
+      socket.off("micStateChanged");
+      socket.off("cameraStateChanged");
     };
-  }, [meetingId, user?.id, navigate, scrollToBottom]);
+  }, [meetingId, user?.id, navigate, scrollToBottom, toast]);
 
   /**
    * Auto-scroll when new messages arrive
@@ -183,19 +311,38 @@ const Meeting: React.FC = () => {
 
       if (response.error) {
         console.error("[MEETING] Error sending message:", response.error);
+        toast.error("Error al enviar mensaje");
         return;
       }
 
-      // Emit to socket for real-time update
+      // Add message immediately to local state
+      const newMessage: Message = {
+        id: response.data?.id || crypto.randomUUID(),
+        userId: user.id,
+        roomId: meetingId,
+        content: response.data?.content || content,
+        visibility: response.data?.visibility || "public",
+        user: {
+          id: user.id,
+          email: user.email || "",
+          displayName: user.displayName ?? undefined,
+          nickname: user.nickname ?? undefined,
+        },
+        createdAt: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, newMessage]);
+
+      // Emit to socket for other participants
       socket.emit("sendMessage", {
         roomId: meetingId,
-        message: response.data,
+        message: newMessage,
       });
 
       setMessageInput("");
       chatInputRef.current?.focus();
     } catch (err) {
       console.error("[MEETING] Error sending message:", err);
+      toast.error("Error al enviar mensaje");
     }
   };
 
@@ -203,17 +350,18 @@ const Meeting: React.FC = () => {
    * Handle leaving the meeting
    */
   const handleLeaveMeeting = async () => {
-    if (!connectionId) return;
+    if (!user?.id || !meetingId) return;
 
     try {
-      await leaveRoom(connectionId);
+      await leaveRoom(user.id, meetingId);
 
       // Emit to socket
       socket.emit("leaveRoom", {
         roomId: meetingId,
-        userId: user?.id,
+        userId: user.id,
       });
 
+      notificationSounds.warning();
       socket.disconnect();
       navigate("/dashboard");
     } catch (err) {
@@ -233,11 +381,54 @@ const Meeting: React.FC = () => {
       // Emit to socket to notify all participants
       socket.emit("endMeeting", { roomId: meetingId });
 
+      notificationSounds.error();
       socket.disconnect();
       navigate("/dashboard");
     } catch (err) {
       console.error("[MEETING] Error ending meeting:", err);
     }
+  };
+
+  /**
+   * Toggle microphone state
+   */
+  const toggleMic = () => {
+    if (!user?.id || !meetingId) return;
+    const userId = String(user.id);
+    const newState = !isMicOn;
+    console.log("[MEETING] Toggle mic:", {
+      userId,
+      oldState: isMicOn,
+      newState,
+    });
+    setIsMicOn(newState);
+    setMicStates((prev) => {
+      const updated = { ...prev, [userId]: newState };
+      console.log("[MEETING] Updated micStates:", updated);
+      return updated;
+    });
+    socket.emit("toggleMic", { roomId: meetingId, userId, isOn: newState });
+  };
+
+  /**
+   * Toggle camera state
+   */
+  const toggleCamera = () => {
+    if (!user?.id || !meetingId) return;
+    const userId = String(user.id);
+    const newState = !isCameraOn;
+    console.log("[MEETING] Toggle camera:", {
+      userId,
+      oldState: isCameraOn,
+      newState,
+    });
+    setIsCameraOn(newState);
+    setCameraStates((prev) => {
+      const updated = { ...prev, [userId]: newState };
+      console.log("[MEETING] Updated cameraStates:", updated);
+      return updated;
+    });
+    socket.emit("toggleCamera", { roomId: meetingId, userId, isOn: newState });
   };
 
   /**
@@ -331,7 +522,7 @@ const Meeting: React.FC = () => {
       {/* Meeting Header */}
       <header className="meeting-header">
         <div className="meeting-info">
-          <h1 className="meeting-title">{room?.name || "Reunión"}</h1>
+          <h1 className="meeting-title">Reunión</h1>
           <span className="meeting-id">ID: {meetingId}</span>
         </div>
 
@@ -416,32 +607,149 @@ const Meeting: React.FC = () => {
         <div className="video-area">
           <div className="video-grid">
             {/* Video placeholder - can be replaced with actual video streams */}
-            {participants.map((participant) => (
-              <div key={participant.id} className="video-tile">
-                <div className="participant-avatar">
-                  {(participant.user?.displayName ||
-                    participant.user?.nickname ||
-                    participant.user?.email ||
-                    "U")[0].toUpperCase()}
+            {participants.map((participant) => {
+              // Ensure userId is string for consistent comparison
+              const participantUserId = String(participant.userId);
+              const currentUserId = String(user?.id);
+              const isCurrentUser = participantUserId === currentUserId;
+
+              // Determine display name with detailed logging
+              let displayName: string;
+              if (isCurrentUser) {
+                displayName =
+                  user?.nickname ||
+                  user?.displayName ||
+                  user?.email?.split("@")[0] ||
+                  "Usuario";
+                console.log(
+                  `[MEETING] Current user name: "${displayName}" (from: ${
+                    user?.nickname
+                      ? "nickname"
+                      : user?.displayName
+                      ? "displayName"
+                      : user?.email
+                      ? "email"
+                      : "fallback"
+                  })`
+                );
+              } else {
+                // Use participant.user data from backend
+                const pUser = participant.user;
+                displayName =
+                  pUser?.nickname ||
+                  pUser?.displayName ||
+                  pUser?.email?.split("@")[0] ||
+                  "Usuario";
+                console.log(
+                  `[MEETING] Participant ${participantUserId} name: "${displayName}"`
+                );
+                console.log(`  - participant.user:`, pUser);
+                console.log(
+                  `  - nickname: "${pUser?.nickname}", displayName: "${pUser?.displayName}", email: "${pUser?.email}"`
+                );
+
+                if (displayName === "Usuario") {
+                  console.error(
+                    `  ❌ PROBLEMA: No se encontró nombre para userId ${participantUserId}`
+                  );
+                  console.error(`  - participant.user existe?:`, !!pUser);
+                  console.error(`  - Objeto completo:`, participant);
+                }
+              }
+
+              const initial = displayName[0].toUpperCase();
+
+              // Log mic/camera states
+              console.log(
+                `[MEETING] Video tile ${participantUserId}: mic=${micStates[participantUserId]}, camera=${cameraStates[participantUserId]}`
+              );
+
+              return (
+                <div key={participant.id} className="video-tile">
+                  <div className="participant-avatar">{initial}</div>
+                  <div className="participant-info">
+                    <span className="participant-name">
+                      {displayName}
+                      {participant.userId === room?.creatorId && " (Anfitrión)"}
+                    </span>
+                    <div className="media-controls">
+                      <div
+                        className={`media-icon ${
+                          micStates[participantUserId] ? "active" : "inactive"
+                        }`}
+                        title="Micrófono"
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          width="20"
+                          height="20"
+                        >
+                          {micStates[participantUserId] ? (
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z M19 10v2a7 7 0 0 1-14 0v-2" />
+                          ) : (
+                            <>
+                              <line
+                                x1="1"
+                                y1="1"
+                                x2="23"
+                                y2="23"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              />
+                              <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
+                            </>
+                          )}
+                        </svg>
+                      </div>
+                      <div
+                        className={`media-icon ${
+                          cameraStates[participantUserId]
+                            ? "active"
+                            : "inactive"
+                        }`}
+                        title="Cámara"
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          width="20"
+                          height="20"
+                        >
+                          {cameraStates[participantUserId] ? (
+                            <>
+                              <path d="M23 7l-7 5 7 5V7z" />
+                              <rect x="1" y="5" width="15" height="14" rx="2" />
+                            </>
+                          ) : (
+                            <>
+                              <line
+                                x1="1"
+                                y1="1"
+                                x2="23"
+                                y2="23"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              />
+                              <path d="M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34" />
+                            </>
+                          )}
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="participant-info">
-                  <span className="participant-name">
-                    {participant.user?.displayName ||
-                      participant.user?.nickname ||
-                      participant.user?.email}
-                    {participant.userId === room?.creatorId && " (Anfitrión)"}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Meeting Controls */}
           <div className="meeting-controls">
             <button
-              className="control-btn"
-              aria-label="Silenciar micrófono"
-              title="Silenciar"
+              className={`control-btn ${!isMicOn ? "muted" : ""}`}
+              onClick={toggleMic}
+              aria-label={isMicOn ? "Silenciar micrófono" : "Activar micrófono"}
+              title={isMicOn ? "Silenciar" : "Activar micrófono"}
             >
               <svg
                 viewBox="0 0 24 24"
@@ -449,17 +757,29 @@ const Meeting: React.FC = () => {
                 stroke="currentColor"
                 strokeWidth="2"
               >
-                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                <line x1="12" y1="19" x2="12" y2="23" />
-                <line x1="8" y1="23" x2="16" y2="23" />
+                {isMicOn ? (
+                  <>
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                    <line x1="12" y1="19" x2="12" y2="23" />
+                    <line x1="8" y1="23" x2="16" y2="23" />
+                  </>
+                ) : (
+                  <>
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                    <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
+                    <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
+                    <line x1="12" y1="19" x2="12" y2="23" />
+                    <line x1="8" y1="23" x2="16" y2="23" />
+                  </>
+                )}
               </svg>
-            </button>
-
+            </button>{" "}
             <button
-              className="control-btn"
-              aria-label="Desactivar cámara"
-              title="Cámara"
+              className={`control-btn ${!isCameraOn ? "camera-off" : ""}`}
+              onClick={toggleCamera}
+              aria-label={isCameraOn ? "Desactivar cámara" : "Activar cámara"}
+              title={isCameraOn ? "Desactivar cámara" : "Activar cámara"}
             >
               <svg
                 viewBox="0 0 24 24"
@@ -467,14 +787,25 @@ const Meeting: React.FC = () => {
                 stroke="currentColor"
                 strokeWidth="2"
               >
-                <path d="M23 7l-7 5 7 5V7z" />
-                <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                {isCameraOn ? (
+                  <>
+                    <path d="M23 7l-7 5 7 5V7z" />
+                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                  </>
+                ) : (
+                  <>
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                    <path d="M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34m-7.72-2.06a4 4 0 1 1-5.56-5.56" />
+                  </>
+                )}
               </svg>
-            </button>
-
+            </button>{" "}
             <button
               className={`control-btn ${showChat ? "active" : ""}`}
-              onClick={() => setShowChat(!showChat)}
+              onClick={() => {
+                setShowChat(!showChat);
+                if (!showChat) setShowParticipants(false);
+              }}
               aria-label="Abrir chat"
               title="Chat"
             >
@@ -490,10 +821,12 @@ const Meeting: React.FC = () => {
                 <span className="badge">{messages.length}</span>
               )}
             </button>
-
             <button
               className={`control-btn ${showParticipants ? "active" : ""}`}
-              onClick={() => setShowParticipants(!showParticipants)}
+              onClick={() => {
+                setShowParticipants(!showParticipants);
+                if (!showParticipants) setShowChat(false);
+              }}
               aria-label="Ver participantes"
               title="Participantes"
             >
@@ -521,30 +854,134 @@ const Meeting: React.FC = () => {
             {/* Participants Tab */}
             {showParticipants && (
               <div className="sidebar-section participants-section">
-                <h2 className="sidebar-title">
-                  Participantes ({participants.length})
-                </h2>
+                <div className="sidebar-header">
+                  <div></div>
+                  <h2 className="sidebar-title">
+                    Participantes ({participants.length})
+                  </h2>
+                  <button
+                    className="sidebar-close-btn sidebar-title"
+                    onClick={() => setShowParticipants(false)}
+                    aria-label="Cerrar participantes"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
                 <div className="participants-list">
-                  {participants.map((participant) => (
-                    <div key={participant.id} className="participant-item">
-                      <div className="participant-avatar-small">
-                        {(participant.user?.displayName ||
-                          participant.user?.nickname ||
-                          participant.user?.email ||
-                          "U")[0].toUpperCase()}
+                  {participants.map((participant) => {
+                    const participantUserId = String(participant.userId);
+                    const currentUserId = String(user?.id);
+                    const isCurrentUser = participantUserId === currentUserId;
+
+                    // Use same logic as video tiles for consistency
+                    let displayName: string;
+                    if (isCurrentUser) {
+                      displayName =
+                        user?.nickname ||
+                        user?.displayName ||
+                        user?.email?.split("@")[0] ||
+                        "Usuario";
+                    } else {
+                      const pUser = participant.user;
+                      displayName =
+                        pUser?.nickname ||
+                        pUser?.displayName ||
+                        pUser?.email?.split("@")[0] ||
+                        "Usuario";
+                    }
+                    const initial = displayName[0].toUpperCase();
+                    return (
+                      <div key={participant.id} className="participant-item">
+                        <div className="participant-avatar-small">
+                          {initial}
+                        </div>
+                        <div className="participant-details">
+                          <span className="participant-name-small">
+                            {displayName}
+                          </span>
+                          {participant.userId === room?.creatorId && (
+                            <span className="host-badge">Anfitrión</span>
+                          )}
+                        </div>
+                        <div className="participant-media-status">
+                          <div
+                            className={`status-icon ${
+                              micStates[participantUserId] ? "active" : "muted"
+                            }`}
+                            title="Micrófono"
+                          >
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                              width="18"
+                              height="18"
+                            >
+                              {micStates[participantUserId] ? (
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                              ) : (
+                                <>
+                                  <line
+                                    x1="1"
+                                    y1="1"
+                                    x2="23"
+                                    y2="23"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                  />
+                                  <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
+                                </>
+                              )}
+                            </svg>
+                          </div>
+                          <div
+                            className={`status-icon ${
+                              cameraStates[participantUserId] ? "active" : "off"
+                            }`}
+                            title="Cámara"
+                          >
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                              width="18"
+                              height="18"
+                            >
+                              {cameraStates[participantUserId] ? (
+                                <>
+                                  <path d="M23 7l-7 5 7 5V7z" />
+                                  <rect
+                                    x="2"
+                                    y="5"
+                                    width="14"
+                                    height="14"
+                                    rx="2"
+                                  />
+                                </>
+                              ) : (
+                                <>
+                                  <line
+                                    x1="1"
+                                    y1="1"
+                                    x2="23"
+                                    y2="23"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                  />
+                                  <path d="M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34" />
+                                </>
+                              )}
+                            </svg>
+                          </div>
+                        </div>
                       </div>
-                      <div className="participant-details">
-                        <span className="participant-name-small">
-                          {participant.user?.displayName ||
-                            participant.user?.nickname ||
-                            participant.user?.email}
-                        </span>
-                        {participant.userId === room?.creatorId && (
-                          <span className="host-badge">Anfitrión</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -552,41 +989,66 @@ const Meeting: React.FC = () => {
             {/* Chat Tab */}
             {showChat && (
               <div className="sidebar-section chat-section">
-                <h2 className="sidebar-title">Chat</h2>
-                <div className="chat-messages">
-                  {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`chat-message ${
-                        message.userId === user?.id ? "own-message" : ""
-                      }`}
+                <div className="sidebar-header">
+                  <h2 className="sidebar-title">Chat</h2>
+                  <button
+                    className="sidebar-close-btn"
+                    onClick={() => setShowChat(false)}
+                    aria-label="Cerrar chat"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
                     >
-                      <div className="message-avatar">
-                        {(message.user?.displayName ||
-                          message.user?.nickname ||
-                          message.user?.email ||
-                          "U")[0].toUpperCase()}
-                      </div>
-                      <div className="message-content">
-                        <div className="message-header">
-                          <span className="message-author">
-                            {message.user?.displayName ||
-                              message.user?.nickname ||
-                              message.user?.email}
-                          </span>
-                          <span className="message-time">
-                            {message.createdAt
-                              ? new Date(message.createdAt).toLocaleTimeString(
-                                  "es-ES",
-                                  { hour: "2-digit", minute: "2-digit" }
-                                )
-                              : ""}
-                          </span>
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="chat-messages">
+                  {messages.map((message) => {
+                    const isOwnMessage = message.userId === user?.id;
+                    const displayName = isOwnMessage
+                      ? user?.displayName ||
+                        user?.nickname ||
+                        user?.email ||
+                        "Usuario"
+                      : message.user?.displayName ||
+                        message.user?.nickname ||
+                        message.user?.email ||
+                        "Usuario";
+                    const initial = displayName[0].toUpperCase();
+
+                    return (
+                      <div
+                        key={message.id}
+                        className={`chat-message ${
+                          isOwnMessage ? "own-message" : ""
+                        }`}
+                      >
+                        <div className="message-avatar">{initial}</div>
+                        <div className="message-content">
+                          <div className="message-header">
+                            <span className="message-author">
+                              {displayName}
+                            </span>
+                            <span className="message-time">
+                              {message.createdAt
+                                ? new Date(
+                                    message.createdAt
+                                  ).toLocaleTimeString("es-ES", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
+                                : ""}
+                            </span>
+                          </div>
+                          <p className="message-text">{message.content}</p>
                         </div>
-                        <p className="message-text">{message.content}</p>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   <div ref={messagesEndRef} />
                 </div>
                 <div className="chat-input-container">

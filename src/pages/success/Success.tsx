@@ -1,12 +1,16 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../stores/useAuthStore";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
-import WebContentReader from '../../components/web-reader/WebContentReader';
+import WebContentReader from "../../components/web-reader/WebContentReader";
 import "./Success.scss";
 
 const Success: React.FC = () => {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const navigate = useNavigate();
   const { user } = useAuthStore();
 
@@ -56,7 +60,11 @@ const Success: React.FC = () => {
             )}
           </p>
 
-          <div className="features-list" role="list" aria-label="Características principales de Charlaton">
+          <div
+            className="features-list"
+            role="list"
+            aria-label="Características principales de Charlaton"
+          >
             <div className="feature-item" role="listitem">
               <div className="feature-icon" aria-hidden="true">
                 <svg fill="currentColor" viewBox="0 0 24 24">
@@ -113,7 +121,10 @@ const Success: React.FC = () => {
           </button>
 
           <p className="help-text">
-            ¿Necesitas ayuda? Visita nuestro <a href="/help" aria-label="Ir al centro de ayuda">Centro de ayuda</a>
+            ¿Necesitas ayuda? Visita nuestro{" "}
+            <a href="/help" aria-label="Ir al centro de ayuda">
+              Centro de ayuda
+            </a>
           </p>
         </div>
       </main>
