@@ -32,7 +32,6 @@ const Meeting: React.FC = () => {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState("");
-  const [connectionId, setConnectionId] = useState<string | null>(null);
   const [isHost, setIsHost] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
