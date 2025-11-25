@@ -7,6 +7,16 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 const normalizedApiUrl = API_URL.replace(/\/api\/?$/, "");
 const API_BASE = `${normalizedApiUrl}/api`;
 
+// Log API configuration in development
+if (import.meta.env.DEV) {
+  console.log("[API] Configuration:", {
+    API_URL,
+    normalizedApiUrl,
+    API_BASE,
+    hasViteApiUrl: !!import.meta.env.VITE_API_URL
+  });
+}
+
 interface ApiResponse<T = any> {
   data?: T;
   error?: string;
@@ -19,14 +29,22 @@ const fetchWithConfig = async <T = any>(
   options: RequestInit = {},
   retryOn401: boolean = true
 ): Promise<ApiResponse<T>> => {
-  const timeout = 10000; // 10 segundos de timeout
+  // Timeout más largo para endpoints de autenticación que pueden tardar más
+  const isAuthEndpoint = endpoint.includes('/auth/login') || endpoint.includes('/auth/signup');
+  const timeout = isAuthEndpoint ? 30000 : 15000; // 30s para auth, 15s para otros
   
   try {
+    const fullUrl = `${API_BASE}${endpoint}`;
+    console.log(`[API] Making request to: ${fullUrl}`);
+    
     // Crear un AbortController para el timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    const timeoutId = setTimeout(() => {
+      console.error(`[API] Request timeout after ${timeout}ms: ${fullUrl}`);
+      controller.abort();
+    }, timeout);
 
-    const response = await fetch(`${API_BASE}${endpoint}`, {
+    const response = await fetch(fullUrl, {
       ...options,
       signal: controller.signal,
       headers: {
@@ -98,12 +116,14 @@ const fetchWithConfig = async <T = any>(
     return { data };
   } catch (error: any) {
     if (error.name === "AbortError") {
-      console.error("Timeout en API:", endpoint);
+      console.error(`[API] Timeout after ${timeout}ms:`, endpoint);
+      console.error(`[API] Full URL was: ${API_BASE}${endpoint}`);
       return {
-        error: "El servidor tardó demasiado en responder. Verifica que el backend esté corriendo.",
+        error: `El servidor tardó demasiado en responder (${timeout/1000}s). Verifica que el backend esté corriendo en ${API_BASE}`,
       };
     }
-    console.error("Error en API:", error);
+    console.error("[API] Error:", error);
+    console.error(`[API] Failed URL: ${API_BASE}${endpoint}`);
     return {
       error: error.message || "Error de conexión con el servidor",
     };
