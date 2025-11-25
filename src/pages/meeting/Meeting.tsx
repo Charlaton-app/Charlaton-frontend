@@ -118,20 +118,34 @@ const Meeting: React.FC = () => {
             "[MEETING] Participants loaded:",
             participantsResponse.data
           );
+          
+          // Log detailed user data for debugging
+          participantsResponse.data.forEach((p: Participant) => {
+            console.log(`[MEETING] Participant ${p.userId}:`, {
+              userId: p.userId,
+              user: p.user,
+              displayName: p.user?.displayName,
+              nickname: p.user?.nickname,
+              email: p.user?.email
+            });
+          });
+          
           setParticipants(participantsResponse.data);
 
           // Initialize mic/camera states for all participants
           const initialMicStates: Record<string, boolean> = {};
           const initialCameraStates: Record<string, boolean> = {};
           participantsResponse.data.forEach((p: Participant) => {
-            // Current user defaults match local state, others off
-            const isCurrentUser = p.userId === user.id;
-            initialMicStates[p.userId] = isCurrentUser ? isMicOn : false;
-            initialCameraStates[p.userId] = isCurrentUser ? isCameraOn : false;
+            // Ensure userId is string for consistency
+            const userId = String(p.userId);
+            const isCurrentUser = userId === String(user.id);
+            initialMicStates[userId] = isCurrentUser ? isMicOn : false;
+            initialCameraStates[userId] = isCurrentUser ? isCameraOn : false;
           });
           setMicStates(initialMicStates);
           setCameraStates(initialCameraStates);
           console.log("[MEETING] Initialized states:", {
+            currentUserId: user.id,
             micStates: initialMicStates,
             cameraStates: initialCameraStates,
           });
@@ -174,9 +188,10 @@ const Meeting: React.FC = () => {
       const newParticipant = data.participant;
       setParticipants((prev) => [...prev, newParticipant]);
 
-      // Initialize states for new participant
-      setMicStates((prev) => ({ ...prev, [newParticipant.userId]: false }));
-      setCameraStates((prev) => ({ ...prev, [newParticipant.userId]: false }));
+      // Initialize states for new participant (ensure string userId)
+      const participantUserId = String(newParticipant.userId);
+      setMicStates((prev) => ({ ...prev, [participantUserId]: false }));
+      setCameraStates((prev) => ({ ...prev, [participantUserId]: false }));
 
       notificationSounds.userJoined();
       const userName =
@@ -184,14 +199,19 @@ const Meeting: React.FC = () => {
         newParticipant.user?.nickname ||
         newParticipant.user?.email ||
         "Usuario";
-      console.log("[MEETING] User joined - displaying:", userName, newParticipant.user);
+      console.log(
+        "[MEETING] User joined - displaying:",
+        userName,
+        newParticipant.user
+      );
       toast.info(`${userName} se unió a la reunión`);
     });
 
     // Listen for participants leaving
     socket.on("userLeft", (data: any) => {
       console.log("[MEETING] User left:", data);
-      setParticipants((prev) => prev.filter((p) => p.userId !== data.userId));
+      const leftUserId = String(data.userId);
+      setParticipants((prev) => prev.filter((p) => String(p.userId) !== leftUserId));
       notificationSounds.userLeft();
       toast.info("Un usuario salió de la reunión");
     });
@@ -213,16 +233,26 @@ const Meeting: React.FC = () => {
 
     // Listen for mic state changes
     socket.on("micStateChanged", (data: { userId: string; isOn: boolean }) => {
-      console.log("[MEETING] Mic state changed:", data);
-      setMicStates((prev) => ({ ...prev, [data.userId]: data.isOn }));
+      const userId = String(data.userId);
+      console.log("[MEETING] Mic state changed:", { userId, isOn: data.isOn });
+      setMicStates((prev) => {
+        const updated = { ...prev, [userId]: data.isOn };
+        console.log("[MEETING] Updated micStates after socket event:", updated);
+        return updated;
+      });
     });
 
     // Listen for camera state changes
     socket.on(
       "cameraStateChanged",
       (data: { userId: string; isOn: boolean }) => {
-        console.log("[MEETING] Camera state changed:", data);
-        setCameraStates((prev) => ({ ...prev, [data.userId]: data.isOn }));
+        const userId = String(data.userId);
+        console.log("[MEETING] Camera state changed:", { userId, isOn: data.isOn });
+        setCameraStates((prev) => {
+          const updated = { ...prev, [userId]: data.isOn };
+          console.log("[MEETING] Updated cameraStates after socket event:", updated);
+          return updated;
+        });
       }
     );
 
@@ -346,9 +376,13 @@ const Meeting: React.FC = () => {
    */
   const toggleMic = () => {
     if (!user?.id || !meetingId) return;
-    const userId = user.id;
+    const userId = String(user.id);
     const newState = !isMicOn;
-    console.log("[MEETING] Toggle mic:", { userId, oldState: isMicOn, newState });
+    console.log("[MEETING] Toggle mic:", {
+      userId,
+      oldState: isMicOn,
+      newState,
+    });
     setIsMicOn(newState);
     setMicStates((prev) => {
       const updated = { ...prev, [userId]: newState };
@@ -363,9 +397,13 @@ const Meeting: React.FC = () => {
    */
   const toggleCamera = () => {
     if (!user?.id || !meetingId) return;
-    const userId = user.id;
+    const userId = String(user.id);
     const newState = !isCameraOn;
-    console.log("[MEETING] Toggle camera:", { userId, oldState: isCameraOn, newState });
+    console.log("[MEETING] Toggle camera:", {
+      userId,
+      oldState: isCameraOn,
+      newState,
+    });
     setIsCameraOn(newState);
     setCameraStates((prev) => {
       const updated = { ...prev, [userId]: newState };
@@ -552,8 +590,11 @@ const Meeting: React.FC = () => {
           <div className="video-grid">
             {/* Video placeholder - can be replaced with actual video streams */}
             {participants.map((participant) => {
-              // Get display name with current user fallback
-              const isCurrentUser = participant.userId === user?.id;
+              // Ensure userId is string for consistent comparison
+              const participantUserId = String(participant.userId);
+              const currentUserId = String(user?.id);
+              const isCurrentUser = participantUserId === currentUserId;
+              
               const displayName = isCurrentUser
                 ? user?.displayName ||
                   user?.nickname ||
@@ -564,6 +605,15 @@ const Meeting: React.FC = () => {
                   participant.user?.email ||
                   "Usuario";
               const initial = displayName[0].toUpperCase();
+              
+              // Log for debugging
+              console.log(`[MEETING] Rendering video tile for ${participantUserId}:`, {
+                isCurrentUser,
+                displayName,
+                micState: micStates[participantUserId],
+                cameraState: cameraStates[participantUserId],
+                participantData: participant
+              });
 
               return (
                 <div key={participant.id} className="video-tile">
@@ -576,7 +626,7 @@ const Meeting: React.FC = () => {
                     <div className="media-controls">
                       <div
                         className={`media-icon ${
-                          micStates[participant.userId] ? "active" : "inactive"
+                          micStates[participantUserId] ? "active" : "inactive"
                         }`}
                         title="Micrófono"
                       >
@@ -586,7 +636,7 @@ const Meeting: React.FC = () => {
                           width="20"
                           height="20"
                         >
-                          {micStates[participant.userId] ? (
+                          {micStates[participantUserId] ? (
                             <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z M19 10v2a7 7 0 0 1-14 0v-2" />
                           ) : (
                             <>
@@ -605,7 +655,7 @@ const Meeting: React.FC = () => {
                       </div>
                       <div
                         className={`media-icon ${
-                          cameraStates[participant.userId]
+                          cameraStates[participantUserId]
                             ? "active"
                             : "inactive"
                         }`}
@@ -617,7 +667,7 @@ const Meeting: React.FC = () => {
                           width="20"
                           height="20"
                         >
-                          {cameraStates[participant.userId] ? (
+                          {cameraStates[participantUserId] ? (
                             <>
                               <path d="M23 7l-7 5 7 5V7z" />
                               <rect x="1" y="5" width="15" height="14" rx="2" />
@@ -777,7 +827,10 @@ const Meeting: React.FC = () => {
                 </div>
                 <div className="participants-list">
                   {participants.map((participant) => {
-                    const isCurrentUser = participant.userId === user?.id;
+                    const participantUserId = String(participant.userId);
+                    const currentUserId = String(user?.id);
+                    const isCurrentUser = participantUserId === currentUserId;
+                    
                     const displayName = isCurrentUser
                       ? user?.displayName ||
                         user?.nickname ||
@@ -805,7 +858,7 @@ const Meeting: React.FC = () => {
                         <div className="participant-media-status">
                           <div
                             className={`status-icon ${
-                              micStates[participant.userId] ? "active" : "muted"
+                              micStates[participantUserId] ? "active" : "muted"
                             }`}
                             title="Micrófono"
                           >
@@ -815,7 +868,7 @@ const Meeting: React.FC = () => {
                               width="18"
                               height="18"
                             >
-                              {micStates[participant.userId] ? (
+                              {micStates[participantUserId] ? (
                                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
                               ) : (
                                 <>
@@ -834,7 +887,7 @@ const Meeting: React.FC = () => {
                           </div>
                           <div
                             className={`status-icon ${
-                              cameraStates[participant.userId]
+                              cameraStates[participantUserId]
                                 ? "active"
                                 : "off"
                             }`}
@@ -846,7 +899,7 @@ const Meeting: React.FC = () => {
                               width="18"
                               height="18"
                             >
-                              {cameraStates[participant.userId] ? (
+                              {cameraStates[participantUserId] ? (
                                 <>
                                   <path d="M23 7l-7 5 7 5V7z" />
                                   <rect
