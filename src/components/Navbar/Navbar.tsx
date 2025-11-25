@@ -105,38 +105,58 @@ const Navbar: React.FC<NavbarProps> = ({
         {showAuthButtons && (
           <div id="mobile-menu" className={`auth-section ${isMenuOpen ? "mobile-open" : ""}`} aria-label="Sección de autenticación">
             {user ? (
-              <div className="user-menu-container" ref={userMenuRef}>
-                <button
-                  className="user-icon-btn"
-                  onClick={toggleUserMenu}
-                  aria-label="Menú de usuario"
-                  aria-expanded={isUserMenuOpen}
-                  aria-haspopup="true"
-                  aria-controls="user-dropdown-menu"
-                >
-                  <div className="user-icon" aria-hidden="true">
-                    {getUserInitial()}
-                  </div>
-                </button>
-                {isUserMenuOpen && (
-                  <div id="user-dropdown-menu" className="user-dropdown" role="menu" aria-label="Opciones de usuario">
-                    <button
-                      className="dropdown-item"
-                      onClick={handleProfileClick}
-                      role="menuitem"
-                    >
-                      Mi perfil
-                    </button>
-                    <button
-                      className="dropdown-item"
-                      onClick={handleLogout}
-                      role="menuitem"
-                    >
-                      Cerrar sesión
-                    </button>
-                  </div>
-                )}
-              </div>
+              <>
+                {/* Desktop: Show user icon with dropdown */}
+                <div className="user-menu-container desktop-only" ref={userMenuRef}>
+                  <button
+                    className="user-icon-btn"
+                    onClick={toggleUserMenu}
+                    aria-label="Menú de usuario"
+                    aria-expanded={isUserMenuOpen}
+                    aria-haspopup="true"
+                    aria-controls="user-dropdown-menu"
+                  >
+                    <div className="user-icon" aria-hidden="true">
+                      {getUserInitial()}
+                    </div>
+                  </button>
+                  {isUserMenuOpen && (
+                    <div id="user-dropdown-menu" className="user-dropdown" role="menu" aria-label="Opciones de usuario">
+                      <button
+                        className="dropdown-item"
+                        onClick={handleProfileClick}
+                        role="menuitem"
+                      >
+                        Mi perfil
+                      </button>
+                      <button
+                        className="dropdown-item"
+                        onClick={handleLogout}
+                        role="menuitem"
+                      >
+                        Cerrar sesión
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {/* Mobile: Show profile and logout buttons directly in hamburger menu */}
+                <div className="mobile-menu-items mobile-only">
+                  <button
+                    className="btn-outline"
+                    onClick={handleProfileClick}
+                    aria-label="Ir a mi perfil"
+                  >
+                    MI PERFIL
+                  </button>
+                  <button
+                    className="btn-primary"
+                    onClick={handleLogout}
+                    aria-label="Cerrar sesión"
+                  >
+                    CERRAR SESIÓN
+                  </button>
+                </div>
+              </>
             ) : (
               <>
                 <button

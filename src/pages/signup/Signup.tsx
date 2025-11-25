@@ -13,6 +13,7 @@ const Signup: React.FC = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    edad: "",
     password: "",
     confirmPassword: "",
   });
@@ -32,10 +33,17 @@ const Signup: React.FC = () => {
     if (
       !formData.name ||
       !formData.email ||
+      !formData.edad ||
       !formData.password ||
       !formData.confirmPassword
     ) {
       setError("Por favor, completa todos los campos");
+      return;
+    }
+
+    const edadNum = parseInt(formData.edad, 10);
+    if (isNaN(edadNum) || edadNum < 1 || edadNum > 120) {
+      setError("Por favor, ingresa una edad válida (entre 1 y 120)");
       return;
     }
 
@@ -52,6 +60,7 @@ const Signup: React.FC = () => {
     const result = await signup({
       email: formData.email,
       nickname: formData.name,
+      edad: edadNum,
       password: formData.password,
       confirmPassword: formData.confirmPassword,
     });
@@ -144,6 +153,25 @@ const Signup: React.FC = () => {
                 aria-invalid={error && !formData.email ? "true" : "false"}
                 aria-describedby={error ? "signup-error" : undefined}
               />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="edad">Edad</label>
+              <input
+                type="number"
+                id="edad"
+                name="edad"
+                value={formData.edad}
+                onChange={handleChange}
+                placeholder="18"
+                min="1"
+                max="120"
+                disabled={isLoading}
+                aria-required="true"
+                aria-invalid={error && !formData.edad ? "true" : "false"}
+                aria-describedby={error ? "signup-error edad-help" : "edad-help"}
+              />
+              <span id="edad-help" className="visually-hidden">Ingresa tu edad (entre 1 y 120 años)</span>
             </div>
 
             <div className="form-group">

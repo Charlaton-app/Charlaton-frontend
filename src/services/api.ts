@@ -1,7 +1,8 @@
 // src/services/api.ts
 // Servicio base para comunicación con el backend
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_BASE = `${API_URL}/api`;
 
 interface ApiResponse<T = any> {
   data?: T;
@@ -21,7 +22,7 @@ const fetchWithConfig = async <T = any>(
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const response = await fetch(`${API_BASE}${endpoint}`, {
       ...options,
       signal: controller.signal,
       headers: {
@@ -95,6 +96,15 @@ export const api = {
     return fetchWithConfig<T>(endpoint, {
       ...options,
       method: "PUT",
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  },
+
+  // PATCH request
+  patch: <T = any>(endpoint: string, body?: any, options?: RequestInit) => {
+    return fetchWithConfig<T>(endpoint, {
+      ...options,
+      method: "PATCH",
       body: body ? JSON.stringify(body) : undefined,
     });
   },
