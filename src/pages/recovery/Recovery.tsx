@@ -1,23 +1,27 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import useAuthStore from "../../stores/useAuthStore";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
 import WebContentReader from '../../components/web-reader/WebContentReader';
+import { useToastContext } from "../../contexts/ToastContext";
 import "./Recovery.scss";
 
 const Recovery: React.FC = () => {
+  const toast = useToastContext();
   const { recoverPassword, isLoading } = useAuthStore();
   const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
     setSuccess(false);
 
     if (!email) {
-      setError("Por favor, ingresa tu correo electrónico");
+      toast.error("Por favor, ingresa tu correo electrónico");
       return;
     }
 
@@ -25,7 +29,7 @@ const Recovery: React.FC = () => {
     if (result.success) {
       setSuccess(true);
     } else {
-      setError(result.error || "Error al enviar el correo");
+      toast.error(result.error || "Error al enviar el correo");
     }
   };
 
@@ -53,12 +57,6 @@ const Recovery: React.FC = () => {
             Ingresa tu correo electrónico y te enviaremos instrucciones para
             restablecer tu contraseña
           </p>
-
-          {error && (
-            <div id="recovery-error" className="error-message" role="alert" aria-live="assertive">
-              {error}
-            </div>
-          )}
 
           {success && (
             <div className="success-message" role="status" aria-live="polite" aria-atomic="true">
@@ -96,8 +94,6 @@ const Recovery: React.FC = () => {
                   placeholder="tu@ejemplo.com"
                   disabled={isLoading}
                   aria-required="true"
-                  aria-invalid={error ? "true" : "false"}
-                  aria-describedby={error ? "recovery-error" : undefined}
                   autoFocus
                 />
               </div>

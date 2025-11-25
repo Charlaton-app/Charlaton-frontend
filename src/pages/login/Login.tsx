@@ -1,7 +1,8 @@
 import type React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../stores/useAuthStore";
+import { useToastContext } from "../../contexts/ToastContext";
 import googleIcon from "/icons/google-icon.svg";
 import githubIcon from "/icons/github-icon.svg";
 import Navbar from "../../components/Navbar/Navbar";
@@ -13,48 +14,60 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const { login, loginWithGoogle, loginWithGithub, isLoading } =
     useAuthStore();
+  const toast = useToastContext();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const handleLoginGoogle = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
 
     const result = await loginWithGoogle();
     if (result.success) {
+      toast.success("Inicio de sesión exitoso");
       navigate("/dashboard");
     } else {
-      setError(result.error || "Error al iniciar sesión con Google");
+      toast.error(result.error || "Error al iniciar sesión con Google");
     }
   };
 
   const handleLoginGithub = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
 
     const result = await loginWithGithub();
     if (result.success) {
+      toast.success("Inicio de sesión exitoso");
       navigate("/dashboard");
     } else {
-      setError(result.error || "Error al iniciar sesión con GitHub");
+      toast.error(result.error || "Error al iniciar sesión con GitHub");
     }
   };
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setPasswordError("");
 
     if (!email || !password) {
-      setError("Por favor, completa todos los campos");
+      toast.error("Por favor, completa todos los campos");
+      return;
+    }
+
+    if (password.length < 6) {
+      setPasswordError("La contraseña debe tener al menos 6 caracteres");
       return;
     }
 
     const result = await login(email, password);
     if (result.success) {
+      toast.success("Inicio de sesión exitoso");
       navigate("/dashboard");
     } else {
-      setError(result.error || "Error al iniciar sesión");
+      toast.error(result.error || "Error al iniciar sesión");
     }
   };
 
@@ -84,13 +97,6 @@ const Login: React.FC = () => {
           <h1>Ingresa a tu cuenta</h1>
           <p className="subtitle">Conecta con tu equipo de forma sencilla</p>
 
-          {/* Error Message */}
-          {error && (
-            <div id="login-error" className="error-message" role="alert" aria-live="polite">
-              {error}
-            </div>
-          )}
-
           {/* Email/Password Form */}
           <form onSubmit={handleEmailLogin} className="login-form">
             <div className="form-group">
@@ -103,8 +109,7 @@ const Login: React.FC = () => {
                 placeholder="tu@ejemplo.com"
                 disabled={isLoading}
                 aria-required="true"
-                aria-invalid={error ? "true" : "false"}
-                aria-describedby={error ? "login-error" : undefined}
+                aria-invalid="false"
               />
             </div>
 
@@ -114,13 +119,21 @@ const Login: React.FC = () => {
                 type="password"
                 id="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setPasswordError("");
+                }}
                 placeholder="••••••••"
                 disabled={isLoading}
                 aria-required="true"
-                aria-invalid={error ? "true" : "false"}
-                aria-describedby={error ? "login-error" : undefined}
+                aria-invalid={passwordError ? "true" : "false"}
+                aria-describedby={passwordError ? "password-error" : undefined}
               />
+              {passwordError && (
+                <span id="password-error" className="field-error" role="alert">
+                  {passwordError}
+                </span>
+              )}
             </div>
 
             <button

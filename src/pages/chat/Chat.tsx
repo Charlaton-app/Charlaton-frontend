@@ -32,6 +32,10 @@ const Chat: React.FC = () => {
   const hasLoadedHistory = useRef(false);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
     // Verificar autenticación
     if (!user) {
       navigate("/login");

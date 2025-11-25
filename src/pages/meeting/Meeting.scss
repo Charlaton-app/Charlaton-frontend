@@ -106,10 +106,10 @@ $font-body: "Rubik", sans-serif;
 
       .meeting-id {
         font-size: 0.875rem;
-        color: $text-white;
-        font-weight: 500;
+        color: #ffffff;
+        font-weight: 600;
         padding: 0.25rem 0.75rem;
-        background: rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.2);
         border-radius: 12px;
         letter-spacing: 0.5px;
       }
@@ -253,15 +253,16 @@ $font-body: "Rubik", sans-serif;
             bottom: 0.75rem;
             left: 0.75rem;
             right: 0.75rem;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.85);
             backdrop-filter: blur(8px);
             padding: 0.5rem 0.75rem;
             border-radius: 6px;
 
             .participant-name {
-              font-size: 0.875rem;
-              font-weight: 500;
-              color: white;
+              font-size: 0.9375rem;
+              font-weight: 600;
+              color: #ffffff;
+              text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
             }
           }
         }
@@ -421,7 +422,8 @@ $font-body: "Rubik", sans-serif;
                 .participant-name-small {
                   display: block;
                   font-size: 0.9375rem;
-                  font-weight: 500;
+                  font-weight: 600;
+                  color: #ffffff;
                   white-space: nowrap;
                   overflow: hidden;
                   text-overflow: ellipsis;
@@ -501,21 +503,22 @@ $font-body: "Rubik", sans-serif;
 
                   .message-author {
                     font-size: 0.875rem;
-                    font-weight: 600;
-                    color: $secondary-color;
+                    font-weight: 700;
+                    color: #24c4e8;
                   }
 
                   .message-time {
                     font-size: 0.75rem;
-                    color: $text-gray;
+                    color: #b0b0b0;
                   }
                 }
 
                 .message-text {
                   font-size: 0.9375rem;
-                  color: $text-white;
+                  color: #ffffff;
                   margin: 0;
                   word-wrap: break-word;
+                  line-height: 1.4;
                 }
               }
             }

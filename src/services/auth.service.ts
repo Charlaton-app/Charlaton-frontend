@@ -389,14 +389,6 @@ export const loginWithGithub = async () => {
     };
   }
 };
-      };
-    }
-
-    return {
-      error: error.message || "Error al iniciar sesión con Facebook",
-    };
-  }
-};
 
 /**
  * Logout (cerrar sesión)

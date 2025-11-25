@@ -25,6 +25,8 @@ interface ReaderPreferences {
   voice: string;
 }
 
+type Position = 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
+
 const WebContentReader: React.FC = () => {
   // Estados principales
   const [isOpen, setIsOpen] = useState(false);
@@ -36,12 +38,48 @@ const WebContentReader: React.FC = () => {
   const [pitch, setPitch] = useState(1.0); // Tono de voz (0 - 2)
   const [notification, setNotification] = useState<string>("");
   const [isSupported, setIsSupported] = useState(true);
+  const [position, setPosition] = useState<Position>('bottom-right');
   
   // Referencias
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const textChunksRef = useRef<string[]>([]);
-  const currentChunkIndexRef = useRef<number>(0);  /**
+  const currentChunkIndexRef = useRef<number>(0);
+
+  /**
+   * Load saved position from localStorage
+   */
+  useEffect(() => {
+    const savedPosition = localStorage.getItem('webReaderPosition');
+    if (savedPosition && ['bottom-right', 'bottom-left', 'top-right', 'top-left'].includes(savedPosition)) {
+      setPosition(savedPosition as Position);
+    }
+  }, []);
+
+  /**
+   * Cycle through positions clockwise: BR -> BL -> TL -> TR -> BR
+   */
+  const cyclePosition = () => {
+    const positions: Position[] = ['bottom-right', 'bottom-left', 'top-left', 'top-right'];
+    const currentIndex = positions.indexOf(position);
+    const nextPosition = positions[(currentIndex + 1) % positions.length];
+    setPosition(nextPosition);
+    localStorage.setItem('webReaderPosition', nextPosition);
+    showNotification(`Posici\u00f3n: ${getPositionLabel(nextPosition)}`);
+  };
+
+  /**
+   * Get human-readable position label
+   */
+  const getPositionLabel = (pos: Position): string => {
+    const labels: Record<Position, string> = {
+      'bottom-right': 'Abajo Derecha',
+      'bottom-left': 'Abajo Izquierda',
+      'top-right': 'Arriba Derecha',
+      'top-left': 'Arriba Izquierda'
+    };
+    return labels[pos];
+  };  /**
    * Verificar compatibilidad del navegador
    * La Web Speech API requiere HTTPS en producción
    */
@@ -415,19 +453,23 @@ const WebContentReader: React.FC = () => {
   return (
     <>
       {/* 
-        Botón flotante principal
+        Botón flotante principal con posicionamiento dinámico
         WCAG 2.4.7 - Focus Visible
         WCAG 4.1.2 - Name, Role, Value
       */}
       <button
-        className="web-content-reader__fab"
+        className={`web-content-reader__fab web-content-reader__fab--${position}`}
         onClick={togglePanel}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          cyclePosition();
+        }}
         aria-label={
           isOpen ? "Cerrar panel de lectura" : "Abrir panel de lectura"
         }
         aria-expanded={isOpen}
         aria-controls="reader-panel"
-        title="Lector de contenido web"
+        title="Lector de contenido web (Click derecho para mover)"
         type="button"
       >
         <svg

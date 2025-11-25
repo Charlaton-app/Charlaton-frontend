@@ -14,6 +14,10 @@ const JoinMeeting: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
     if (meetingId) {
       console.log(`[JOIN] Redirecting to meeting ${meetingId}`);
       navigate(`/meet/${meetingId}`, { replace: true });

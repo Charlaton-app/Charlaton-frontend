@@ -4,6 +4,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import useAuthStore from "../../stores/useAuthStore";
+import { useToastContext } from "../../contexts/ToastContext";
+import { notificationSounds } from "../../utils/notificationSounds";
 import WebContentReader from "../../components/web-reader/WebContentReader";
 import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationModal";
 import {
@@ -26,6 +28,12 @@ const Meeting: React.FC = () => {
   const { meetingId } = useParams<{ meetingId: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const toast = useToastContext();
+
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   // State
   const [room, setRoom] = useState<any>(null);
@@ -38,7 +46,7 @@ const Meeting: React.FC = () => {
   const [showEndModal, setShowEndModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [showChat, setShowChat] = useState(false);
-  const [showParticipants, setShowParticipants] = useState(true);
+  const [showParticipants, setShowParticipants] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -123,25 +131,30 @@ const Meeting: React.FC = () => {
     socket.on("userJoined", (data: any) => {
       console.log("[MEETING] User joined:", data);
       setParticipants((prev) => [...prev, data.participant]);
+      notificationSounds.userJoined();
+      toast.info(`${data.participant.user?.displayName || data.participant.user?.email || "Usuario"} se unió a la reunión`);
     });
 
     // Listen for participants leaving
     socket.on("userLeft", (data: any) => {
       console.log("[MEETING] User left:", data);
       setParticipants((prev) => prev.filter((p) => p.userId !== data.userId));
+      notificationSounds.userLeft();
+      toast.info("Un usuario salió de la reunión");
     });
 
     // Listen for new messages
     socket.on("newMessage", (message: Message) => {
       console.log("[MEETING] New message received:", message);
       setMessages((prev) => [...prev, message]);
+      notificationSounds.newMessage();
       scrollToBottom();
     });
 
     // Listen for meeting end
     socket.on("meetingEnded", () => {
       console.log("[MEETING] Meeting ended by host");
-      alert("La reunión ha sido finalizada por el anfitrión");
+      toast.warning("La reunión ha sido finalizada por el anfitrión");
       navigate("/dashboard");
     });
 
@@ -328,7 +341,7 @@ const Meeting: React.FC = () => {
       {/* Meeting Header */}
       <header className="meeting-header">
         <div className="meeting-info">
-          <h1 className="meeting-title">{room?.name || "Reunión"}</h1>
+          <h1 className="meeting-title">Reunión</h1>
           <span className="meeting-id">ID: {meetingId}</span>
         </div>
 
@@ -471,7 +484,10 @@ const Meeting: React.FC = () => {
 
             <button
               className={`control-btn ${showChat ? "active" : ""}`}
-              onClick={() => setShowChat(!showChat)}
+              onClick={() => {
+                setShowChat(!showChat);
+                if (!showChat) setShowParticipants(false);
+              }}
               aria-label="Abrir chat"
               title="Chat"
             >
@@ -490,7 +506,10 @@ const Meeting: React.FC = () => {
 
             <button
               className={`control-btn ${showParticipants ? "active" : ""}`}
-              onClick={() => setShowParticipants(!showParticipants)}
+              onClick={() => {
+                setShowParticipants(!showParticipants);
+                if (!showParticipants) setShowChat(false);
+              }}
               aria-label="Ver participantes"
               title="Participantes"
             >

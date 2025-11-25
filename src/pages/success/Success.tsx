@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../stores/useAuthStore";
 import Navbar from "../../components/Navbar/Navbar";
@@ -7,6 +7,10 @@ import WebContentReader from '../../components/web-reader/WebContentReader';
 import "./Success.scss";
 
 const Success: React.FC = () => {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const navigate = useNavigate();
   const { user } = useAuthStore();
 

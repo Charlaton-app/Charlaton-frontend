@@ -149,6 +149,20 @@ $font-body: "Rubik", sans-serif;
             &::placeholder {
               color: #9ca3af;
             }
+
+            &[aria-invalid="true"] {
+              border-color: $error-color;
+            }
+          }
+
+          .field-error {
+            display: block;
+            color: $error-color;
+            font-size: 0.8125rem;
+            margin-top: 0.375rem;
+            font-family: $font-body;
+          }
+            }
           }
         }
 
