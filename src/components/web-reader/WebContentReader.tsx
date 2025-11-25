@@ -99,8 +99,8 @@ const WebContentReader: React.FC = () => {
    */
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
     setIsDragging(true);
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
     dragStartPos.current = { x: clientX, y: clientY };
   };
 
@@ -111,8 +111,14 @@ const WebContentReader: React.FC = () => {
     if (!isDragging) return;
     setIsDragging(false);
 
-    const clientX = 'changedTouches' in e ? e.changedTouches[0].clientX : (e as React.MouseEvent).clientX;
-    const clientY = 'changedTouches' in e ? e.changedTouches[0].clientY : (e as React.MouseEvent).clientY;
+    const clientX =
+      "changedTouches" in e
+        ? e.changedTouches[0].clientX
+        : (e as React.MouseEvent).clientX;
+    const clientY =
+      "changedTouches" in e
+        ? e.changedTouches[0].clientY
+        : (e as React.MouseEvent).clientY;
 
     // Determine position based on which quadrant of screen
     const isLeft = clientX < window.innerWidth / 2;
@@ -521,7 +527,9 @@ const WebContentReader: React.FC = () => {
       */}
       <button
         ref={fabRef}
-        className={`web-content-reader__fab web-content-reader__fab--${position} ${isDragging ? 'web-content-reader__fab--dragging' : ''}`}
+        className={`web-content-reader__fab web-content-reader__fab--${position} ${
+          isDragging ? "web-content-reader__fab--dragging" : ""
+        }`}
         onClick={togglePanel}
         onContextMenu={(e) => {
           e.preventDefault();

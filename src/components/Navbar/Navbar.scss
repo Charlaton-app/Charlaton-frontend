@@ -33,6 +33,18 @@ $font-body: "Rubik", sans-serif;
       align-items: center;
       gap: 0.5rem;
       z-index: 41;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+
+      &:hover {
+        opacity: 0.8;
+      }
+
+      &:focus {
+        outline: 2px solid $primary-color;
+        outline-offset: 4px;
+        border-radius: 4px;
+      }
 
       h1 {
         font-family: $font-title;
@@ -152,28 +164,35 @@ $font-body: "Rubik", sans-serif;
       align-items: center;
 
       @media (max-width: 768px) {
-        position: fixed;
-        top: 4rem;
-        right: 0;
-        background: white;
-        flex-direction: column;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
-        transform: translateX(120%);
-        transition: transform 0.3s ease;
-        gap: 0.75rem;
-        min-width: 200px;
-        margin-right: 1rem;
+        // Solo aplicar posicionamiento fijo cuando NO hay usuario autenticado
+        // Cuando hay usuario, se muestra directamente en el navbar
+        &:not(:has(.user-menu-container)) {
+          position: fixed;
+          top: 4rem;
+          right: 0;
+          background: white;
+          flex-direction: column;
+          padding: 1rem;
+          border-radius: 0.5rem;
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+          transform: translateX(120%);
+          transition: transform 0.3s ease;
+          gap: 0.75rem;
+          min-width: 200px;
+          margin-right: 1rem;
 
-        &.mobile-open {
-          transform: translateX(0);
+          &.mobile-open {
+            transform: translateX(0);
+          }
         }
       }
 
       @media (max-width: 640px) {
         gap: 0.5rem;
-        top: 3.5rem;
+
+        &:not(:has(.user-menu-container)) {
+          top: 3.5rem;
+        }
       }
 
       .user-name {

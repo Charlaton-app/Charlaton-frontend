@@ -120,9 +120,14 @@ const Meeting: React.FC = () => {
           );
 
           // Log detailed user data for debugging
-          console.log("[MEETING] Total participants:", participantsResponse.data.length);
+          console.log(
+            "[MEETING] Total participants:",
+            participantsResponse.data.length
+          );
           participantsResponse.data.forEach((p: Participant, index) => {
-            console.log(`[MEETING] Participant ${index + 1} (userId: ${p.userId}):`);
+            console.log(
+              `[MEETING] Participant ${index + 1} (userId: ${p.userId}):`
+            );
             console.log("  - Full participant object:", p);
             console.log("  - Has user object?", !!p.user);
             if (p.user) {
@@ -611,23 +616,47 @@ const Meeting: React.FC = () => {
               // Determine display name with detailed logging
               let displayName: string;
               if (isCurrentUser) {
-                displayName = user?.nickname || user?.displayName || user?.email?.split('@')[0] || "Usuario";
-                console.log(`[MEETING] Current user name: "${displayName}" (from: ${user?.nickname ? 'nickname' : user?.displayName ? 'displayName' : user?.email ? 'email' : 'fallback'})`);
+                displayName =
+                  user?.nickname ||
+                  user?.displayName ||
+                  user?.email?.split("@")[0] ||
+                  "Usuario";
+                console.log(
+                  `[MEETING] Current user name: "${displayName}" (from: ${
+                    user?.nickname
+                      ? "nickname"
+                      : user?.displayName
+                      ? "displayName"
+                      : user?.email
+                      ? "email"
+                      : "fallback"
+                  })`
+                );
               } else {
                 // Use participant.user data from backend
                 const pUser = participant.user;
-                displayName = pUser?.nickname || pUser?.displayName || pUser?.email?.split('@')[0] || "Usuario";
-                console.log(`[MEETING] Participant ${participantUserId} name: "${displayName}"`);
+                displayName =
+                  pUser?.nickname ||
+                  pUser?.displayName ||
+                  pUser?.email?.split("@")[0] ||
+                  "Usuario";
+                console.log(
+                  `[MEETING] Participant ${participantUserId} name: "${displayName}"`
+                );
                 console.log(`  - participant.user:`, pUser);
-                console.log(`  - nickname: "${pUser?.nickname}", displayName: "${pUser?.displayName}", email: "${pUser?.email}"`);
-                
+                console.log(
+                  `  - nickname: "${pUser?.nickname}", displayName: "${pUser?.displayName}", email: "${pUser?.email}"`
+                );
+
                 if (displayName === "Usuario") {
-                  console.error(`  ❌ PROBLEMA: No se encontró nombre para userId ${participantUserId}`);
+                  console.error(
+                    `  ❌ PROBLEMA: No se encontró nombre para userId ${participantUserId}`
+                  );
                   console.error(`  - participant.user existe?:`, !!pUser);
                   console.error(`  - Objeto completo:`, participant);
                 }
               }
-              
+
               const initial = displayName[0].toUpperCase();
 
               // Log mic/camera states
@@ -850,16 +879,25 @@ const Meeting: React.FC = () => {
                     const participantUserId = String(participant.userId);
                     const currentUserId = String(user?.id);
                     const isCurrentUser = participantUserId === currentUserId;
-                    
+
                     // Use same logic as video tiles for consistency
                     let displayName: string;
                     if (isCurrentUser) {
-                      displayName = user?.nickname || user?.displayName || user?.email?.split('@')[0] || "Usuario";
+                      displayName =
+                        user?.nickname ||
+                        user?.displayName ||
+                        user?.email?.split("@")[0] ||
+                        "Usuario";
                     } else {
                       const pUser = participant.user;
-                      displayName = pUser?.nickname || pUser?.displayName || pUser?.email?.split('@')[0] || "Usuario";
+                      displayName =
+                        pUser?.nickname ||
+                        pUser?.displayName ||
+                        pUser?.email?.split("@")[0] ||
+                        "Usuario";
                     }
-                    const initial = displayName[0].toUpperCase();                    return (
+                    const initial = displayName[0].toUpperCase();
+                    return (
                       <div key={participant.id} className="participant-item">
                         <div className="participant-avatar-small">
                           {initial}
