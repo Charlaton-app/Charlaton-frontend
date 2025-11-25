@@ -1,12 +1,12 @@
-$primary-color: #0D5E9E;
-$secondary-color: #24C4E8;
-$accent-color: #F7941D;
-$bg-light: #F0F8FF;
-$bg-white: #FFFFFF;
-$text-dark: #1A1A1A;
-$text-gray: #5A5A5A;
-$font-title: 'Days One', sans-serif;
-$font-body: 'Rubik', sans-serif;
+$primary-color: #0d5e9e;
+$secondary-color: #24c4e8;
+$accent-color: #f7941d;
+$bg-light: #f0f8ff;
+$bg-white: #ffffff;
+$text-dark: #1a1a1a;
+$text-gray: #5a5a5a;
+$font-title: "Days One", sans-serif;
+$font-body: "Rubik", sans-serif;
 
 .dashboard-page {
   display: flex;
@@ -99,7 +99,6 @@ $font-body: 'Rubik', sans-serif;
       display: flex;
       align-items: center;
       justify-content: center;
-      
       svg {
         width: 48px;
         height: 48px;
@@ -107,7 +106,6 @@ $font-body: 'Rubik', sans-serif;
         transition: stroke 0.3s ease;
       }
     }
-    
     &:hover .action-icon svg {
       stroke: $secondary-color;
     }
@@ -125,6 +123,140 @@ $font-body: 'Rubik', sans-serif;
       color: $text-gray;
       margin: 0;
     }
+  }
+}
+
+// Join Meeting Section
+.join-meeting-section {
+  background: $bg-white;
+  border-radius: 16px;
+  padding: 2.5rem;
+  margin-bottom: 3rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+
+  h2 {
+    font-family: $font-title;
+    font-size: 1.5rem;
+    color: $primary-color;
+    margin-bottom: 0.5rem;
+  }
+
+  .join-meeting-description {
+    font-family: $font-body;
+    font-size: 1rem;
+    color: $text-gray;
+    margin-bottom: 1.5rem;
+  }
+
+  .join-meeting-form {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+
+    @media (max-width: 640px) {
+      flex-direction: column;
+    }
+  }
+
+  .join-meeting-input {
+    flex: 1;
+    font-family: $font-body;
+    font-size: 1rem;
+    padding: 0.875rem 1.25rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+
+    &:focus {
+      outline: none;
+      border-color: $secondary-color;
+      box-shadow: 0 0 0 3px rgba(36, 196, 232, 0.1);
+    }
+
+    &:disabled {
+      background-color: #f5f5f5;
+      cursor: not-allowed;
+    }
+
+    &::placeholder {
+      color: #999;
+    }
+  }
+
+  .join-meeting-button {
+    font-family: $font-body;
+    font-size: 1rem;
+    font-weight: 500;
+    padding: 0.875rem 2rem;
+    background: linear-gradient(
+      135deg,
+      $primary-color 0%,
+      $secondary-color 100%
+    );
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-width: 140px;
+
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(36, 196, 232, 0.3);
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    &:focus-visible {
+      outline: 3px solid $secondary-color;
+      outline-offset: 2px;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (max-width: 640px) {
+      width: 100%;
+    }
+  }
+
+  .join-meeting-help {
+    font-family: $font-body;
+    font-size: 0.875rem;
+    color: $text-gray;
+    margin: 0;
+  }
+
+  @media (max-width: 768px) {
+    padding: 2rem 1.5rem;
+  }
+
+  @media (max-width: 640px) {
+    padding: 1.5rem 1rem;
   }
 }
 
@@ -188,7 +320,6 @@ $font-body: 'Rubik', sans-serif;
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        
         .meeting-icon {
           width: 18px;
           height: 18px;
@@ -220,7 +351,11 @@ $font-body: 'Rubik', sans-serif;
   }
 
   .stat-card {
-    background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+    background: linear-gradient(
+      135deg,
+      $primary-color 0%,
+      $secondary-color 100%
+    );
     border-radius: 12px;
     padding: 2rem 1.5rem;
     text-align: center;
@@ -262,7 +397,7 @@ $font-body: 'Rubik', sans-serif;
   text-decoration: none;
   border-radius: 0 0 8px 0;
   font-weight: 500;
-  
+
   &:focus {
     left: 0;
   }
@@ -289,4 +424,3 @@ $font-body: 'Rubik', sans-serif;
     left: 12px;
   }
 }
-

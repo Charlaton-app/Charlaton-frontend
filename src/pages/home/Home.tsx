@@ -82,7 +82,11 @@ const Home: React.FC = () => {
                 para tus reuniones virtuales. Todo lo que necesitas en un 
                 solo lugar.
               </p>
-              <button className="cta-button" aria-label="Comenzar a usar Charlaton gratis">
+              <button 
+                className="cta-button" 
+                onClick={() => window.location.href = '/signup'}
+                aria-label="Comenzar a usar Charlaton gratis"
+              >
                 COMIENZA YA
               </button>
             </div>

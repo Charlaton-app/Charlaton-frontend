@@ -10,6 +10,7 @@ interface User {
   email: string | null;
   photoURL: string | null;
   nickname?: string | null;
+  edad?: number;
   role?: string | null;
   createdAt?: any;
   authProvider?: string | null;
@@ -34,6 +35,7 @@ type AuthStore = {
     email: string;
     nickname?: string;
     password: string;
+    edad: number;
     confirmPassword: string;
   }) => Promise<{ success: boolean; error?: string }>;
   loginWithGoogle: () => Promise<{ success: boolean; error?: string }>;
@@ -50,9 +52,7 @@ type AuthStore = {
     newPassword: string,
     confirmPassword: string
   ) => Promise<{ success: boolean; error?: string }>;
-  deleteAccount: (
-    password: string
-  ) => Promise<{ success: boolean; error?: string }>;
+  deleteAccount: () => Promise<{ success: boolean; error?: string }>;
 };
 
 const normalizeProvider = (providerId?: string | null) => {
@@ -105,6 +105,7 @@ const useAuthStore = create<AuthStore>()(
                     email: fbUser.email,
                     photoURL: fbUser.photoURL,
                     nickname: response.data.nickname,
+                    edad: response.data.edad,
                     role: response.data.role,
                     createdAt: response.data.createdAt || null,
                     authProvider,
@@ -194,6 +195,7 @@ const useAuthStore = create<AuthStore>()(
               email: response.data.firebaseUser.email,
               photoURL: response.data.firebaseUser.photoURL,
               nickname: response.data.user?.nickname,
+              edad: response.data.user?.edad,
               role: response.data.user?.role,
               createdAt: response.data.user?.createdAt || null,
               authProvider: "password",
@@ -232,6 +234,7 @@ const useAuthStore = create<AuthStore>()(
               email: response.data.firebaseUser.email,
               photoURL: response.data.firebaseUser.photoURL,
               nickname: response.data.user?.nickname,
+              edad: response.data.user?.edad,
               role: response.data.user?.role,
               createdAt: response.data.user?.createdAt || null,
               authProvider: "password",
@@ -270,6 +273,7 @@ const useAuthStore = create<AuthStore>()(
               email: response.data.firebaseUser.email,
               photoURL: response.data.firebaseUser.photoURL,
               nickname: response.data.user?.nickname,
+              edad: response.data.user?.edad,
               role: response.data.user?.role,
               createdAt: response.data.user?.createdAt || null,
               authProvider: "google",
@@ -308,6 +312,7 @@ const useAuthStore = create<AuthStore>()(
               email: response.data.firebaseUser.email,
               photoURL: response.data.firebaseUser.photoURL,
               nickname: response.data.user?.nickname,
+              edad: response.data.user?.edad,
               role: response.data.user?.role,
               createdAt: response.data.user?.createdAt || null,
               authProvider: "facebook",
@@ -384,9 +389,17 @@ const useAuthStore = create<AuthStore>()(
             return { success: false, error: response.error };
           }
 
+          // Merge backend response data with local state to ensure all fields are updated
+          const updatedUser = {
+            ...user,
+            ...data,
+            // Ensure backend response data is used if available
+            ...(response.data || {})
+          } as User;
+
           // Actualizar usuario en el store
           set({
-            user: { ...user, ...data } as User,
+            user: updatedUser,
             isLoading: false,
             isAuthenticated: true,
             error: null
@@ -431,7 +444,7 @@ const useAuthStore = create<AuthStore>()(
         }
       },
 
-      deleteAccount: async (password: string) => {
+      deleteAccount: async () => {
         const user = get().user;
         if (!user || !user.id) {
           return { success: false, error: "No hay usuario autenticado" };
@@ -439,7 +452,7 @@ const useAuthStore = create<AuthStore>()(
 
         set({ isLoading: true, error: null });
         try {
-          const response = await authService.deleteAccount(user.id, password);
+          const response = await authService.deleteAccount(user.id);
 
           if (response.error) {
             set({ error: response.error, isLoading: false });
