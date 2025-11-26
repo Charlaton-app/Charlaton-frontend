@@ -5,7 +5,7 @@ import Footer from "../../components/Footer/Footer";
 import useAuthStore from "../../stores/useAuthStore";
 import WebContentReader from "../../components/web-reader/WebContentReader";
 import Toast from "../../components/Toast/Toast";
-import { createRoom, getRoomById } from "../../services/room.service";
+import { createRoom, getRoomById, getUserRooms, getUserStats } from "../../services/room.service";
 import "./Dashboard.scss";
 
 interface ToastState {
@@ -27,6 +27,20 @@ const Dashboard: React.FC = () => {
   const shownToastsRef = useRef<Set<string>>(new Set());
   const [joinMeetingId, setJoinMeetingId] = useState("");
   const [isJoining, setIsJoining] = useState(false);
+  
+  // Recent meetings state
+  const [recentMeetings, setRecentMeetings] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loadingMeetings, setLoadingMeetings] = useState(true);
+  
+  // Stats state
+  const [stats, setStats] = useState({
+    meetingsThisMonth: 0,
+    totalDuration: "0min",
+    activeContacts: 0,
+  });
+  const [loadingStats, setLoadingStats] = useState(true);
 
   const handleLogout = () => {
     logout();
@@ -198,6 +212,156 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  /**
+   * Load user's recent meetings
+   */
+  const loadRecentMeetings = useCallback(async (page: number = 1) => {
+    if (!user?.id) return;
+    
+    setLoadingMeetings(true);
+    try {
+      const response = await getUserRooms(user.id, page, 3);
+      
+      if (response.error) {
+        console.error("[DASHBOARD] Error loading meetings:", response.error);
+        setRecentMeetings([]);
+        return;
+      }
+      
+      if (response.data) {
+        setRecentMeetings(response.data.rooms || []);
+        setTotalPages(response.data.pagination?.totalPages || 1);
+        setCurrentPage(response.data.pagination?.currentPage || 1);
+        console.log(`[DASHBOARD] Loaded ${response.data.rooms?.length || 0} meetings`);
+      }
+    } catch (error) {
+      console.error("[DASHBOARD] Error loading meetings:", error);
+      setRecentMeetings([]);
+    } finally {
+      setLoadingMeetings(false);
+    }
+  }, [user?.id]);
+
+  /**
+   * Load user statistics
+   */
+  const loadUserStats = useCallback(async () => {
+    if (!user?.id) {
+      console.log("[DASHBOARD] No user ID, skipping stats load");
+      return;
+    }
+
+    try {
+      setLoadingStats(true);
+      console.log(`[DASHBOARD] Loading stats for user ${user.id}`);
+      
+      const response = await getUserStats(user.id);
+      
+      if (response.error) {
+        console.error("[DASHBOARD] Error loading stats:", response.error);
+        showToast(`Error al cargar estadísticas: ${response.error}`, "error");
+        return;
+      }
+
+      if (response.data) {
+        setStats({
+          meetingsThisMonth: response.data.meetingsThisMonth || 0,
+          totalDuration: response.data.totalDuration || "0min",
+          activeContacts: response.data.activeContacts || 0,
+        });
+        console.log("[DASHBOARD] Stats loaded:", response.data);
+      }
+    } catch (error) {
+      console.error("[DASHBOARD] Error in loadUserStats:", error);
+    } finally {
+      setLoadingStats(false);
+    }
+  }, [user?.id, showToast]);
+
+  // Load meetings and stats on mount and when user changes
+  useEffect(() => {
+    loadRecentMeetings(1);
+    loadUserStats();
+  }, [loadRecentMeetings, loadUserStats]);
+
+  /**
+   * Format timestamp to readable date
+   */
+  const formatMeetingDate = (timestamp: any): string => {
+    if (!timestamp) return "Fecha desconocida";
+    
+    try {
+      let date: Date;
+      
+      // Handle different timestamp formats
+      if (typeof timestamp === 'string') {
+        // ISO string format: "2025-11-25T23:12:00.000Z"
+        date = new Date(timestamp);
+      } else if (timestamp._seconds || timestamp.seconds) {
+        // Firestore Timestamp format
+        const seconds = timestamp._seconds || timestamp.seconds;
+        date = new Date(seconds * 1000);
+      } else if (typeof timestamp === 'number') {
+        // Unix timestamp in milliseconds or seconds
+        date = new Date(timestamp > 10000000000 ? timestamp : timestamp * 1000);
+      } else {
+        console.warn("[DASHBOARD] Unknown timestamp format:", timestamp);
+        return "Fecha desconocida";
+      }
+      
+      // Validate date
+      if (isNaN(date.getTime())) {
+        console.error("[DASHBOARD] Invalid date:", timestamp);
+        return "Fecha inválida";
+      }
+      
+      // Calculate days difference based on calendar days, not 24-hour periods
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const meetingDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const diffMs = today.getTime() - meetingDay.getTime();
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 0) {
+        return `Hoy, ${date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
+      } else if (diffDays === 1) {
+        return `Ayer, ${date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
+      } else if (diffDays < 7) {
+        const weekday = date.toLocaleDateString('es-ES', { weekday: 'short' });
+        const time = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+        return `${weekday.charAt(0).toUpperCase() + weekday.slice(1)}, ${time}`;
+      } else {
+        return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+      }
+    } catch (e) {
+      console.error("[DASHBOARD] Error formatting date:", e, timestamp);
+      return "Fecha desconocida";
+    }
+  };
+
+  /**
+   * Format duration in minutes to readable string
+   */
+  const formatDuration = (minutes: number): string => {
+    if (!minutes || minutes <= 0) return "Sin datos";
+    
+    const hours = Math.floor(minutes / 60);
+    const mins = Math.round(minutes % 60);
+    
+    if (hours > 0) {
+      return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
+    }
+    return `${mins} min`;
+  };
+
+  /**
+   * Format participants count
+   */
+  const formatParticipants = (count: number): string => {
+    if (!count || count <= 0) return "Sin participantes";
+    return count === 1 ? "1 participante" : `${count} participantes`;
+  };
+
   const features = [
     {
       title: "Iniciar Reunión",
@@ -225,27 +389,6 @@ const Dashboard: React.FC = () => {
       description: "Revisa los resúmenes de tus reuniones",
       icon: "summary",
       action: () => showToast("Funcionalidad próximamente", "info"),
-    },
-  ];
-
-  const recentMeetings = [
-    {
-      title: "Reunión de Equipo",
-      date: "Hoy, 10:00 AM",
-      participants: 5,
-      duration: "45 min",
-    },
-    {
-      title: "Presentación de Proyecto",
-      date: "Ayer, 3:00 PM",
-      participants: 12,
-      duration: "1h 20min",
-    },
-    {
-      title: "Revisión Semanal",
-      date: "15 Nov, 2:00 PM",
-      participants: 8,
-      duration: "30 min",
     },
   ];
 
@@ -363,49 +506,110 @@ const Dashboard: React.FC = () => {
 
           {/* Recent Meetings */}
           <section className="recent-meetings" aria-labelledby="recent-title">
-            <h2 id="recent-title">Reuniones Recientes</h2>
-            <div className="meetings-list" role="list">
-              {recentMeetings.map((meeting, index) => (
-                <article key={index} className="meeting-card" role="listitem">
-                  <div className="meeting-header">
-                    <h3 className="meeting-title">{meeting.title}</h3>
-                    <span className="meeting-date">{meeting.date}</span>
-                  </div>
-                  <div className="meeting-details">
-                    <span className="meeting-info">
-                      <svg
-                        className="meeting-icon"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        aria-hidden="true"
-                      >
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="9" cy="7" r="4"></circle>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                      </svg>
-                      {meeting.participants} participantes
-                    </span>
-                    <span className="meeting-info">
-                      <svg
-                        className="meeting-icon"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        aria-hidden="true"
-                      >
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <polyline points="12 6 12 12 16 14"></polyline>
-                      </svg>
-                      {meeting.duration}
-                    </span>
-                  </div>
-                </article>
-              ))}
+            <div className="recent-meetings-header">
+              <h2 id="recent-title">Reuniones Recientes</h2>
+              {totalPages > 1 && (
+                <div className="pagination-info">
+                  Página {currentPage} de {totalPages}
+                </div>
+              )}
             </div>
+            
+            {loadingMeetings ? (
+              <div className="meetings-loading">
+                <div className="spinner" aria-label="Cargando reuniones"></div>
+                <p>Cargando reuniones...</p>
+              </div>
+            ) : recentMeetings.length === 0 ? (
+              <div className="meetings-empty">
+                <p>No tienes reuniones recientes.</p>
+                <p className="empty-subtitle">Crea tu primera reunión para comenzar</p>
+              </div>
+            ) : (
+              <>
+                <div className="meetings-list" role="list">
+                  {recentMeetings.map((meeting) => (
+                    <article 
+                      key={meeting.id} 
+                      className="meeting-card" 
+                      role="listitem"
+                      onClick={() => navigate(`/meet/${meeting.id}`)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div className="meeting-header">
+                        <h3 className="meeting-title">{meeting.name}</h3>
+                        <span className="meeting-date">{formatMeetingDate(meeting.createdAt)}</span>
+                      </div>
+                      <div className="meeting-details">
+                        <span className="meeting-info">
+                          <svg
+                            className="meeting-icon"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            aria-hidden="true"
+                          >
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                          </svg>
+                          {formatParticipants(meeting.participants)}
+                        </span>
+                        <span className="meeting-info">
+                          <svg
+                            className="meeting-icon"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            aria-hidden="true"
+                          >
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                          </svg>
+                          {formatDuration(meeting.duration)}
+                        </span>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+                
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="pagination-controls" role="navigation" aria-label="Paginación de reuniones">
+                    <button
+                      className="pagination-button"
+                      onClick={() => loadRecentMeetings(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      aria-label="Página anterior"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                      </svg>
+                      Anterior
+                    </button>
+                    
+                    <span className="pagination-current" aria-current="page">
+                      {currentPage} / {totalPages}
+                    </span>
+                    
+                    <button
+                      className="pagination-button"
+                      onClick={() => loadRecentMeetings(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      aria-label="Página siguiente"
+                    >
+                      Siguiente
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </section>
 
           {/* Stats Overview */}
@@ -415,8 +619,8 @@ const Dashboard: React.FC = () => {
             </h2>
             <div className="stats-grid" role="list">
               <div className="stat-card" role="listitem">
-                <div className="stat-value" aria-label="12 reuniones este mes">
-                  12
+                <div className="stat-value" aria-label={`${stats.meetingsThisMonth} reuniones este mes`}>
+                  {loadingStats ? "..." : stats.meetingsThisMonth}
                 </div>
                 <div className="stat-label" aria-hidden="true">
                   Reuniones este mes
@@ -425,17 +629,17 @@ const Dashboard: React.FC = () => {
               <div className="stat-card" role="listitem">
                 <div
                   className="stat-value"
-                  aria-label="8 horas y 45 minutos de tiempo total"
+                  aria-label={`${stats.totalDuration} de tiempo total`}
                 >
-                  8h 45m
+                  {loadingStats ? "..." : stats.totalDuration}
                 </div>
                 <div className="stat-label" aria-hidden="true">
                   Tiempo total
                 </div>
               </div>
               <div className="stat-card" role="listitem">
-                <div className="stat-value" aria-label="24 contactos activos">
-                  24
+                <div className="stat-value" aria-label={`${stats.activeContacts} contactos activos`}>
+                  {loadingStats ? "..." : stats.activeContacts}
                 </div>
                 <div className="stat-label" aria-hidden="true">
                   Contactos activos

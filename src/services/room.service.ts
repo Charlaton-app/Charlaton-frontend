@@ -12,9 +12,11 @@ export interface Room {
   private?: boolean;
   scheduleAt?: string | null;
   deletedAt?: string | null;
+  endedAt?: string | null;
   createdAt?: string;
   subRooms?: any[];
   connections?: any[];
+  adminsId?: string[];
 }
 
 export interface CreateRoomData {
@@ -48,15 +50,12 @@ export interface Participant {
  */
 export const getAllRooms = async () => {
   try {
-    console.log("[ROOM-SERVICE] Fetching all rooms");
     const response = await api.get("/room");
 
     if (response.error) {
-      console.log(`[ROOM-SERVICE] Error fetching rooms: ${response.error}`);
       return { error: response.error };
     }
 
-    console.log(`[ROOM-SERVICE] Fetched ${response.data?.length || 0} rooms`);
     return { data: response.data as Room[] };
   } catch (error: any) {
     console.error("[ROOM-SERVICE] Error in getAllRooms:", error);
@@ -73,15 +72,12 @@ export const getAllRooms = async () => {
  */
 export const getRoomById = async (roomId: string) => {
   try {
-    console.log(`[ROOM-SERVICE] Fetching room ${roomId}`);
     const response = await api.get(`/room/${roomId}`);
 
     if (response.error) {
-      console.log(`[ROOM-SERVICE] Error fetching room: ${response.error}`);
       return { error: response.error };
     }
 
-    console.log(`[ROOM-SERVICE] Room ${roomId} fetched successfully`);
     return { data: response.data as Room };
   } catch (error: any) {
     console.error("[ROOM-SERVICE] Error in getRoomById:", error);
@@ -98,15 +94,12 @@ export const getRoomById = async (roomId: string) => {
  */
 export const createRoom = async (roomData: CreateRoomData) => {
   try {
-    console.log(`[ROOM-SERVICE] Creating room: ${roomData.name}`);
     const response = await api.post("/room", roomData);
 
     if (response.error) {
-      console.log(`[ROOM-SERVICE] Error creating room: ${response.error}`);
       return { error: response.error };
     }
 
-    console.log(`[ROOM-SERVICE] Room created with ID: ${response.data?.id}`);
     return { data: response.data as Room };
   } catch (error: any) {
     console.error("[ROOM-SERVICE] Error in createRoom:", error);
@@ -129,8 +122,6 @@ export const joinRoom = async (
   password?: string
 ) => {
   try {
-    console.log(`[ROOM-SERVICE] User ${userId} joining room ${roomId}`);
-
     // First check if room exists
     const roomResponse = await getRoomById(roomId);
     if (roomResponse.error) {
@@ -139,9 +130,13 @@ export const joinRoom = async (
 
     const room = roomResponse.data;
 
+    // Check if room has ended
+    if (room?.endedAt) {
+      return { error: "Esta reunión ya ha finalizado" };
+    }
+
     // Check password if room is private
     if (room?.password && room.password !== password) {
-      console.log("[ROOM-SERVICE] Invalid room password");
       return { error: "Contraseña incorrecta" };
     }
 
@@ -152,13 +147,9 @@ export const joinRoom = async (
     });
 
     if (response.error) {
-      console.log(`[ROOM-SERVICE] Error joining room: ${response.error}`);
       return { error: response.error };
     }
 
-    console.log(
-      `[ROOM-SERVICE] User ${userId} joined room ${roomId} successfully`
-    );
     return { data: response.data };
   } catch (error: any) {
     console.error("[ROOM-SERVICE] Error in joinRoom:", error);
@@ -175,18 +166,15 @@ export const joinRoom = async (
  */
 export const leaveRoom = async (userId: string, roomId: string) => {
   try {
-    console.log(`[ROOM-SERVICE] Leaving room, user ${userId} from room ${roomId}`);
     const response = await api.put("/connection", {
       userId,
       roomId,
     });
 
     if (response.error) {
-      console.log(`[ROOM-SERVICE] Error leaving room: ${response.error}`);
       return { error: response.error };
     }
 
-    console.log("[ROOM-SERVICE] Left room successfully");
     return { data: response.data };
   } catch (error: any) {
     console.error("[ROOM-SERVICE] Error in leaveRoom:", error);
@@ -203,24 +191,18 @@ export const leaveRoom = async (userId: string, roomId: string) => {
  */
 export const getRoomParticipants = async (roomId: string) => {
   try {
-    console.log(`[ROOM-SERVICE] Fetching participants for room ${roomId}`);
     const response = await api.get(`/connection/room/${roomId}`);
 
     if (response.error) {
-      console.log(
-        `[ROOM-SERVICE] Error fetching participants: ${response.error}`
-      );
       return { error: response.error };
     }
 
-    // Filter only active participants (no leftAt)
-    const activeParticipants = (response.data as Participant[]).filter(
-      (p) => !p.leftAt
-    );
+    // Backend already filters only active participants (leftAt === null)
+    const participants = (response.data as Participant[]) || [];
+    
+    // Additional safety check in case backend sends inactive ones
+    const activeParticipants = participants.filter((p) => !p.leftAt);
 
-    console.log(
-      `[ROOM-SERVICE] Found ${activeParticipants.length} active participants`
-    );
     return { data: activeParticipants };
   } catch (error: any) {
     console.error("[ROOM-SERVICE] Error in getRoomParticipants:", error);
@@ -237,18 +219,84 @@ export const getRoomParticipants = async (roomId: string) => {
  */
 export const deleteRoom = async (roomId: string) => {
   try {
-    console.log(`[ROOM-SERVICE] Deleting room ${roomId}`);
     const response = await api.delete(`/room/${roomId}`);
 
     if (response.error) {
-      console.log(`[ROOM-SERVICE] Error deleting room: ${response.error}`);
       return { error: response.error };
     }
 
-    console.log("[ROOM-SERVICE] Room deleted successfully");
     return { data: response.data };
   } catch (error: any) {
     console.error("[ROOM-SERVICE] Error in deleteRoom:", error);
     return { error: error.message || "Error al eliminar sala" };
+  }
+};
+
+/**
+ * Get user's rooms (where they are creator or participant)
+ * Returns paginated results
+ *
+ * @param {string} userId - User ID to get rooms for
+ * @param {number} [page=1] - Page number
+ * @param {number} [limit=3] - Items per page
+ * @returns {Promise<{data?: any, error?: string}>} Response with paginated rooms or error
+ */
+export const getUserRooms = async (userId: string, page: number = 1, limit: number = 3) => {
+  try {
+    const response = await api.get(`/room/user/${userId}?page=${page}&limit=${limit}`);
+
+    if (response.error) {
+      return { error: response.error };
+    }
+
+    return { data: response.data };
+  } catch (error: any) {
+    console.error("[ROOM-SERVICE] Error in getUserRooms:", error);
+    return { error: error.message || "Error al obtener reuniones del usuario" };
+  }
+};
+
+/**
+ * Get user statistics
+ * Returns total meetings this month, total duration, and active contacts
+ *
+ * @param {string} userId - User ID to get stats for
+ * @returns {Promise<{data?: any, error?: string}>} Response with stats or error
+ */
+export const getUserStats = async (userId: string) => {
+  try {
+    const response = await api.get(`/room/user/${userId}/stats`);
+
+    if (response.error) {
+      return { error: response.error };
+    }
+
+    return { data: response.data };
+  } catch (error: any) {
+    console.error("[ROOM-SERVICE] Error in getUserStats:", error);
+    return { error: error.message || "Error al obtener estadísticas" };
+  }
+};
+
+/**
+ * End a room/meeting (creator or admin only)
+ * Sets endedAt timestamp and prevents new joins
+ *
+ * @param {string} roomId - Room ID to end
+ * @param {string} userId - User ID attempting to end the room
+ * @returns {Promise<{data?: any, error?: string}>} Response with success or error
+ */
+export const endRoom = async (roomId: string, userId: string) => {
+  try {
+    const response = await api.post(`/room/${roomId}/end`, { userId });
+
+    if (response.error) {
+      return { error: response.error };
+    }
+
+    return { data: response.data };
+  } catch (error: any) {
+    console.error("[ROOM-SERVICE] Error in endRoom:", error);
+    return { error: error.message || "Error al finalizar reunión" };
   }
 };

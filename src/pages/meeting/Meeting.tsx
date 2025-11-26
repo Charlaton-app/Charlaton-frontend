@@ -13,15 +13,15 @@ import {
   joinRoom,
   leaveRoom,
   deleteRoom,
+  endRoom,
   getRoomParticipants,
   type Participant,
 } from "../../services/room.service";
 import {
   getRoomMessages,
-  sendMessage,
   type Message,
 } from "../../services/message.service";
-import { socket } from "../../lib/socket.config";
+import { connectToChat, disconnectFromChat, getSocket } from "../../lib/socket.config";
 import "./Meeting.scss";
 
 const Meeting: React.FC = () => {
@@ -45,6 +45,7 @@ const Meeting: React.FC = () => {
   const [error, setError] = useState("");
   const [showEndModal, setShowEndModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [showFinalizeModal, setShowFinalizeModal] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -124,7 +125,23 @@ const Meeting: React.FC = () => {
             "[MEETING] Total participants:",
             participantsResponse.data.length
           );
-          participantsResponse.data.forEach((p: Participant, index) => {
+          
+          // Log all participants to see what we're receiving
+          console.log("[MEETING] Raw participants data:", JSON.stringify(participantsResponse.data, null, 2));
+          
+          // Don't filter out participants - keep all of them
+          const validParticipants = participantsResponse.data.map((p: Participant) => {
+            // Log each participant
+            console.log(`[MEETING] Processing participant:`, {
+              id: p.id,
+              userId: p.userId,
+              hasUser: !!p.user,
+              fullData: p
+            });
+            return p;
+          });
+
+          validParticipants.forEach((p: Participant, index) => {
             console.log(
               `[MEETING] Participant ${index + 1} (userId: ${p.userId}):`
             );
@@ -136,16 +153,16 @@ const Meeting: React.FC = () => {
               console.log("  - user.nickname:", p.user.nickname);
               console.log("  - user.displayName:", p.user.displayName);
             } else {
-              console.error("  ❌ NO USER DATA - This is the problem!");
+              console.warn(`  ⚠️ No user data for userId: ${p.userId}`);
             }
           });
 
-          setParticipants(participantsResponse.data);
+          setParticipants(validParticipants);
 
-          // Initialize mic/camera states for all participants
+          // Initialize mic/camera states for all valid participants
           const initialMicStates: Record<string, boolean> = {};
           const initialCameraStates: Record<string, boolean> = {};
-          participantsResponse.data.forEach((p: Participant) => {
+          validParticipants.forEach((p: Participant) => {
             // Ensure userId is string for consistency
             const userId = String(p.userId);
             const isCurrentUser = userId === String(user.id);
@@ -186,104 +203,202 @@ const Meeting: React.FC = () => {
   useEffect(() => {
     if (!meetingId || !user?.id) return;
 
-    console.log("[MEETING] Setting up Socket.io listeners");
-    socket.connect();
+    let socketInstance: any = null;
+    let isCleanedUp = false;
 
-    // Join room in socket
-    socket.emit("joinRoom", { roomId: meetingId, userId: user.id });
-
-    // Listen for new participants
-    socket.on("userJoined", (data: any) => {
-      console.log("[MEETING] User joined:", data);
-      const newParticipant = data.participant;
-      setParticipants((prev) => [...prev, newParticipant]);
-
-      // Initialize states for new participant (ensure string userId)
-      const participantUserId = String(newParticipant.userId);
-      setMicStates((prev) => ({ ...prev, [participantUserId]: false }));
-      setCameraStates((prev) => ({ ...prev, [participantUserId]: false }));
-
-      notificationSounds.userJoined();
-      const userName =
-        newParticipant.user?.displayName ||
-        newParticipant.user?.nickname ||
-        newParticipant.user?.email ||
-        "Usuario";
-      console.log(
-        "[MEETING] User joined - displaying:",
-        userName,
-        newParticipant.user
-      );
-      toast.info(`${userName} se unió a la reunión`);
-    });
-
-    // Listen for participants leaving
-    socket.on("userLeft", (data: any) => {
-      console.log("[MEETING] User left:", data);
-      const leftUserId = String(data.userId);
-      setParticipants((prev) =>
-        prev.filter((p) => String(p.userId) !== leftUserId)
-      );
-      notificationSounds.userLeft();
-      toast.info("Un usuario salió de la reunión");
-    });
-
-    // Listen for new messages
-    socket.on("newMessage", (message: Message) => {
-      console.log("[MEETING] New message received:", message);
-      setMessages((prev) => [...prev, message]);
-      notificationSounds.newMessage();
-      scrollToBottom();
-    });
-
-    // Listen for meeting end
-    socket.on("meetingEnded", () => {
-      console.log("[MEETING] Meeting ended by host");
-      toast.warning("La reunión ha sido finalizada por el anfitrión");
-      navigate("/dashboard");
-    });
-
-    // Listen for mic state changes
-    socket.on("micStateChanged", (data: { userId: string; isOn: boolean }) => {
-      const userId = String(data.userId);
-      console.log("[MEETING] Mic state changed:", { userId, isOn: data.isOn });
-      setMicStates((prev) => {
-        const updated = { ...prev, [userId]: data.isOn };
-        console.log("[MEETING] Updated micStates after socket event:", updated);
-        return updated;
-      });
-    });
-
-    // Listen for camera state changes
-    socket.on(
-      "cameraStateChanged",
-      (data: { userId: string; isOn: boolean }) => {
-        const userId = String(data.userId);
-        console.log("[MEETING] Camera state changed:", {
-          userId,
-          isOn: data.isOn,
-        });
-        setCameraStates((prev) => {
-          const updated = { ...prev, [userId]: data.isOn };
-          console.log(
-            "[MEETING] Updated cameraStates after socket event:",
-            updated
-          );
-          return updated;
-        });
+    const setupSocket = async () => {
+      console.log("[MEETING] Setting up Socket.io listeners");
+      
+      // Connect to chat server with authentication
+      socketInstance = await connectToChat();
+      if (!socketInstance) {
+        console.error("[MEETING] Failed to connect to chat server");
+        toast.error("Error al conectar con el servidor de chat");
+        return;
       }
-    );
+
+      // Remove any existing listeners first to prevent duplicates
+      console.log("[MEETING] Removing any existing listeners before setup");
+      socketInstance.off("join_room_success");
+      socketInstance.off("join_room_error");
+      socketInstance.off("usersOnline");
+      socketInstance.off("newMessage");
+      socketInstance.off("disconnect");
+      socketInstance.off("userLeft");
+
+      // Join room in socket (chat server format)
+      console.log(`[MEETING] Joining room: ${meetingId}`);
+      socketInstance.emit("join_room", meetingId);
+
+      // Listen for join room success
+      const handleJoinRoomSuccess = (response: any) => {
+        if (isCleanedUp) return; // Ignore if component is unmounted
+        
+        console.log("[MEETING] ✅ Successfully joined room:", response);
+        if (response.user && response.user.id !== user.id) {
+          // Another user joined - only show notification once
+          const userName =
+            response.user.displayName ||
+            response.user.nickname ||
+            response.user.email ||
+            "Usuario";
+          
+          console.log(`[MEETING] User ${userName} (${response.user.id}) joined, current user: ${user.id}`);
+          toast.info(`${userName} se unió a la reunión`);
+          notificationSounds.userJoined();
+        }
+      };
+      
+      socketInstance.on("join_room_success", handleJoinRoomSuccess);
+
+      // Listen for join room error
+      const handleJoinRoomError = (response: any) => {
+        if (isCleanedUp) return; // Ignore if component is unmounted
+        
+        console.error("[MEETING] ❌ Error joining room:", response);
+        toast.error(response.message || "Error al unirse a la sala");
+      };
+      
+      socketInstance.on("join_room_error", handleJoinRoomError);
+
+      // Listen for online users updates
+      const handleUsersOnline = (users: any[]) => {
+        if (isCleanedUp) return; // Ignore if component is unmounted
+        console.log("[MEETING] 👥 Users online:", users.length);
+        // Note: We don't show notifications here to avoid spam
+        // The participants list is managed by the backend's getRoomParticipants
+      };
+      
+      socketInstance.on("usersOnline", handleUsersOnline);
+
+      // Listen for new messages (chat server format)
+      const handleNewMessage = (message: any) => {
+        if (isCleanedUp) return; // Ignore if component is unmounted
+        
+        console.log("[MEETING] New message received:", message);
+        
+        // Convert chat server message format to local Message format
+        const localMessage: Message = {
+          id: message.id || crypto.randomUUID(),
+          userId: message.senderId,
+          roomId: message.roomId,
+          content: message.text,
+          visibility: "public",
+          user: message.user || {
+            id: message.senderId,
+            email: message.user?.email || "",
+            displayName: message.user?.displayName,
+            nickname: message.user?.nickname,
+          },
+          createdAt: message.createAt
+            ? typeof message.createAt === "number"
+              ? new Date(message.createAt).toISOString()
+              : message.createAt.toDate
+              ? message.createAt.toDate().toISOString()
+              : new Date().toISOString()
+            : new Date().toISOString(),
+        };
+        
+        // Check if message already exists to avoid duplicates
+        setMessages((prev) => {
+          // Check if message with same ID already exists
+          if (message.id && prev.some((msg) => msg.id === message.id)) {
+            console.log("[MEETING] Message already exists (by ID), skipping duplicate");
+            return prev;
+          }
+          
+          // Check if message with same content, sender, and similar timestamp already exists
+          const isDuplicate = prev.some(
+            (msg) =>
+              msg.userId === localMessage.userId &&
+              msg.content === localMessage.content &&
+              msg.createdAt &&
+              localMessage.createdAt &&
+              Math.abs(
+                new Date(msg.createdAt).getTime() -
+                  new Date(localMessage.createdAt).getTime()
+              ) < 3000 // Within 3 seconds
+          );
+          
+          if (isDuplicate) {
+            console.log("[MEETING] Duplicate message detected (by content), skipping");
+            return prev;
+          }
+          
+          console.log("[MEETING] Adding new message to state");
+          return [...prev, localMessage];
+        });
+        
+        // Only play sound if it's not from current user
+        if (message.senderId !== user.id) {
+          notificationSounds.newMessage();
+        }
+        scrollToBottom();
+      };
+      
+      socketInstance.on("newMessage", handleNewMessage);
+
+      // Listen for disconnect events
+      const handleDisconnect = (response: any) => {
+        if (isCleanedUp) return; // Ignore if component is unmounted
+        
+        console.log("[MEETING] User disconnected:", response);
+        if (response.user && response.user.id !== user.id) {
+          const userName =
+            response.user.displayName ||
+            response.user.nickname ||
+            response.user.email ||
+            "Usuario";
+          toast.info(`${userName} salió de la reunión`);
+          notificationSounds.userLeft();
+          
+          // Remove the disconnected user from participants list
+          setParticipants((prev) =>
+            prev.filter((p) => String(p.userId) !== String(response.user.id))
+          );
+        }
+      };
+      
+      socketInstance.on("disconnect", handleDisconnect);
+
+      // Listen for when users leave the room
+      const handleUserLeft = (data: any) => {
+        if (isCleanedUp) return; // Ignore if component is unmounted
+        
+        console.log("[MEETING] User left room:", data);
+        if (data.userId && data.userId !== user.id) {
+          // Remove the user from participants list
+          setParticipants((prev) =>
+            prev.filter((p) => String(p.userId) !== String(data.userId))
+          );
+          notificationSounds.userLeft();
+          toast.info("Un usuario salió de la reunión");
+        }
+      };
+      
+      socketInstance.on("userLeft", handleUserLeft);
+    };
+
+    setupSocket();
 
     return () => {
       console.log("[MEETING] Cleaning up Socket.io listeners");
-      socket.off("userJoined");
-      socket.off("userLeft");
-      socket.off("newMessage");
-      socket.off("meetingEnded");
-      socket.off("micStateChanged");
-      socket.off("cameraStateChanged");
+      isCleanedUp = true;
+      if (socketInstance) {
+        // Remove all listeners to prevent duplicates
+        console.log("[MEETING] Removing all socket listeners");
+        socketInstance.off("join_room_success");
+        socketInstance.off("join_room_error");
+        socketInstance.off("usersOnline");
+        socketInstance.off("newMessage");
+        socketInstance.off("disconnect");
+        socketInstance.off("userLeft");
+        console.log("[MEETING] All listeners removed");
+      }
+      // Don't disconnect here - let it stay connected for the meeting
+      // disconnectFromChat();
     };
-  }, [meetingId, user?.id, navigate, scrollToBottom, toast]);
+  }, [meetingId, user?.id]);
 
   /**
    * Auto-scroll when new messages arrive
@@ -302,41 +417,21 @@ const Meeting: React.FC = () => {
     if (!content || !meetingId || !user?.id) return;
 
     try {
-      const response = await sendMessage({
-        userId: user.id,
-        roomId: meetingId,
-        content,
-        visibility: "public",
-      });
-
-      if (response.error) {
-        console.error("[MEETING] Error sending message:", response.error);
-        toast.error("Error al enviar mensaje");
+      const socketInstance = getSocket();
+      if (!socketInstance || !socketInstance.connected) {
+        toast.error("No conectado al servidor de chat");
         return;
       }
 
-      // Add message immediately to local state
-      const newMessage: Message = {
-        id: response.data?.id || crypto.randomUUID(),
-        userId: user.id,
+      // Send message via Socket.IO (chat server format)
+      socketInstance.emit("sendMessage", {
+        senderId: user.id,
         roomId: meetingId,
-        content: response.data?.content || content,
-        visibility: response.data?.visibility || "public",
-        user: {
-          id: user.id,
-          email: user.email || "",
-          displayName: user.displayName ?? undefined,
-          nickname: user.nickname ?? undefined,
-        },
-        createdAt: new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev, newMessage]);
-
-      // Emit to socket for other participants
-      socket.emit("sendMessage", {
-        roomId: meetingId,
-        message: newMessage,
+        text: content,
       });
+
+      // Don't add message locally - wait for server response via newMessage event
+      // This prevents duplicate messages
 
       setMessageInput("");
       chatInputRef.current?.focus();
@@ -355,14 +450,17 @@ const Meeting: React.FC = () => {
     try {
       await leaveRoom(user.id, meetingId);
 
-      // Emit to socket
-      socket.emit("leaveRoom", {
-        roomId: meetingId,
-        userId: user.id,
-      });
+      // Emit to socket (chat server format)
+      const socketInstance = getSocket();
+      if (socketInstance && socketInstance.connected) {
+        socketInstance.emit("leaveRoom", {
+          roomId: meetingId,
+          userId: user.id,
+        });
+      }
 
       notificationSounds.warning();
-      socket.disconnect();
+      disconnectFromChat();
       navigate("/dashboard");
     } catch (err) {
       console.error("[MEETING] Error leaving meeting:", err);
@@ -378,14 +476,57 @@ const Meeting: React.FC = () => {
     try {
       await deleteRoom(meetingId);
 
-      // Emit to socket to notify all participants
-      socket.emit("endMeeting", { roomId: meetingId });
+      // Disconnect from chat server
+      const socketInstance = getSocket();
+      if (socketInstance && socketInstance.connected) {
+        socketInstance.emit("leaveRoom", {
+          roomId: meetingId,
+          userId: user?.id || "",
+        });
+      }
 
       notificationSounds.error();
-      socket.disconnect();
+      disconnectFromChat();
       navigate("/dashboard");
     } catch (err) {
       console.error("[MEETING] Error ending meeting:", err);
+    }
+  };
+
+  /**
+   * Handle finalizing the meeting (host/admin only)
+   * Ends the meeting but keeps it in history (sets endedAt)
+   */
+  const handleFinalizeMeeting = async () => {
+    if (!user?.id || !meetingId) return;
+
+    try {
+      console.log("[MEETING] Finalizing meeting");
+      const response = await endRoom(meetingId, user.id);
+
+      if (response.error) {
+        toast?.error(response.error);
+        return;
+      }
+
+      toast?.success("Reunión finalizada correctamente");
+      notificationSounds.success();
+      
+      // Leave room and disconnect
+      await leaveRoom(user.id, meetingId);
+      const socketInstance = getSocket();
+      if (socketInstance && socketInstance.connected) {
+        socketInstance.emit("leaveRoom", {
+          roomId: meetingId,
+          userId: user.id,
+        });
+      }
+      
+      disconnectFromChat();
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("[MEETING] Error finalizing meeting:", err);
+      toast?.error("Error al finalizar la reunión");
     }
   };
 
@@ -407,7 +548,13 @@ const Meeting: React.FC = () => {
       console.log("[MEETING] Updated micStates:", updated);
       return updated;
     });
-    socket.emit("toggleMic", { roomId: meetingId, userId, isOn: newState });
+    // Note: Mic/camera state changes are handled locally
+    // If you need to sync with other participants, add custom events to chat server
+    const socketInstance = getSocket();
+    if (socketInstance && socketInstance.connected) {
+      // You can emit custom events here if needed
+      // socketInstance.emit("toggleMic", { roomId: meetingId, userId, isOn: newState });
+    }
   };
 
   /**
@@ -428,7 +575,13 @@ const Meeting: React.FC = () => {
       console.log("[MEETING] Updated cameraStates:", updated);
       return updated;
     });
-    socket.emit("toggleCamera", { roomId: meetingId, userId, isOn: newState });
+    // Note: Mic/camera state changes are handled locally
+    // If you need to sync with other participants, add custom events to chat server
+    const socketInstance = getSocket();
+    if (socketInstance && socketInstance.connected) {
+      // You can emit custom events here if needed
+      // socketInstance.emit("toggleCamera", { roomId: meetingId, userId, isOn: newState });
+    }
   };
 
   /**
@@ -504,6 +657,18 @@ const Meeting: React.FC = () => {
       />
 
       <ConfirmationModal
+        isOpen={showFinalizeModal}
+        title="Finalizar y guardar reunión"
+        message="¿Deseas finalizar esta reunión? La reunión se guardará en tu historial pero nadie podrá unirse nuevamente."
+        confirmText="Finalizar reunión"
+        cancelText="Cancelar"
+        confirmButtonClass="btn-confirm"
+        delaySeconds={0}
+        onConfirm={handleFinalizeMeeting}
+        onCancel={() => setShowFinalizeModal(false)}
+      />
+
+      <ConfirmationModal
         isOpen={showLeaveModal}
         title="Salir de la reunión"
         message={
@@ -564,7 +729,7 @@ const Meeting: React.FC = () => {
           {isHost && (
             <button
               className="action-btn end-meeting"
-              onClick={() => setShowEndModal(true)}
+              onClick={() => setShowFinalizeModal(true)}
               aria-label="Finalizar reunión"
               title="Finalizar reunión"
             >
@@ -574,7 +739,8 @@ const Meeting: React.FC = () => {
                 stroke="currentColor"
                 strokeWidth="2"
               >
-                <path d="M18 6L6 18M6 6l12 12" />
+                <polyline points="9 11 12 14 22 4"></polyline>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
               </svg>
               Finalizar
             </button>

@@ -29,10 +29,11 @@ const fetchWithConfig = async <T = any>(
   options: RequestInit = {},
   retryOn401: boolean = true
 ): Promise<ApiResponse<T>> => {
-  // Timeout más largo para endpoints de autenticación que pueden tardar más
+  // Timeout más largo para endpoints que pueden tardar más
   const isAuthEndpoint =
     endpoint.includes("/auth/login") || endpoint.includes("/auth/signup");
-  const timeout = isAuthEndpoint ? 30000 : 15000; // 30s para auth, 15s para otros
+  const isUserRoomsEndpoint = endpoint.includes("/room/user/");
+  const timeout = isAuthEndpoint ? 30000 : isUserRoomsEndpoint ? 45000 : 15000; // 30s para auth, 45s para user rooms, 15s para otros
 
   try {
     const fullUrl = `${API_BASE}${endpoint}`;
