@@ -414,18 +414,21 @@ export const loginWithGithub = async () => {
 export const logout = async () => {
   try {
     // 1. Cerrar sesión en backend (limpiar cookies)
-    await api.post("/auth/logout");
-
-    // 2. Cerrar sesión en Firebase
-    await firebaseSignOut(auth);
-
-    return { data: { message: "Sesión cerrada exitosamente" } };
+    const response = await api.post("/auth/logout");
+    if (response.error) {
+      console.warn("[AUTH-SERVICE] Backend logout error:", response.error);
+    }
   } catch (error: any) {
-    console.error("Error en logout:", error);
-    return {
-      error: error.message || "Error al cerrar sesión",
-    };
+    console.error("[AUTH-SERVICE] Error calling backend logout:", error);
+  } finally {
+    try {
+      await firebaseSignOut(auth);
+    } catch (firebaseError) {
+      console.error("[AUTH-SERVICE] Error signing out from Firebase:", firebaseError);
+    }
   }
+
+  return { data: { message: "Sesión cerrada exitosamente" } };
 };
 
 /**
