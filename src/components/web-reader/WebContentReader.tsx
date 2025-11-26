@@ -156,34 +156,50 @@ const WebContentReader: React.FC = () => {
    * Filtra solo español, inglés y francés
    */
   useEffect(() => {
+    // Verificar que speechSynthesis esté disponible
+    if (typeof window === "undefined" || !window.speechSynthesis) {
+      setIsSupported(false);
+      return;
+    }
+
     const loadVoices = () => {
-      const availableVoices = window.speechSynthesis.getVoices();
-      if (availableVoices.length > 0) {
-        // Filtrar solo voces en español
-        const filteredVoices = availableVoices.filter((voice) => {
-          const lang = voice.lang.toLowerCase();
-          return lang.startsWith("es"); // Solo español
-        });
+      // Verificar nuevamente antes de usar
+      if (!window.speechSynthesis) return;
+      
+      try {
+        const availableVoices = window.speechSynthesis.getVoices();
+        if (availableVoices.length > 0) {
+          // Filtrar solo voces en español
+          const filteredVoices = availableVoices.filter((voice) => {
+            const lang = voice.lang.toLowerCase();
+            return lang.startsWith("es"); // Solo español
+          });
 
-        setVoices(filteredVoices);
+          setVoices(filteredVoices);
 
-        // Seleccionar la primera voz en español disponible
-        if (filteredVoices.length > 0) {
-          setSelectedVoice(filteredVoices[0].voiceURI);
+          // Seleccionar la primera voz en español disponible
+          if (filteredVoices.length > 0) {
+            setSelectedVoice(filteredVoices[0].voiceURI);
+          }
         }
+      } catch (error) {
+        console.error("Error loading voices:", error);
+        setIsSupported(false);
       }
     };
 
     loadVoices();
 
     // Algunos navegadores cargan las voces de forma asíncrona
-    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+    if (window.speechSynthesis && window.speechSynthesis.onvoiceschanged !== undefined) {
       window.speechSynthesis.onvoiceschanged = loadVoices;
     }
 
     // Limpiar al desmontar
     return () => {
-      window.speechSynthesis.cancel();
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
     };
   }, []);
 
@@ -367,7 +383,16 @@ const WebContentReader: React.FC = () => {
       };
 
       utteranceRef.current = utterance;
-      window.speechSynthesis.speak(utterance);
+      
+      // Verificar que speechSynthesis esté disponible antes de usar
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.speak(utterance);
+      } else {
+        console.error("SpeechSynthesis no está disponible");
+        setIsReading(false);
+        setIsPaused(false);
+        showNotification("Error: Lectura por voz no disponible");
+      }
     },
     [voices, selectedVoice, rate, pitch]
   );
