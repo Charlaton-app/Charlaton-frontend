@@ -8,16 +8,18 @@ import "./Home.scss";
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user, isInitialized } = useAuthStore();
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    
-    // Si el usuario está logueado, redirigir al dashboard
-    if (user) {
+  }, []);
+
+  useEffect(() => {
+    // Esperar a que el store se inicialice antes de redirigir
+    if (isInitialized && user) {
       navigate("/dashboard", { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, isInitialized, navigate]);
 
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
