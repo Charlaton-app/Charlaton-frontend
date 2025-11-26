@@ -99,7 +99,6 @@ $font-body: "Rubik", sans-serif;
       display: flex;
       align-items: center;
       justify-content: center;
-
       svg {
         width: 48px;
         height: 48px;
@@ -107,7 +106,6 @@ $font-body: "Rubik", sans-serif;
         transition: stroke 0.3s ease;
       }
     }
-
     &:hover .action-icon svg {
       stroke: $secondary-color;
     }
@@ -322,7 +320,6 @@ $font-body: "Rubik", sans-serif;
         display: flex;
         align-items: center;
         gap: 0.5rem;
-
         .meeting-icon {
           width: 18px;
           height: 18px;

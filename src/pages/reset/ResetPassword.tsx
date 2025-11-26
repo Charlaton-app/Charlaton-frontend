@@ -4,29 +4,35 @@ import { confirmPasswordReset, verifyPasswordResetCode } from "firebase/auth";
 import { auth } from "../../lib/firebase.config";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
-import WebContentReader from '../../components/web-reader/WebContentReader';
+import WebContentReader from "../../components/web-reader/WebContentReader";
+import { useToastContext } from "../../contexts/ToastContext";
 import "./ResetPassword.scss";
 
 const ResetPassword: React.FC = () => {
   const navigate = useNavigate();
+  const toast = useToastContext();
   const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
     password: "",
     confirmPassword: "",
   });
-  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [validatingCode, setValidatingCode] = useState(true);
   const [codeValid, setCodeValid] = useState(false);
   const [email, setEmail] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   const oobCode = searchParams.get("oobCode");
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
     const validateCode = async () => {
       if (!oobCode) {
-        setError("Código de restablecimiento inválido o expirado");
+        toast.error("Código de restablecimiento inválido o expirado");
         setValidatingCode(false);
         return;
       }
@@ -37,41 +43,57 @@ const ResetPassword: React.FC = () => {
         setCodeValid(true);
       } catch (error: any) {
         console.error("Error validating code:", error);
-        setError("El enlace de restablecimiento es inválido o ha expirado");
+        toast.error("El enlace de restablecimiento es inválido o ha expirado");
       } finally {
         setValidatingCode(false);
       }
     };
 
     validateCode();
-  }, [oobCode]);
+  }, [oobCode, toast]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+
+    // Inline password validation
+    if (name === "password") {
+      if (value.length > 0 && value.length < 6) {
+        setPasswordError("La contraseña debe tener al menos 6 caracteres");
+      } else {
+        setPasswordError("");
+      }
+    }
+    if (name === "confirmPassword") {
+      if (value.length > 0 && value !== formData.password) {
+        setPasswordError("Las contraseñas no coinciden");
+      } else if (formData.password.length >= 6) {
+        setPasswordError("");
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
 
     if (!formData.password || !formData.confirmPassword) {
-      setError("Por favor, completa todos los campos");
+      toast.error("Por favor, completa todos los campos");
       setLoading(false);
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError("Las contraseñas no coinciden");
+      toast.error("Las contraseñas no coinciden");
       setLoading(false);
       return;
     }
 
     if (formData.password.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres");
+      toast.error("La contraseña debe tener al menos 6 caracteres");
       setLoading(false);
       return;
     }
@@ -85,11 +107,11 @@ const ResetPassword: React.FC = () => {
     } catch (error: any) {
       console.error("Error resetting password:", error);
       if (error.code === "auth/weak-password") {
-        setError("La contraseña es muy débil");
+        toast.error("La contraseña es muy débil");
       } else if (error.code === "auth/expired-action-code") {
-        setError("El enlace ha expirado. Solicita uno nuevo");
+        toast.error("El enlace ha expirado. Solicita uno nuevo");
       } else {
-        setError(
+        toast.error(
           "Error al restablecer la contraseña. Por favor, intenta nuevamente."
         );
       }
@@ -139,7 +161,9 @@ const ResetPassword: React.FC = () => {
               </svg>
             </div>
             <h1>Enlace inválido</h1>
-            <p className="error-text">{error}</p>
+            <p className="error-text">
+              El enlace de restablecimiento es inválido o ha expirado
+            </p>
             <a href="/recovery" className="back-btn">
               Solicitar nuevo enlace
             </a>
@@ -208,12 +232,6 @@ const ResetPassword: React.FC = () => {
             Ingresa tu nueva contraseña para <strong>{email}</strong>
           </p>
 
-          {error && (
-            <div className="error-message" role="alert" aria-live="polite">
-              {error}
-            </div>
-          )}
-
           <form onSubmit={handleSubmit} className="reset-form">
             <div className="form-group">
               <label htmlFor="password">Nueva contraseña</label>
@@ -228,6 +246,11 @@ const ResetPassword: React.FC = () => {
                 aria-required="true"
                 autoFocus
               />
+              {passwordError &&
+                formData.password.length > 0 &&
+                formData.password.length < 6 && (
+                  <span className="field-error">{passwordError}</span>
+                )}
             </div>
 
             <div className="form-group">
@@ -244,6 +267,11 @@ const ResetPassword: React.FC = () => {
                 disabled={loading}
                 aria-required="true"
               />
+              {passwordError &&
+                formData.confirmPassword.length > 0 &&
+                formData.password !== formData.confirmPassword && (
+                  <span className="field-error">{passwordError}</span>
+                )}
             </div>
 
             <div className="password-requirements">

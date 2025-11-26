@@ -5,6 +5,7 @@ import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
 import WebContentReader from "../../components/web-reader/WebContentReader";
 import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationModal";
+import { useToastContext } from "../../contexts/ToastContext";
 import "./Profile.scss";
 
 const parseCreatedAt = (value?: any): Date | null => {
@@ -38,10 +39,9 @@ const formatMemberSince = (value?: any) => {
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();
+  const toast = useToastContext();
   const { user, updateUserProfile, changePassword, deleteAccount, isLoading } =
     useAuthStore();
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const isOAuthUser = user?.authProvider && user.authProvider !== "password";
 
   // Personal Info State
@@ -51,6 +51,10 @@ const Profile: React.FC = () => {
     edad: "",
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   // Cargar datos del usuario cuando el componente se monta o el usuario cambia
   useEffect(() => {
@@ -86,16 +90,35 @@ const Profile: React.FC = () => {
   };
 
   const handleSaveChanges = async () => {
-    setError("");
-    setSuccess("");
-
     if (!personalInfo.fullName.trim()) {
-      setError("El nombre completo es requerido");
+      toast.error("El nombre completo es requerido");
       return;
     }
 
     if (!personalInfo.email.trim()) {
-      setError("El correo electrónico es requerido");
+      toast.error("El correo electrónico es requerido");
+      return;
+    }
+
+    if (!personalInfo.edad || !personalInfo.edad.trim()) {
+      toast.error("La edad es requerida");
+      return;
+    }
+
+    const edadNum = parseInt(personalInfo.edad, 10);
+    if (isNaN(edadNum) || edadNum < 1 || edadNum > 120) {
+      toast.error("Por favor, ingresa una edad válida (entre 1 y 120)");
+      return;
+    }
+
+    if (!personalInfo.edad || !personalInfo.edad.trim()) {
+      setError("La edad es requerida");
+      return;
+    }
+
+    const edadNum = parseInt(personalInfo.edad, 10);
+    if (isNaN(edadNum) || edadNum < 1 || edadNum > 120) {
+      setError("Por favor, ingresa una edad válida (entre 1 y 120)");
       return;
     }
 
@@ -118,24 +141,22 @@ const Profile: React.FC = () => {
     });
 
     if (result.success) {
-      setSuccess("Cambios guardados exitosamente");
+      toast.success("Cambios guardados exitosamente");
     } else {
-      setError(result.error || "Error al guardar los cambios");
+      toast.error(result.error || "Error al guardar los cambios");
     }
   };
 
   const handleChangePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setError("Las contraseñas no coinciden");
+      toast.error("Las contraseñas no coinciden");
       return;
     }
 
     if (passwordData.newPassword.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres");
+      toast.error("La contraseña debe tener al menos 6 caracteres");
       return;
     }
 
@@ -146,19 +167,18 @@ const Profile: React.FC = () => {
     );
 
     if (result.success) {
-      setSuccess("Contraseña actualizada correctamente");
+      toast.success("Contraseña actualizada correctamente");
       setPasswordData({
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
       });
     } else {
-      setError(result.error || "Error al cambiar la contraseña");
+      toast.error(result.error || "Error al cambiar la contraseña");
     }
   };
 
   const handleDeleteAccount = async () => {
-    setError("");
     setShowDeleteModal(false);
 
     const result = await deleteAccount();
@@ -166,7 +186,7 @@ const Profile: React.FC = () => {
     if (result.success) {
       navigate("/");
     } else {
-      setError(result.error || "Error al eliminar la cuenta");
+      toast.error(result.error || "Error al eliminar la cuenta");
     }
   };
 
@@ -207,28 +227,6 @@ const Profile: React.FC = () => {
               ← Volver al dashboard
             </button>
           </div>
-
-          {error && (
-            <div
-              id="profile-error"
-              className="alert alert-error"
-              role="alert"
-              aria-live="assertive"
-            >
-              {error}
-            </div>
-          )}
-
-          {success && (
-            <div
-              id="profile-success"
-              className="alert alert-success"
-              role="status"
-              aria-live="polite"
-            >
-              {success}
-            </div>
-          )}
 
           <div className="profile-grid">
             {/* User Card */}
@@ -279,10 +277,6 @@ const Profile: React.FC = () => {
                     placeholder="Juan Pérez"
                     disabled={isLoading}
                     aria-required="true"
-                    aria-invalid={
-                      error && !personalInfo.fullName.trim() ? "true" : "false"
-                    }
-                    aria-describedby={error ? "profile-error" : undefined}
                   />
                 </div>
 
@@ -297,16 +291,7 @@ const Profile: React.FC = () => {
                     placeholder="user@email.com"
                     disabled={isLoading || Boolean(isOAuthUser)}
                     aria-required="true"
-                    aria-invalid={
-                      error && !personalInfo.email.trim() ? "true" : "false"
-                    }
-                    aria-describedby={
-                      isOAuthUser
-                        ? "email-help"
-                        : error
-                        ? "profile-error"
-                        : undefined
-                    }
+                    aria-describedby={isOAuthUser ? "email-help" : undefined}
                   />
                   {isOAuthUser && (
                     <p id="email-help" className="field-note">
@@ -331,10 +316,7 @@ const Profile: React.FC = () => {
                     max="120"
                     disabled={isLoading}
                     aria-required="true"
-                    aria-invalid={
-                      error && !personalInfo.edad ? "true" : "false"
-                    }
-                    aria-describedby={error ? "profile-error edad-help" : "edad-help"}
+                    aria-describedby="edad-help"
                   />
                   <p id="edad-help" className="field-note">
                     Edad entre 1 y 120 años
@@ -381,8 +363,6 @@ const Profile: React.FC = () => {
                     placeholder="Contraseña actual"
                     disabled={isLoading}
                     aria-required="true"
-                    aria-invalid={error ? "true" : "false"}
-                    aria-describedby={error ? "profile-error" : undefined}
                   />
                 </div>
 
@@ -399,18 +379,7 @@ const Profile: React.FC = () => {
                     placeholder="Nueva contraseña"
                     disabled={isLoading}
                     aria-required="true"
-                    aria-invalid={
-                      error &&
-                      passwordData.newPassword.length < 6 &&
-                      passwordData.newPassword.length > 0
-                        ? "true"
-                        : "false"
-                    }
-                    aria-describedby={
-                      error
-                        ? "profile-error password-length-help"
-                        : "password-length-help"
-                    }
+                    aria-describedby="password-length-help"
                   />
                   <span id="password-length-help" className="visually-hidden">
                     La contraseña debe tener al menos 6 caracteres
@@ -430,15 +399,6 @@ const Profile: React.FC = () => {
                     placeholder="Confirmar contraseña"
                     disabled={isLoading}
                     aria-required="true"
-                    aria-invalid={
-                      error &&
-                      passwordData.newPassword !==
-                        passwordData.confirmPassword &&
-                      passwordData.confirmPassword.length > 0
-                        ? "true"
-                        : "false"
-                    }
-                    aria-describedby={error ? "profile-error" : undefined}
                   />
                 </div>
 

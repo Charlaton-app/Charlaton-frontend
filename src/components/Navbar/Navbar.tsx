@@ -43,7 +43,10 @@ const Navbar: React.FC<NavbarProps> = ({
   // Cerrar el menú de usuario al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
         setIsUserMenuOpen(false);
       }
     };
@@ -74,36 +77,59 @@ const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="navbar" role="banner">
       <div className="navbar-container">
-        <div className="logo">
-          <h1 lang="es">CHARLATON</h1>
-        </div>
-
-        {/* Botón hamburguesa - visible en móvil */}
-        <button
-          className="hamburger-btn"
-          onClick={toggleMenu}
-          aria-label={isMenuOpen ? "Cerrar menú de navegación" : "Abrir menú de navegación"}
-          aria-expanded={isMenuOpen}
-          aria-controls="mobile-menu"
+        <div
+          className="logo"
+          onClick={() => navigate(user ? "/dashboard" : "/")}
+          style={{ cursor: "pointer" }}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              navigate(user ? "/dashboard" : "/");
+            }
+          }}
+          aria-label={user ? "Ir al dashboard" : "Ir al inicio"}
         >
-          <span className={`hamburger-icon ${isMenuOpen ? "open" : ""}`} aria-hidden="true">
-            <span></span>
-            <span></span>
-            <span></span>
-          </span>
-        </button>
-
-        {/* Navegación - solo visible cuando NO hay usuario autenticado */}
+          <h1 lang="es">CHARLATON</h1>
+        </div>{" "}
+        {/* Botón hamburguesa - visible en móvil solo cuando NO hay usuario */}
+        {!user && (
+          <button
+            className="hamburger-btn"
+            onClick={toggleMenu}
+            aria-label={
+              isMenuOpen
+                ? "Cerrar menú de navegación"
+                : "Abrir menú de navegación"
+            }
+            aria-expanded={isMenuOpen}
+            aria-controls="mobile-menu"
+          >
+            <span
+              className={`hamburger-icon ${isMenuOpen ? "open" : ""}`}
+              aria-hidden="true"
+            >
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+          </button>
+        )}
+        {/* Navegación desktop - solo visible cuando NO hay usuario */}
         {!user && (
           <nav className="nav-links" aria-label="Navegación principal">
             <a href="/">Inicio</a>
             <a href="/about">Sobre nosotros</a>
           </nav>
         )}
-
         {/* Sección de autenticación */}
         {showAuthButtons && (
-          <div id="mobile-menu" className={`auth-section ${isMenuOpen ? "mobile-open" : ""}`} aria-label="Sección de autenticación">
+          <div
+            id="mobile-menu"
+            className={`auth-section ${isMenuOpen ? "mobile-open" : ""}`}
+            aria-label="Sección de autenticación"
+          >
+            {/* Navegación removida del mobile menu - disponible solo en footer */}
             {user ? (
               <>
                 {/* User icon with dropdown */}
@@ -121,13 +147,40 @@ const Navbar: React.FC<NavbarProps> = ({
                     </div>
                   </button>
                   {isUserMenuOpen && (
-                    <div id="user-dropdown-menu" className="user-dropdown" role="menu" aria-label="Opciones de usuario">
+                    <div
+                      id="user-dropdown-menu"
+                      className="user-dropdown"
+                      role="menu"
+                      aria-label="Opciones de usuario"
+                    >
                       <button
                         className="dropdown-item"
                         onClick={handleProfileClick}
                         role="menuitem"
                       >
                         Mi perfil
+                      </button>
+                      <button
+                        className="dropdown-item"
+                        onClick={() => {
+                          navigate("/dashboard");
+                          setIsUserMenuOpen(false);
+                          setIsMenuOpen(false);
+                        }}
+                        role="menuitem"
+                      >
+                        Dashboard
+                      </button>
+                      <button
+                        className="dropdown-item"
+                        onClick={() => {
+                          navigate("/resumenes");
+                          setIsUserMenuOpen(false);
+                          setIsMenuOpen(false);
+                        }}
+                        role="menuitem"
+                      >
+                        Resúmenes
                       </button>
                       <button
                         className="dropdown-item"
@@ -138,6 +191,23 @@ const Navbar: React.FC<NavbarProps> = ({
                       </button>
                     </div>
                   )}
+                </div>
+                {/* Mobile: Show profile and logout buttons directly in hamburger menu */}
+                <div className="mobile-menu-items mobile-only">
+                  <button
+                    className="btn-outline"
+                    onClick={handleProfileClick}
+                    aria-label="Ir a mi perfil"
+                  >
+                    MI PERFIL
+                  </button>
+                  <button
+                    className="btn-primary"
+                    onClick={handleLogout}
+                    aria-label="Cerrar sesión"
+                  >
+                    CERRAR SESIÓN
+                  </button>
                 </div>
               </>
             ) : (

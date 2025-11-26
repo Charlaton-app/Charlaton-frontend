@@ -33,6 +33,18 @@ $font-body: "Rubik", sans-serif;
       align-items: center;
       gap: 0.5rem;
       z-index: 41;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+
+      &:hover {
+        opacity: 0.8;
+      }
+
+      &:focus {
+        outline: 2px solid $primary-color;
+        outline-offset: 4px;
+        border-radius: 4px;
+      }
 
       h1 {
         font-family: $font-title;
@@ -94,19 +106,15 @@ $font-body: "Rubik", sans-serif;
       }
     }
 
-    // Navegación principal (solo visible cuando no hay usuario)
+    // Navegación principal (solo visible cuando no hay usuario - desktop)
     .nav-links {
       display: flex;
       gap: 1.5rem;
       background: transparent;
       padding: 0;
 
-      @media (max-width: 640px) {
-        gap: 1rem;
-      }
-
-      @media (max-width: 480px) {
-        gap: 0.75rem;
+      @media (max-width: 768px) {
+        display: none; // Hidden on mobile - links shown in mobile menu instead
       }
 
       a {
@@ -117,12 +125,34 @@ $font-body: "Rubik", sans-serif;
         transition: color 0.2s;
         white-space: nowrap;
 
-        @media (max-width: 480px) {
-          font-size: 0.85rem;
+        &:hover {
+          color: #111827;
         }
+      }
+    }
+
+    // Navegación para mobile menu
+    .nav-links-mobile {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      width: 100%;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid #e5e7eb;
+      margin-bottom: 0.75rem;
+
+      a {
+        font-family: $font-body;
+        color: #4b5563;
+        text-decoration: none;
+        font-size: 0.95rem;
+        padding: 0.5rem;
+        border-radius: 0.375rem;
+        transition: all 0.2s;
 
         &:hover {
           color: #111827;
+          background: rgba($primary-color, 0.05);
         }
       }
     }
@@ -134,28 +164,35 @@ $font-body: "Rubik", sans-serif;
       align-items: center;
 
       @media (max-width: 768px) {
-        position: fixed;
-        top: 4rem;
-        right: 0;
-        background: white;
-        flex-direction: column;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
-        transform: translateX(120%);
-        transition: transform 0.3s ease;
-        gap: 0.75rem;
-        min-width: 200px;
-        margin-right: 1rem;
+        // Solo aplicar posicionamiento fijo cuando NO hay usuario autenticado
+        // Cuando hay usuario, se muestra directamente en el navbar
+        &:not(:has(.user-menu-container)) {
+          position: fixed;
+          top: 4rem;
+          right: 0;
+          background: white;
+          flex-direction: column;
+          padding: 1rem;
+          border-radius: 0.5rem;
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+          transform: translateX(120%);
+          transition: transform 0.3s ease;
+          gap: 0.75rem;
+          min-width: 200px;
+          margin-right: 1rem;
 
-        &.mobile-open {
-          transform: translateX(0);
+          &.mobile-open {
+            transform: translateX(0);
+          }
         }
       }
 
       @media (max-width: 640px) {
         gap: 0.5rem;
-        top: 3.5rem;
+
+        &:not(:has(.user-menu-container)) {
+          top: 3.5rem;
+        }
       }
 
       .user-name {
@@ -172,6 +209,33 @@ $font-body: "Rubik", sans-serif;
       // Contenedor del menú de usuario
       .user-menu-container {
         position: relative;
+      }
+
+      // Desktop only - hide on mobile
+      .desktop-only {
+        @media (max-width: 768px) {
+          display: none;
+        }
+      }
+
+      // Mobile only - hide on desktop
+      .mobile-only {
+        display: none;
+        
+        @media (max-width: 768px) {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          width: 100%;
+        }
+      }
+
+      // Mobile menu items container
+      .mobile-menu-items {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        width: 100%;
       }
 
       // Botón del icono de usuario
@@ -201,7 +265,11 @@ $font-body: "Rubik", sans-serif;
         width: 2.5rem;
         height: 2.5rem;
         border-radius: 50%;
-        background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+        background: linear-gradient(
+          135deg,
+          $primary-color 0%,
+          $secondary-color 100%
+        );
         color: white;
         display: flex;
         align-items: center;
@@ -226,7 +294,8 @@ $font-body: "Rubik", sans-serif;
         right: 0;
         background: white;
         border-radius: 0.5rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06);
         min-width: 180px;
         z-index: 50;
         overflow: hidden;
@@ -280,7 +349,6 @@ $font-body: "Rubik", sans-serif;
           border-bottom-left-radius: 0.5rem;
           border-bottom-right-radius: 0.5rem;
         }
-
       }
 
       button {

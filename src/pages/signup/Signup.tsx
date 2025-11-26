@@ -1,14 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../stores/useAuthStore";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
-import WebContentReader from '../../components/web-reader/WebContentReader';
+import WebContentReader from "../../components/web-reader/WebContentReader";
+import { useToastContext } from "../../contexts/ToastContext";
 import "./Signup.scss";
 
 const Signup: React.FC = () => {
   const navigate = useNavigate();
-  const { signup, loginWithGoogle, loginWithFacebook, isLoading } =
+  const toast = useToastContext();
+  const { signup, loginWithGoogle, loginWithGithub, isLoading } =
     useAuthStore();
   const [formData, setFormData] = useState({
     name: "",
@@ -17,18 +19,38 @@ const Signup: React.FC = () => {
     password: "",
     confirmPassword: "",
   });
-  const [error, setError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+
+    // Inline password validation
+    if (name === "password") {
+      if (value.length > 0 && value.length < 6) {
+        setPasswordError("La contraseña debe tener al menos 6 caracteres");
+      } else {
+        setPasswordError("");
+      }
+    }
+    if (name === "confirmPassword") {
+      if (value.length > 0 && value !== formData.password) {
+        setPasswordError("Las contraseñas no coinciden");
+      } else if (formData.password.length >= 6) {
+        setPasswordError("");
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
 
     if (
       !formData.name ||
@@ -37,7 +59,19 @@ const Signup: React.FC = () => {
       !formData.password ||
       !formData.confirmPassword
     ) {
-      setError("Por favor, completa todos los campos");
+      toast.error("Por favor, completa todos los campos");
+      return;
+    }
+
+    const edadNum = parseInt(formData.edad, 10);
+    if (isNaN(edadNum) || edadNum < 1 || edadNum > 120) {
+      toast.error("Por favor, ingresa una edad válida (entre 1 y 120)");
+      return;
+    }
+
+    const edadNum = parseInt(formData.edad, 10);
+    if (isNaN(edadNum) || edadNum < 1 || edadNum > 120) {
+      setError("Por favor, ingresa una edad válida (entre 1 y 120)");
       return;
     }
 
@@ -48,12 +82,12 @@ const Signup: React.FC = () => {
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError("Las contraseñas no coinciden");
+      toast.error("Las contraseñas no coinciden");
       return;
     }
 
     if (formData.password.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres");
+      toast.error("La contraseña debe tener al menos 6 caracteres");
       return;
     }
 
@@ -68,29 +102,25 @@ const Signup: React.FC = () => {
     if (result.success) {
       navigate("/signup-success");
     } else {
-      setError(result.error || "Error al registrarse");
+      toast.error(result.error || "Error al registrarse");
     }
   };
 
   const handleGoogleSignup = async () => {
-    setError("");
-
     const result = await loginWithGoogle();
     if (result.success) {
       navigate("/signup-success");
     } else {
-      setError(result.error || "Error al registrarse con Google");
+      toast.error(result.error || "Error al registrarse con Google");
     }
   };
 
-  const handleFacebookSignup = async () => {
-    setError("");
-
-    const result = await loginWithFacebook();
+  const handleGithubSignup = async () => {
+    const result = await loginWithGithub();
     if (result.success) {
       navigate("/signup-success");
     } else {
-      setError(result.error || "Error al registrarse con Facebook");
+      toast.error(result.error || "Error al registrarse con GitHub");
     }
   };
 
@@ -116,12 +146,6 @@ const Signup: React.FC = () => {
           <h1>Crea tu cuenta</h1>
           <p className="subtitle">Únete a Charlaton y comienza a colaborar</p>
 
-          {error && (
-            <div id="signup-error" className="error-message" role="alert" aria-live="polite">
-              {error}
-            </div>
-          )}
-
           <form onSubmit={handleSubmit} className="signup-form">
             <div className="form-group">
               <label htmlFor="name">Nombre completo</label>
@@ -134,8 +158,6 @@ const Signup: React.FC = () => {
                 placeholder="Juan Pérez"
                 disabled={isLoading}
                 aria-required="true"
-                aria-invalid={error && !formData.name ? "true" : "false"}
-                aria-describedby={error ? "signup-error" : undefined}
               />
             </div>
 
@@ -150,8 +172,6 @@ const Signup: React.FC = () => {
                 placeholder="tu@ejemplo.com"
                 disabled={isLoading}
                 aria-required="true"
-                aria-invalid={error && !formData.email ? "true" : "false"}
-                aria-describedby={error ? "signup-error" : undefined}
               />
             </div>
 
@@ -168,10 +188,11 @@ const Signup: React.FC = () => {
                 max="120"
                 disabled={isLoading}
                 aria-required="true"
-                aria-invalid={error && !formData.edad ? "true" : "false"}
-                aria-describedby={error ? "signup-error edad-help" : "edad-help"}
+                aria-describedby="edad-help"
               />
-              <span id="edad-help" className="visually-hidden">Ingresa tu edad (entre 1 y 120 años)</span>
+              <span id="edad-help" className="visually-hidden">
+                Ingresa tu edad (entre 1 y 120 años)
+              </span>
             </div>
 
             <div className="form-group">
@@ -185,10 +206,16 @@ const Signup: React.FC = () => {
                 placeholder="Mínimo 6 caracteres"
                 disabled={isLoading}
                 aria-required="true"
-                aria-invalid={error && formData.password.length < 6 && formData.password.length > 0 ? "true" : "false"}
-                aria-describedby={error ? "signup-error password-help" : "password-help"}
+                aria-describedby="password-help"
               />
-              <span id="password-help" className="visually-hidden">La contraseña debe tener al menos 6 caracteres</span>
+              {passwordError &&
+                formData.password.length > 0 &&
+                formData.password.length < 6 && (
+                  <span className="field-error">{passwordError}</span>
+                )}
+              <span id="password-help" className="visually-hidden">
+                La contraseña debe tener al menos 6 caracteres
+              </span>
             </div>
 
             <div className="form-group">
@@ -202,9 +229,12 @@ const Signup: React.FC = () => {
                 placeholder="Repite tu contraseña"
                 disabled={isLoading}
                 aria-required="true"
-                aria-invalid={error && formData.password !== formData.confirmPassword && formData.confirmPassword.length > 0 ? "true" : "false"}
-                aria-describedby={error ? "signup-error" : undefined}
               />
+              {passwordError &&
+                formData.confirmPassword.length > 0 &&
+                formData.password !== formData.confirmPassword && (
+                  <span className="field-error">{passwordError}</span>
+                )}
             </div>
 
             <button
@@ -233,13 +263,13 @@ const Signup: React.FC = () => {
             </button>
 
             <button
-              onClick={handleFacebookSignup}
-              className="social-btn facebook-btn"
+              onClick={handleGithubSignup}
+              className="social-btn github-btn"
               disabled={isLoading}
-              aria-label="Registrarse con Facebook"
+              aria-label="Registrarse con GitHub"
             >
-              <img src="/icons/facebook-icon.svg" alt="" aria-hidden="true" />
-              Facebook
+              <img src="/icons/github-icon.svg" alt="" aria-hidden="true" />
+              GitHub
             </button>
           </div>
 

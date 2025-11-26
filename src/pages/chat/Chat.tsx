@@ -5,7 +5,7 @@ import { socket } from "../../lib/socket.config";
 import useAuthStore from "../../stores/useAuthStore";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
-import WebContentReader from '../../components/web-reader/WebContentReader';
+import WebContentReader from "../../components/web-reader/WebContentReader";
 import "./Chat.scss";
 
 interface Message {
@@ -30,6 +30,10 @@ const Chat: React.FC = () => {
   const [isManuallyDisconnected, setIsManuallyDisconnected] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const hasLoadedHistory = useRef(false);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   useEffect(() => {
     // Verificar autenticación
@@ -186,12 +190,18 @@ const Chat: React.FC = () => {
                 <p className="status" role="status" aria-live="polite">
                   {isConnected ? (
                     <>
-                      <span className="status-dot online" aria-hidden="true"></span>
+                      <span
+                        className="status-dot online"
+                        aria-hidden="true"
+                      ></span>
                       <span>Conectado</span>
                     </>
                   ) : (
                     <>
-                      <span className="status-dot offline" aria-hidden="true"></span>
+                      <span
+                        className="status-dot offline"
+                        aria-hidden="true"
+                      ></span>
                       <span>Desconectado</span>
                     </>
                   )}
@@ -254,8 +264,8 @@ const Chat: React.FC = () => {
           </div>
 
           {/* Messages Container */}
-          <div 
-            className="messages-container" 
+          <div
+            className="messages-container"
             ref={messagesContainerRef}
             role="log"
             aria-live="polite"
@@ -312,9 +322,15 @@ const Chat: React.FC = () => {
           </div>
 
           {/* Message Input */}
-          <form onSubmit={handleSendMessage} className="message-input-form" aria-label="Formulario de envío de mensajes">
+          <form
+            onSubmit={handleSendMessage}
+            className="message-input-form"
+            aria-label="Formulario de envío de mensajes"
+          >
             <div className="input-container">
-              <label htmlFor="message-input" className="visually-hidden">Escribe un mensaje</label>
+              <label htmlFor="message-input" className="visually-hidden">
+                Escribe un mensaje
+              </label>
               <input
                 id="message-input"
                 type="text"
@@ -330,7 +346,12 @@ const Chat: React.FC = () => {
                 disabled={!isConnected || !messageInput.trim()}
                 aria-label="Enviar mensaje"
               >
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <svg
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"

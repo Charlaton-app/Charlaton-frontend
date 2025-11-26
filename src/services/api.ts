@@ -80,22 +80,34 @@ const fetchWithConfig = async <T = any>(
               // Reintentar la petición original después de refrescar
               return fetchWithConfig<T>(endpoint, options, false);
             } else {
-              console.error("[API] Error al refrescar token:", refreshData.error);
+              console.error(
+                "[API] Error al refrescar token:",
+                refreshData.error
+              );
               // Si el refresh falla, podría ser que la sesión expiró completamente
               // En este caso, el usuario necesita volver a iniciar sesión
               return {
-                error: refreshData.error || "Tu sesión ha expirado. Por favor, recarga la página o inicia sesión nuevamente.",
+                error:
+                  refreshData.error ||
+                  "Tu sesión ha expirado. Por favor, recarga la página o inicia sesión nuevamente.",
               };
             }
           } catch (refreshError) {
-            console.error("[API] Error en el proceso de refresh:", refreshError);
+            console.error(
+              "[API] Error en el proceso de refresh:",
+              refreshError
+            );
             return {
-              error: "Error al refrescar la sesión. Por favor, recarga la página o inicia sesión nuevamente.",
+              error:
+                "Error al refrescar la sesión. Por favor, recarga la página o inicia sesión nuevamente.",
             };
           }
         }
         return {
-          error: data.error || data.message || "Token expirado o no autorizado. Por favor, inicia sesión nuevamente.",
+          error:
+            data.error ||
+            data.message ||
+            "Token expirado o no autorizado. Por favor, inicia sesión nuevamente.",
         };
       }
       if (response.status === 404) {
@@ -109,7 +121,10 @@ const fetchWithConfig = async <T = any>(
         };
       }
       return {
-        error: data.error || data.message || `Error en la petición (${response.status})`,
+        error:
+          data.error ||
+          data.message ||
+          `Error en la petición (${response.status})`,
       };
     }
 
