@@ -57,6 +57,53 @@ const Meeting: React.FC = () => {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLInputElement>(null);
+  /**
+   * Helper to refresh participants from backend
+   */
+  const refreshParticipants = useCallback(async () => {
+    if (!meetingId) return;
+    const participantsResponse = await getRoomParticipants(meetingId);
+    if (participantsResponse.error || !participantsResponse.data) {
+      return;
+    }
+
+    setParticipants(participantsResponse.data);
+
+    const participantIds = participantsResponse.data.map((p) =>
+      String(p.userId)
+    );
+
+    setMicStates((prev) => {
+      const updated = { ...prev };
+      participantIds.forEach((id) => {
+        if (!(id in updated)) {
+          updated[id] = id === String(user?.id) ? isMicOn : false;
+        }
+      });
+      Object.keys(updated).forEach((id) => {
+        if (!participantIds.includes(id)) {
+          delete updated[id];
+        }
+      });
+      return updated;
+    });
+
+    setCameraStates((prev) => {
+      const updated = { ...prev };
+      participantIds.forEach((id) => {
+        if (!(id in updated)) {
+          updated[id] = id === String(user?.id) ? isCameraOn : false;
+        }
+      });
+      Object.keys(updated).forEach((id) => {
+        if (!participantIds.includes(id)) {
+          delete updated[id];
+        }
+      });
+      return updated;
+    });
+  }, [meetingId, user?.id, isMicOn, isCameraOn]);
+
 
   /**
    * Scroll to bottom of messages
@@ -112,71 +159,7 @@ const Meeting: React.FC = () => {
           return;
         }
 
-        // Load participants
-        const participantsResponse = await getRoomParticipants(meetingId);
-        if (!participantsResponse.error && participantsResponse.data) {
-          console.log(
-            "[MEETING] Participants loaded:",
-            participantsResponse.data
-          );
-
-          // Log detailed user data for debugging
-          console.log(
-            "[MEETING] Total participants:",
-            participantsResponse.data.length
-          );
-          
-          // Log all participants to see what we're receiving
-          console.log("[MEETING] Raw participants data:", JSON.stringify(participantsResponse.data, null, 2));
-          
-          // Don't filter out participants - keep all of them
-          const validParticipants = participantsResponse.data.map((p: Participant) => {
-            // Log each participant
-            console.log(`[MEETING] Processing participant:`, {
-              id: p.id,
-              userId: p.userId,
-              hasUser: !!p.user,
-              fullData: p
-            });
-            return p;
-          });
-
-          validParticipants.forEach((p: Participant, index) => {
-            console.log(
-              `[MEETING] Participant ${index + 1} (userId: ${p.userId}):`
-            );
-            console.log("  - Full participant object:", p);
-            console.log("  - Has user object?", !!p.user);
-            if (p.user) {
-              console.log("  - user.id:", p.user.id);
-              console.log("  - user.email:", p.user.email);
-              console.log("  - user.nickname:", p.user.nickname);
-              console.log("  - user.displayName:", p.user.displayName);
-            } else {
-              console.warn(`  ⚠️ No user data for userId: ${p.userId}`);
-            }
-          });
-
-          setParticipants(validParticipants);
-
-          // Initialize mic/camera states for all valid participants
-          const initialMicStates: Record<string, boolean> = {};
-          const initialCameraStates: Record<string, boolean> = {};
-          validParticipants.forEach((p: Participant) => {
-            // Ensure userId is string for consistency
-            const userId = String(p.userId);
-            const isCurrentUser = userId === String(user.id);
-            initialMicStates[userId] = isCurrentUser ? isMicOn : false;
-            initialCameraStates[userId] = isCurrentUser ? isCameraOn : false;
-          });
-          setMicStates(initialMicStates);
-          setCameraStates(initialCameraStates);
-          console.log("[MEETING] Initialized states:", {
-            currentUserId: user.id,
-            micStates: initialMicStates,
-            cameraStates: initialCameraStates,
-          });
-        }
+        await refreshParticipants();
 
         // Load messages
         const messagesResponse = await getRoomMessages(meetingId);
@@ -246,6 +229,7 @@ const Meeting: React.FC = () => {
           console.log(`[MEETING] User ${userName} (${response.user.id}) joined, current user: ${user.id}`);
           toast.info(`${userName} se unió a la reunión`);
           notificationSounds.userJoined();
+          refreshParticipants();
         }
       };
       
