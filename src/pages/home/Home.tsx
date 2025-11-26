@@ -1,13 +1,23 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
 import WebContentReader from "../../components/web-reader/WebContentReader";
+import useAuthStore from "../../stores/useAuthStore";
 import "./Home.scss";
 
 const Home: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
+
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+    
+    // Si el usuario está logueado, redirigir al dashboard
+    if (user) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, navigate]);
 
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
@@ -75,7 +85,7 @@ const Home: React.FC = () => {
         Saltar al contenido principal
       </a>
 
-      <Navbar showAuthButtons={true} />
+      <Navbar showAuthButtons={!user} />
 
       <main id="main-content">
         {/* Hero Section */}
