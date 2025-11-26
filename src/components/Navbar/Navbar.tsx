@@ -62,13 +62,15 @@ const Navbar: React.FC<NavbarProps> = ({
 
   // Obtener la inicial del nombre del usuario
   const getUserInitial = () => {
-    if (user?.displayName) {
+    if (!user) return "U";
+    
+    if (user.displayName) {
       return user.displayName.charAt(0).toUpperCase();
     }
-    if (user?.nickname) {
+    if (user.nickname) {
       return user.nickname.charAt(0).toUpperCase();
     }
-    if (user?.email) {
+    if (user.email) {
       return user.email.charAt(0).toUpperCase();
     }
     return "U";
