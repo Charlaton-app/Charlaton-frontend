@@ -44,6 +44,7 @@ export async function connectToChat(): Promise<Socket | null> {
     reconnection: true,
     reconnectionDelay: 1000,
     reconnectionAttempts: 5,
+    timeout: 45000,
   });
 
   // Set up connection event listeners only once
@@ -52,6 +53,10 @@ export async function connectToChat(): Promise<Socket | null> {
   });
 
   socket.on("connect_error", (error) => {
+    if (error.message === "timeout") {
+      console.log("[SOCKET] Connection attempt is still pending, retrying...");
+      return;
+    }
     console.error("[SOCKET] ❌ Connection error:", error.message);
   });
 
