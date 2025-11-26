@@ -156,7 +156,6 @@ const useAuthStore = create<AuthStore>()(
                 console.error("Error sincronizando usuario:", error);
                 
                 // Cualquier error al sincronizar = cerrar sesión por seguridad
-                const errorMsg = String(error.message || error).toLowerCase();
                 console.log("[AUTH-STORE] Error inesperado al sincronizar, cerrando sesión");
                 await firebaseSignOut(auth);
                 set({
