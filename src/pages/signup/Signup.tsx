@@ -10,7 +10,7 @@ import "./Signup.scss";
 const Signup: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToastContext();
-  const { signup, loginWithGoogle, loginWithGithub, isLoading } =
+  const { user, signup, loginWithGoogle, loginWithGithub, isLoading } =
     useAuthStore();
   const [formData, setFormData] = useState({
     name: "",
@@ -24,6 +24,13 @@ const Signup: React.FC = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  // Si el usuario ya está logueado, redirigir al dashboard
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

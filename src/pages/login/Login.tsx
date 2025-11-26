@@ -12,7 +12,7 @@ import "./Login.scss";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { login, loginWithGoogle, loginWithGithub, isLoading } = useAuthStore();
+  const { user, login, loginWithGoogle, loginWithGithub, isLoading } = useAuthStore();
   const toast = useToastContext();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,6 +22,13 @@ const Login: React.FC = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  // Si el usuario ya está logueado, redirigir al dashboard
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleLoginGoogle = async (e: React.FormEvent) => {
     e.preventDefault();

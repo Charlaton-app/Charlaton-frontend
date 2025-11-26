@@ -12,6 +12,7 @@ import Chat from "../pages/chat/Chat";
 import Meeting from "../pages/meeting/Meeting";
 import JoinMeeting from "../pages/join/JoinMeeting";
 import Resumenes from "../pages/resumenes/Resumenes";
+import ProtectedRoute from "../components/ProtectedRoute/ProtectedRoute";
 
 export const routes = [
   {
@@ -42,29 +43,54 @@ export const routes = [
     path: "/about",
     element: <About />,
   },
+  // Rutas protegidas - requieren autenticación
   {
     path: "/dashboard",
-    element: <Dashboard />,
+    element: (
+      <ProtectedRoute>
+        <Dashboard />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/profile",
-    element: <Profile />,
+    element: (
+      <ProtectedRoute>
+        <Profile />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/resumenes",
-    element: <Resumenes />,
+    element: (
+      <ProtectedRoute>
+        <Resumenes />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/chat",
-    element: <Chat />,
+    element: (
+      <ProtectedRoute>
+        <Chat />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/meet/:meetingId",
-    element: <Meeting />,
+    element: (
+      <ProtectedRoute>
+        <Meeting />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/join/:meetingId",
-    element: <JoinMeeting />,
+    element: (
+      <ProtectedRoute>
+        <JoinMeeting />
+      </ProtectedRoute>
+    ),
   },
 ];
 
