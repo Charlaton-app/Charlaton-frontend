@@ -94,6 +94,31 @@ const useAuthStore = create<AuthStore>()(
                   fbUser.uid,
                   fbUser.email || undefined
                 );
+                
+                // Si hay error en la respuesta, verificar si es de autenticación
+                if (response.error) {
+                  const errorMsg = String(response.error).toLowerCase();
+                  if (
+                    errorMsg.includes("401") ||
+                    errorMsg.includes("404") ||
+                    errorMsg.includes("token") ||
+                    errorMsg.includes("expirado") ||
+                    errorMsg.includes("unauthorized") ||
+                    errorMsg.includes("not found") ||
+                    errorMsg.includes("sesión")
+                  ) {
+                    console.log("[AUTH-STORE] Error de autenticación del backend, cerrando sesión");
+                    await firebaseSignOut(auth);
+                    set({
+                      user: null,
+                      isAuthenticated: false,
+                      isInitialized: true,
+                      error: null,
+                    });
+                    return;
+                  }
+                }
+                
                 const providerId =
                   fbUser.providerData?.[0]?.providerId || fbUser.providerId;
                 const authProvider = normalizeProvider(providerId);
@@ -117,18 +142,12 @@ const useAuthStore = create<AuthStore>()(
                     error: null,
                   });
                 } else {
-                  // Si no hay datos en backend, usar solo Firebase
-                  const userLogged: User = {
-                    id: fbUser.uid,
-                    displayName: fbUser.displayName,
-                    email: fbUser.email,
-                    photoURL: fbUser.photoURL,
-                    createdAt: null,
-                    authProvider,
-                  };
+                  // Si no hay datos en backend, cerrar sesión (no usar fallback)
+                  console.log("[AUTH-STORE] No se pudo obtener datos del backend, cerrando sesión");
+                  await firebaseSignOut(auth);
                   set({
-                    user: userLogged,
-                    isAuthenticated: true,
+                    user: null,
+                    isAuthenticated: false,
                     isInitialized: true,
                     error: null,
                   });
@@ -136,41 +155,13 @@ const useAuthStore = create<AuthStore>()(
               } catch (error: any) {
                 console.error("Error sincronizando usuario:", error);
                 
-                // Si el error es 401 o token expirado, cerrar sesión completamente
-                if (
-                  error.message?.includes("401") ||
-                  error.message?.includes("Token") ||
-                  error.message?.includes("expirado") ||
-                  error.message?.includes("unauthorized")
-                ) {
-                  console.log("[AUTH-STORE] Token expirado, cerrando sesión");
-                  // Cerrar sesión de Firebase
-                  await firebaseSignOut(auth);
-                  // Limpiar el store
-                  set({
-                    user: null,
-                    isAuthenticated: false,
-                    isInitialized: true,
-                    error: null,
-                  });
-                  return;
-                }
-                
-                // Para otros errores, usar solo Firebase (fallback)
-                const providerId =
-                  fbUser.providerData?.[0]?.providerId || fbUser.providerId;
-                const authProvider = normalizeProvider(providerId);
-                const userLogged: User = {
-                  id: fbUser.uid,
-                  displayName: fbUser.displayName,
-                  email: fbUser.email,
-                  photoURL: fbUser.photoURL,
-                  createdAt: null,
-                  authProvider,
-                };
+                // Cualquier error al sincronizar = cerrar sesión por seguridad
+                const errorMsg = String(error.message || error).toLowerCase();
+                console.log("[AUTH-STORE] Error inesperado al sincronizar, cerrando sesión");
+                await firebaseSignOut(auth);
                 set({
-                  user: userLogged,
-                  isAuthenticated: true,
+                  user: null,
+                  isAuthenticated: false,
                   isInitialized: true,
                   error: null,
                 });
