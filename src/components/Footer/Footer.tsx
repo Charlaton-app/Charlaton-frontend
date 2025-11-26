@@ -892,7 +892,7 @@ const Footer: React.FC = () => {
                   <a href="/">Inicio</a>
                 </li>
                 <li>
-                  <a href="/#nosotros">Sobre nosotros</a>
+                  <a href="/about">Sobre nosotros</a>
                 </li>
               </ul>
             </nav>
