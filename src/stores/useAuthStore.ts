@@ -487,7 +487,7 @@ const useAuthStore = create<AuthStore>()(
     }),
     {
       name: "auth-storage", // Nombre para localStorage
-      partialize: (state) => ({
+      partialize: () => ({
         // NO persistir el usuario - siempre verificar con Firebase/Backend
         // Esto evita problemas con tokens expirados
       }),
