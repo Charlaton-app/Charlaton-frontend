@@ -626,7 +626,20 @@ export const deleteAccount = async (userId: string) => {
 
     console.log(`[AUTH-SERVICE] Deleting Firebase user ${user.uid}`);
     // 2. Eliminar cuenta de Firebase
-    await firebaseDeleteUser(user);
+    try {
+      await firebaseDeleteUser(user);
+    } catch (firebaseError: any) {
+      if (
+        firebaseError.code === "auth/id-token-expired" ||
+        firebaseError.code === "auth/user-token-expired"
+      ) {
+        console.log("[AUTH-SERVICE] Firebase token expired, refreshing...");
+        await user.getIdToken(true);
+        await firebaseDeleteUser(user);
+      } else {
+        throw firebaseError;
+      }
+    }
 
     console.log("[AUTH-SERVICE] Account deleted successfully");
     return {
