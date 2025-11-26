@@ -23,40 +23,24 @@ interface ApiResponse<T = any> {
   message?: string;
 }
 
-// Configuración base para fetch con timeout
+// Configuración base para fetch
 const fetchWithConfig = async <T = any>(
   endpoint: string,
   options: RequestInit = {},
   retryOn401: boolean = true
 ): Promise<ApiResponse<T>> => {
-  // Timeout más largo para endpoints que pueden tardar más
-  const isAuthEndpoint =
-    endpoint.includes("/auth/login") || endpoint.includes("/auth/signup");
-  const isUserRoomsEndpoint = endpoint.includes("/room/user/");
-  const timeout = isAuthEndpoint ? 30000 : isUserRoomsEndpoint ? 45000 : 15000; // 30s para auth, 45s para user rooms, 15s para otros
-
   try {
     const fullUrl = `${API_BASE}${endpoint}`;
     console.log(`[API] Making request to: ${fullUrl}`);
 
-    // Crear un AbortController para el timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      console.error(`[API] Request timeout after ${timeout}ms: ${fullUrl}`);
-      controller.abort();
-    }, timeout);
-
     const response = await fetch(fullUrl, {
       ...options,
-      signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
         ...options.headers,
       },
       credentials: "include", // Importante para cookies (AccessToken, RefreshToken)
     });
-
-    clearTimeout(timeoutId);
 
     const data = await response.json();
 
@@ -132,15 +116,6 @@ const fetchWithConfig = async <T = any>(
 
     return { data };
   } catch (error: any) {
-    if (error.name === "AbortError") {
-      console.error(`[API] Timeout after ${timeout}ms:`, endpoint);
-      console.error(`[API] Full URL was: ${API_BASE}${endpoint}`);
-      return {
-        error: `El servidor tardó demasiado en responder (${
-          timeout / 1000
-        }s). Verifica que el backend esté corriendo en ${API_BASE}`,
-      };
-    }
     console.error("[API] Error:", error);
     console.error(`[API] Failed URL: ${API_BASE}${endpoint}`);
     return {
