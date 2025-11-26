@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, signOut as firebaseSignOut } from "firebase/auth";
 import { auth } from "../lib/firebase.config";
 import authService from "../services/auth.service";
 
@@ -135,8 +135,28 @@ const useAuthStore = create<AuthStore>()(
                 }
               } catch (error: any) {
                 console.error("Error sincronizando usuario:", error);
-                // Si el error es 401, el token expiró pero Firebase está autenticado
-                // Continuar con los datos de Firebase
+                
+                // Si el error es 401 o token expirado, cerrar sesión completamente
+                if (
+                  error.message?.includes("401") ||
+                  error.message?.includes("Token") ||
+                  error.message?.includes("expirado") ||
+                  error.message?.includes("unauthorized")
+                ) {
+                  console.log("[AUTH-STORE] Token expirado, cerrando sesión");
+                  // Cerrar sesión de Firebase
+                  await firebaseSignOut(auth);
+                  // Limpiar el store
+                  set({
+                    user: null,
+                    isAuthenticated: false,
+                    isInitialized: true,
+                    error: null,
+                  });
+                  return;
+                }
+                
+                // Para otros errores, usar solo Firebase (fallback)
                 const providerId =
                   fbUser.providerData?.[0]?.providerId || fbUser.providerId;
                 const authProvider = normalizeProvider(providerId);
@@ -152,11 +172,7 @@ const useAuthStore = create<AuthStore>()(
                   user: userLogged,
                   isAuthenticated: true,
                   isInitialized: true,
-                  error:
-                    error.message?.includes("401") ||
-                    error.message?.includes("Token")
-                      ? "Token expirado. Por favor, recarga la página."
-                      : null,
+                  error: null,
                 });
               }
             } else {
@@ -472,9 +488,9 @@ const useAuthStore = create<AuthStore>()(
     {
       name: "auth-storage", // Nombre para localStorage
       partialize: (state) => ({
-        user: state.user,
-        isAuthenticated: state.isAuthenticated,
-      }), // Solo persistir el usuario y estado de autenticación
+        // NO persistir el usuario - siempre verificar con Firebase/Backend
+        // Esto evita problemas con tokens expirados
+      }),
     }
   )
 );
