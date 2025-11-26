@@ -321,75 +321,77 @@ const Profile: React.FC = () => {
             </div>
 
             {/* Change Password Card */}
-            <div className="profile-card password-card">
-              <h2>Cambia tu contraseña</h2>
+            {!isOAuthUser && (
+              <div className="profile-card password-card">
+                <h2>Cambia tu contraseña</h2>
 
-              <form
-                onSubmit={handleChangePasswordSubmit}
-                className="password-form"
-              >
-                <div className="form-group">
-                  <label htmlFor="currentPassword">
-                    Digita tu contraseña actual
-                  </label>
-                  <input
-                    type="password"
-                    id="currentPassword"
-                    name="currentPassword"
-                    value={passwordData.currentPassword}
-                    onChange={handlePasswordChange}
-                    placeholder="Contraseña actual"
-                    disabled={isLoading}
-                    aria-required="true"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="newPassword">
-                    Digita tu nueva contraseña
-                  </label>
-                  <input
-                    type="password"
-                    id="newPassword"
-                    name="newPassword"
-                    value={passwordData.newPassword}
-                    onChange={handlePasswordChange}
-                    placeholder="Nueva contraseña"
-                    disabled={isLoading}
-                    aria-required="true"
-                    aria-describedby="password-length-help"
-                  />
-                  <span id="password-length-help" className="visually-hidden">
-                    La contraseña debe tener al menos 6 caracteres
-                  </span>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="confirmPassword">
-                    Confirma tu nueva contraseña
-                  </label>
-                  <input
-                    type="password"
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    value={passwordData.confirmPassword}
-                    onChange={handlePasswordChange}
-                    placeholder="Confirmar contraseña"
-                    disabled={isLoading}
-                    aria-required="true"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="btn-change-password"
-                  disabled={isLoading}
-                  aria-label="Cambiar contraseña"
+                <form
+                  onSubmit={handleChangePasswordSubmit}
+                  className="password-form"
                 >
-                  {isLoading ? "Cambiando..." : "CAMBIAR CONTRASEÑA"}
-                </button>
-              </form>
-            </div>
+                  <div className="form-group">
+                    <label htmlFor="currentPassword">
+                      Digita tu contraseña actual
+                    </label>
+                    <input
+                      type="password"
+                      id="currentPassword"
+                      name="currentPassword"
+                      value={passwordData.currentPassword}
+                      onChange={handlePasswordChange}
+                      placeholder="Contraseña actual"
+                      disabled={isLoading}
+                      aria-required="true"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="newPassword">
+                      Digita tu nueva contraseña
+                    </label>
+                    <input
+                      type="password"
+                      id="newPassword"
+                      name="newPassword"
+                      value={passwordData.newPassword}
+                      onChange={handlePasswordChange}
+                      placeholder="Nueva contraseña"
+                      disabled={isLoading}
+                      aria-required="true"
+                      aria-describedby="password-length-help"
+                    />
+                    <span id="password-length-help" className="visually-hidden">
+                      La contraseña debe tener al menos 6 caracteres
+                    </span>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="confirmPassword">
+                      Confirma tu nueva contraseña
+                    </label>
+                    <input
+                      type="password"
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      value={passwordData.confirmPassword}
+                      onChange={handlePasswordChange}
+                      placeholder="Confirmar contraseña"
+                      disabled={isLoading}
+                      aria-required="true"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="btn-change-password"
+                    disabled={isLoading}
+                    aria-label="Cambiar contraseña"
+                  >
+                    {isLoading ? "Cambiando..." : "CAMBIAR CONTRASEÑA"}
+                  </button>
+                </form>
+              </div>
+            )}
 
             {/* Danger Zone Card */}
             <div className="profile-card danger-card">
