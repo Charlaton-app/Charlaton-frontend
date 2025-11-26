@@ -103,16 +103,23 @@
               }
 
               .status-dot {
-                width: 0.5rem;
-                height: 0.5rem;
-                border-radius: 50%;
+                width: 0.7rem;
+                height: 0.7rem;
+                border-radius: 9999px;
+                box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+                margin-right: 0.4rem;
+                transition: background-color 0.2s ease, box-shadow 0.2s ease;
 
                 &.online {
-                  background-color: #10b981;
+                  background-color: #10b981; // green
+                  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25),
+                    0 0 8px rgba(16, 185, 129, 0.9);
                 }
 
                 &.offline {
-                  background-color: #ef4444;
+                  background-color: #ef4444; // red
+                  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25),
+                    0 0 8px rgba(239, 68, 68, 0.9);
                 }
               }
             }
