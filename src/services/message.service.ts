@@ -11,6 +11,7 @@ export interface Message {
   visibility: "public" | "private" | "group";
   target?: any;
   createdAt?: string;
+  createAt?: any; // Firestore Timestamp or number from socket
   updatedAt?: string;
   user?: {
     id: string;
