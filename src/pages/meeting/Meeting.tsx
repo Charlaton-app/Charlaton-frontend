@@ -1,6 +1,18 @@
 // src/pages/meeting/Meeting.tsx
 // Meeting page with Google Meet-style UI, participants, and real-time chat
 
+/**
+ * Meeting page component
+ *
+ * Responsibilities:
+ * - Join/leave Charlaton rooms using the REST `room.service` layer.
+ * - Synchronize participant list and media states (mic/camera) in real time.
+ * - Integrate with the chat microservice for in‑room messaging.
+ * - Expose host‑only actions such as ending or deleting a meeting.
+ *
+ * The implementation is intentionally state‑heavy to keep all meeting‑related
+ * behavior encapsulated in a single page component.
+ */
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import useAuthStore from "../../stores/useAuthStore";

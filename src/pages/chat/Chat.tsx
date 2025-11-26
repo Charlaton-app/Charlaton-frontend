@@ -9,6 +9,9 @@ import Footer from "../../components/Footer/Footer";
 import WebContentReader from "../../components/web-reader/WebContentReader";
 import "./Chat.scss";
 
+/**
+ * Shape of a single chat message rendered in the global chat UI.
+ */
 interface Message {
   id?: string;
   senderId: string;
@@ -16,11 +19,23 @@ interface Message {
   timestamp: number;
 }
 
+/**
+ * Minimal representation of an online user exposed by the chat server.
+ */
 interface OnlineUser {
   socketId: string;
   userId: string;
 }
 
+/**
+ * Global chat page.
+ *
+ * This component:
+ * - Ensures the user is authenticated before accessing the chat.
+ * - Manages a single Socket.IO connection via `connectToChat` / `disconnectFromChat`.
+ * - Displays real‑time messages and the list of online users.
+ * - Allows the user to manually toggle the connection state.
+ */
 const Chat: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -101,7 +116,12 @@ const Chat: React.FC = () => {
     };
   }, [user, navigate, isManuallyDisconnected]);
 
-  // Cargar historial de mensajes desde el API
+  /**
+   * Load historical messages from the chat REST API.
+   *
+   * This is used once per session to hydrate the chat view with
+   * older messages before real‑time events start coming in.
+   */
   const loadChatHistory = async () => {
     try {
       const API_URL =
@@ -141,6 +161,12 @@ const Chat: React.FC = () => {
     }
   }, [messages]);
 
+  /**
+   * Handle message form submission.
+   *
+   * Validates local state and uses the shared Socket.IO client
+   * to emit a `sendMessage` event to the chat server.
+   */
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!messageInput.trim() || !user || !isConnected) return;

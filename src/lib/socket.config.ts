@@ -1,14 +1,26 @@
 import { io, Socket } from "socket.io-client";
 import { getAccessToken } from "./getAccessToken";
 
-// Chat server URL (puerto 4000)
+/**
+ * Base URL of the chat microservice.
+ *
+ * - In production it should come from `VITE_CHAT_SERVER_URL`.
+ * - During local development it falls back to `http://localhost:4000`.
+ */
 const CHAT_SERVER_URL =
   import.meta.env.VITE_CHAT_SERVER_URL || "http://localhost:4000";
 
 let socket: Socket | null = null;
 
 /**
- * Connect to the chat server with JWT authentication
+ * Connect to the chat server with JWT‑based authentication.
+ *
+ * Behavior:
+ * - Reuses an existing connected socket when possible.
+ * - Attempts to reconnect a previously created (but disconnected) socket.
+ * - Creates a new Socket.IO client using a JWT obtained via `getAccessToken`.
+ *
+ * @returns The connected `Socket` instance, or `null` if no auth token is available.
  */
 export async function connectToChat(): Promise<Socket | null> {
   // If socket exists and is connected, return it
@@ -68,7 +80,10 @@ export async function connectToChat(): Promise<Socket | null> {
 }
 
 /**
- * Disconnect from the chat server
+ * Cleanly disconnect the current Socket.IO client from the chat server.
+ *
+ * After calling this function, `getSocket()` will return `null` until
+ * `connectToChat()` is invoked again.
  */
 export function disconnectFromChat() {
   if (socket) {
@@ -79,7 +94,12 @@ export function disconnectFromChat() {
 }
 
 /**
- * Get the current socket instance
+ * Get the currently cached Socket.IO instance, if any.
+ *
+ * Note: this function does **not** establish a connection by itself; it only
+ * returns the instance previously created by `connectToChat()`.
+ *
+ * @returns The existing `Socket` instance or `null` when not connected.
  */
 export function getSocket(): Socket | null {
   return socket;
