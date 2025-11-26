@@ -1,6 +1,8 @@
 // src/pages/meeting/Meeting.scss
 // Google Meet-style meeting page styles
 
+@use "sass:color";
+
 $primary-color: #0d5e9e;
 $secondary-color: #24c4e8;
 $accent-color: #f7941d;
@@ -357,7 +359,7 @@ $font-body: "Rubik", sans-serif;
             background: $secondary-color;
 
             &:hover {
-              background: darken($secondary-color, 10%);
+              background: color.adjust($secondary-color, $lightness: -10%);
             }
           }
 
@@ -705,7 +707,7 @@ $font-body: "Rubik", sans-serif;
               }
 
               &:hover:not(:disabled) {
-                background: darken($secondary-color, 10%);
+                background: color.adjust($secondary-color, $lightness: -10%);
                 transform: scale(1.05);
               }
 

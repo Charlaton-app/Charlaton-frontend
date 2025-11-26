@@ -1,5 +1,5 @@
 @use "sass:color";
-@import "../../index.scss";
+@use "../../index.scss" as *;
 
 .profile-page {
   min-height: 100vh;

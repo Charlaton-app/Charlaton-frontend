@@ -4,7 +4,7 @@
  * Estilos para la página de resúmenes (próximamente)
  */
 
-@import "../../index.scss";
+@use "../../index.scss" as *;
 
 .resumenes-page {
   min-height: calc(100vh - 4rem);

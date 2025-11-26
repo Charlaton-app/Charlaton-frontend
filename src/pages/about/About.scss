@@ -1,5 +1,6 @@
 @use "sass:color";
-@import "../../index.scss";
+@use "sass:color";
+@use "../../index.scss" as *;
 
 .about-page {
   min-height: 100vh;
@@ -107,7 +108,7 @@
       max-width: 900px;
       margin: 0 auto;
       padding: 3rem;
-      background: lighten($primary-background, 3%);
+      background: color.adjust($primary-background, $lightness: 3%);
       border-radius: 16px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 
