@@ -1152,7 +1152,17 @@ const Meeting: React.FC = () => {
             {showChat && (
               <div className="sidebar-section chat-section">
                 <div className="sidebar-header">
-                  <h2 className="sidebar-title">Chat</h2>
+                  <div className="sidebar-title-with-status">
+                    <span
+                      className={`chat-status-dot ${
+                        getSocket() && getSocket()!.connected
+                          ? "online"
+                          : "offline"
+                      }`}
+                      aria-hidden="true"
+                    />
+                    <h2 className="sidebar-title">Chat</h2>
+                  </div>
                   <button
                     className="sidebar-close-btn"
                     onClick={() => setShowChat(false)}

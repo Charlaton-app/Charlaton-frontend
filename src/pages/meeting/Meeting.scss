@@ -437,13 +437,39 @@ $font-body: "Rubik", sans-serif;
           border-bottom: 1px solid rgba(255, 255, 255, 0.1);
           flex-shrink: 0;
 
-          .sidebar-title {
-            font-family: $font-title;
-            font-size: 1.125rem;
-            margin: 0;
-            padding: 0;
-            color: white;
-            border-bottom: none;
+          .sidebar-title-with-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+
+            .chat-status-dot {
+              width: 0.7rem;
+              height: 0.7rem;
+              border-radius: 9999px;
+              box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.3);
+              transition: background-color 0.2s ease, box-shadow 0.2s ease;
+
+              &.online {
+                background-color: #10b981; // green
+                box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3),
+                  0 0 8px rgba(16, 185, 129, 0.9);
+              }
+
+              &.offline {
+                background-color: #ef4444; // red
+                box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3),
+                  0 0 8px rgba(239, 68, 68, 0.9);
+              }
+            }
+
+            .sidebar-title {
+              font-family: $font-title;
+              font-size: 1.125rem;
+              margin: 0;
+              padding: 0;
+              color: white;
+              border-bottom: none;
+            }
           }
 
           .sidebar-close-btn {
