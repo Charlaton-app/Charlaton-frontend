@@ -40,7 +40,14 @@ const formatMemberSince = (value?: any) => {
 const Profile: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToastContext();
-  const { user, updateUserProfile, changePassword, deleteAccount, isLoading } =
+  const {
+    user,
+    updateUserProfile,
+    changePassword,
+    deleteAccount,
+    logout,
+    isLoading,
+  } =
     useAuthStore();
   const isOAuthUser = user?.authProvider && user.authProvider !== "password";
 
@@ -173,6 +180,11 @@ const Profile: React.FC = () => {
   const sessionCount = 24;
   const memberSince = formatMemberSince(user?.createdAt);
 
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
   return (
     <div className="profile-page">
       <WebContentReader />
@@ -180,7 +192,7 @@ const Profile: React.FC = () => {
         Saltar al contenido principal
       </a>
 
-      <Navbar />
+      <Navbar onLogout={handleLogout} />
 
       <ConfirmationModal
         isOpen={showDeleteModal}
