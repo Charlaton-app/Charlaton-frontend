@@ -126,7 +126,7 @@ const Signup: React.FC = () => {
         Saltar al contenido principal
       </a>
 
-      <Navbar showAuthButtons={false} />
+      <Navbar showAuthButtons={!user} />
 
       <main id="main-content" className="main-content">
         <div className="signup-card">

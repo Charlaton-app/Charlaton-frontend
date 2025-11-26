@@ -399,7 +399,7 @@ const Dashboard: React.FC = () => {
         Saltar al contenido principal
       </a>
 
-      <Navbar showAuthButtons={true} onLogout={handleLogout} />
+      <Navbar showAuthButtons={false} onLogout={handleLogout} />
 
       <main id="main-content" className="dashboard-content">
         <div className="dashboard-container">

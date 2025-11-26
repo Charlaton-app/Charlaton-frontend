@@ -85,7 +85,7 @@ const Login: React.FC = () => {
       </a>
 
       {/* Header */}
-      <Navbar showAuthButtons={false} />
+      <Navbar showAuthButtons={!user} />
 
       {/* Main Content */}
       <main id="main-content" className="main-content">
