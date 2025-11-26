@@ -18,7 +18,6 @@ import {
 } from "../../services/room.service";
 import {
   getRoomMessages,
-  sendMessage,
   type Message,
 } from "../../services/message.service";
 import { socket, connectToChat, disconnectFromChat } from "../../lib/socket.config";
@@ -47,8 +46,6 @@ const Meeting: React.FC = () => {
   const [showEndModal, setShowEndModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [showChat, setShowChat] = useState(false);
-  const [showParticipants, setShowParticipants] = useState(true);
-  const [copiedLink, setCopiedLink] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   // Media state management
@@ -73,7 +70,6 @@ const Meeting: React.FC = () => {
   useEffect(() => {
     const initializeMeeting = async () => {
       if (!user?.id) {
-        console.log("[MEETING] No authenticated user, redirecting to login");
         toast.error("Debes iniciar sesión para unirte a la reunión");
         navigate("/login");
         return;
@@ -84,8 +80,6 @@ const Meeting: React.FC = () => {
         setLoading(false);
         return;
       }
-
-      console.log(`[MEETING] Initializing meeting ${meetingId}`);
 
       try {
         // Get room details
@@ -110,13 +104,86 @@ const Meeting: React.FC = () => {
         // Load participants
         const participantsResponse = await getRoomParticipants(meetingId);
         if (!participantsResponse.error && participantsResponse.data) {
-          setParticipants(participantsResponse.data);
+          let participantsList = participantsResponse.data;
+          
+          // Ensure current user is in participants list with proper user data
+          const currentUserInList = participantsList.find(
+            (p) => p.userId === user.id
+          );
+          
+          if (!currentUserInList && user.id) {
+            // Add current user to participants if not present
+            participantsList = [
+              ...participantsList,
+              {
+                id: `temp-${user.id}`,
+                userId: user.id,
+                roomId: meetingId,
+                joinedAt: new Date().toISOString(),
+                user: {
+                  id: user.id,
+                  email: user.email || "",
+                  nickname: user.nickname || undefined,
+                  displayName: user.displayName || undefined,
+                },
+              },
+            ];
+          } else if (currentUserInList && !currentUserInList.user && user.id) {
+            // If user exists but doesn't have user data, add it
+            currentUserInList.user = {
+              id: user.id,
+              email: user.email || "",
+              nickname: user.nickname || undefined,
+              displayName: user.displayName || undefined,
+            };
+          }
+          
+          // Filter out participants with null userId and enrich with user data where missing
+          participantsList = participantsList
+            .filter((p) => p.userId != null)
+            .map((participant) => {
+              // If participant doesn't have user data but has userId, try to use current user data if it matches
+              if (!participant.user && participant.userId === user.id) {
+                participant.user = {
+                  id: user.id,
+                  email: user.email || "",
+                  nickname: user.nickname || undefined,
+                  displayName: user.displayName || undefined,
+                };
+              }
+              return participant;
+            });
+          
+          setParticipants(participantsList);
+          
+          // Initialize mic and camera states for all participants
+          const initialMicStates: Record<string, boolean> = {};
+          const initialCameraStates: Record<string, boolean> = {};
+          participantsList.forEach((participant) => {
+            if (participant.userId) {
+              const participantUserId = String(participant.userId);
+              initialMicStates[participantUserId] = false;
+              initialCameraStates[participantUserId] = false;
+            }
+          });
+          setMicStates(initialMicStates);
+          setCameraStates(initialCameraStates);
         }
 
         // Load messages
         const messagesResponse = await getRoomMessages(meetingId);
         if (!messagesResponse.error && messagesResponse.data) {
-          setMessages(messagesResponse.data);
+          // Sort messages by creation time to ensure correct order
+          const sortedMessages = [...messagesResponse.data].sort((a, b) => {
+            const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return timeA - timeB;
+          });
+          setMessages(sortedMessages);
+          // Scroll to bottom after messages load
+          setTimeout(() => {
+            scrollToBottom();
+          }, 100);
         }
 
         notificationSounds.success();
@@ -129,7 +196,7 @@ const Meeting: React.FC = () => {
     };
 
     initializeMeeting();
-  }, [meetingId, user?.id]);
+  }, [meetingId, user?.id, navigate, toast]);
 
   /**
    * Setup Socket.io listeners and connect to chat server
@@ -138,12 +205,10 @@ const Meeting: React.FC = () => {
     if (!meetingId || !user?.id) return;
 
     const setupChatConnection = async () => {
-      console.log("[MEETING] Setting up Socket.io connection");
-
       // Get access token for authentication
       const token = await getAccessToken();
       if (!token) {
-        console.error("[MEETING] No access token available, cannot connect to chat");
+        console.error("[MEETING] No access token available");
         setError("Error de autenticación. Por favor, recarga la página.");
         return;
       }
@@ -153,14 +218,11 @@ const Meeting: React.FC = () => {
 
       // Wait for connection before joining room
       socket.once("connect", () => {
-        console.log("[MEETING] ✅ Connected to chat server");
-        // Join room in socket (using join_room event from chat server)
-        console.log(`[MEETING] Joining room: ${meetingId}`);
         socket.emit("join_room", meetingId);
       });
 
       socket.on("connect_error", (error) => {
-        console.error("[MEETING] ❌ Connection error:", error.message);
+        console.error("[MEETING] Connection error:", error.message);
         setError("Error al conectar con el servidor de chat");
       });
     };
@@ -168,26 +230,73 @@ const Meeting: React.FC = () => {
     setupChatConnection();
 
     // Listen for successful room join
-    socket.on("join_room_success", (response: any) => {
-      console.log("[MEETING] ✅ Successfully joined room:", response);
+    socket.on("join_room_success", () => {
+      // Room joined successfully
     });
 
     socket.on("join_room_error", (response: any) => {
-      console.error("[MEETING] ❌ Failed to join room:", response);
+      console.error("[MEETING] Failed to join room:", response);
       setError(response.message || "No se pudo unir a la sala");
     });
 
     // Listen for online users in room
-    socket.on("usersOnline", (users: any[]) => {
-      console.log("[MEETING] 👥 Users online:", users);
-      // Update participants based on online users
-      // Note: This updates the participant count, not full participant data
+    socket.on("usersOnline", () => {
+      // Users online updated
     });
 
-    // Listen for new messages
-    socket.on("newMessage", (socketMessage: any) => {
-      console.log("[MEETING] New message received:", socketMessage);
+    // Listen for new participants (from backend socket)
+    socket.on("userJoined", (data: any) => {
+      const newParticipant = data.participant;
       
+      // Ensure participant has user data
+      if (newParticipant && !newParticipant.user && newParticipant.userId) {
+        // If it's the current user, add user data
+        if (newParticipant.userId === user.id) {
+          newParticipant.user = {
+            id: user.id,
+            email: user.email || "",
+            nickname: user.nickname || undefined,
+            displayName: user.displayName || undefined,
+          };
+        }
+      }
+      
+      // Only add if userId is not null
+      if (newParticipant && newParticipant.userId != null) {
+        setParticipants((prev) => {
+          // Check if participant already exists
+          const exists = prev.some((p) => p.userId === newParticipant.userId);
+          if (exists) return prev;
+          return [...prev, newParticipant];
+        });
+
+        // Initialize states for new participant (ensure string userId)
+        const participantUserId = String(newParticipant.userId);
+        setMicStates((prev) => ({ ...prev, [participantUserId]: false }));
+        setCameraStates((prev) => ({ ...prev, [participantUserId]: false }));
+
+        notificationSounds.userJoined();
+        const userName =
+          newParticipant.user?.displayName ||
+          newParticipant.user?.nickname ||
+          newParticipant.user?.email ||
+          "Usuario";
+        toast.info(`${userName} se unió a la reunión`);
+      }
+    });
+
+    // Listen for participants leaving
+    socket.on("userLeft", (data: any) => {
+      const leftUserId = String(data.userId);
+      setParticipants((prev) =>
+        prev.filter((p) => String(p.userId) !== leftUserId)
+      );
+      notificationSounds.userLeft();
+      toast.info("Un usuario salió de la reunión");
+    });
+
+    // Listen for new messages (from chat microservice)
+    socket.on("newMessage", (socketMessage: any) => {
       // Convert socket message format to our Message format
       const message: Message = {
         id: socketMessage.id || `temp-${Date.now()}`,
@@ -200,80 +309,26 @@ const Meeting: React.FC = () => {
         user: socketMessage.user,
       };
       
-      setMessages((prev) => [...prev, message]);
-      scrollToBottom();
-    });
-
-    return () => {
-      console.log("[MEETING] Cleaning up Socket.io listeners");
-      socket.off("connect");
-      socket.off("connect_error");
-      socket.off("join_room_success");
-      socket.off("join_room_error");
-      socket.off("usersOnline");
-      socket.off("newMessage");
+      setMessages((prev) => {
+        // Check if message already exists to avoid duplicates
+        const exists = prev.some((m) => m.id === message.id);
+        if (exists) return prev;
+        
+        // Add new message and sort by time
+        const updated = [...prev, message].sort((a, b) => {
+          const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return timeA - timeB;
+        });
+        return updated;
+      });
       
-      // Leave room and disconnect
-      if (socket.connected) {
-        console.log("[MEETING] Leaving room and disconnecting");
-        socket.emit("leaveRoom", { roomId: meetingId, userId: user.id });
-        disconnectFromChat();
-      }
-    };
-  }, [meetingId, user?.id, navigate]);
-    console.log("[MEETING] Setting up Socket.io listeners");
-    socket.connect();
-
-    // Join room in socket
-    socket.emit("joinRoom", { roomId: meetingId, userId: user.id });
-
-    // Listen for new participants
-    socket.on("userJoined", (data: any) => {
-      console.log("[MEETING] User joined:", data);
-      const newParticipant = data.participant;
-      setParticipants((prev) => [...prev, newParticipant]);
-
-      // Initialize states for new participant (ensure string userId)
-      const participantUserId = String(newParticipant.userId);
-      setMicStates((prev) => ({ ...prev, [participantUserId]: false }));
-      setCameraStates((prev) => ({ ...prev, [participantUserId]: false }));
-
-      notificationSounds.userJoined();
-      const userName =
-        newParticipant.user?.displayName ||
-        newParticipant.user?.nickname ||
-        newParticipant.user?.email ||
-        "Usuario";
-      console.log(
-        "[MEETING] User joined - displaying:",
-        userName,
-        newParticipant.user
-      );
-      toast.info(`${userName} se unió a la reunión`);
-    });
-
-    // Listen for participants leaving
-    socket.on("userLeft", (data: any) => {
-      console.log("[MEETING] User left:", data);
-      const leftUserId = String(data.userId);
-      setParticipants((prev) =>
-        prev.filter((p) => String(p.userId) !== leftUserId)
-      );
-      notificationSounds.userLeft();
-      toast.info("Un usuario salió de la reunión");
-    });
-
-    // Listen for new messages
-    socket.on("newMessage", (message: Message) => {
-      console.log("[MEETING] New message received:", message);
-      setMessages((prev) => [...prev, message]);
       notificationSounds.newMessage();
-      scrollToBottom();
+      setTimeout(() => scrollToBottom(), 50);
     });
 
     // Listen for meeting end
     socket.on("meetingEnded", () => {
-      console.log("[MEETING] Meeting ended by host");
       toast.warning("La reunión ha sido finalizada por el anfitrión");
       navigate("/dashboard");
     });
@@ -281,12 +336,7 @@ const Meeting: React.FC = () => {
     // Listen for mic state changes
     socket.on("micStateChanged", (data: { userId: string; isOn: boolean }) => {
       const userId = String(data.userId);
-      console.log("[MEETING] Mic state changed:", { userId, isOn: data.isOn });
-      setMicStates((prev) => {
-        const updated = { ...prev, [userId]: data.isOn };
-        console.log("[MEETING] Updated micStates after socket event:", updated);
-        return updated;
-      });
+      setMicStates((prev) => ({ ...prev, [userId]: data.isOn }));
     });
 
     // Listen for camera state changes
@@ -294,29 +344,28 @@ const Meeting: React.FC = () => {
       "cameraStateChanged",
       (data: { userId: string; isOn: boolean }) => {
         const userId = String(data.userId);
-        console.log("[MEETING] Camera state changed:", {
-          userId,
-          isOn: data.isOn,
-        });
-        setCameraStates((prev) => {
-          const updated = { ...prev, [userId]: data.isOn };
-          console.log(
-            "[MEETING] Updated cameraStates after socket event:",
-            updated
-          );
-          return updated;
-        });
+        setCameraStates((prev) => ({ ...prev, [userId]: data.isOn }));
       }
     );
 
     return () => {
-      console.log("[MEETING] Cleaning up Socket.io listeners");
+      socket.off("connect");
+      socket.off("connect_error");
+      socket.off("join_room_success");
+      socket.off("join_room_error");
+      socket.off("usersOnline");
       socket.off("userJoined");
       socket.off("userLeft");
       socket.off("newMessage");
       socket.off("meetingEnded");
       socket.off("micStateChanged");
       socket.off("cameraStateChanged");
+      
+      // Leave room and disconnect
+      if (socket.connected) {
+        socket.emit("leaveRoom", { roomId: meetingId, userId: user.id });
+        disconnectFromChat();
+      }
     };
   }, [meetingId, user?.id, navigate, scrollToBottom, toast]);
 
@@ -330,6 +379,34 @@ const Meeting: React.FC = () => {
   }, [messages, scrollToBottom]);
 
   /**
+   * Reload messages and scroll when chat is opened
+   */
+  useEffect(() => {
+    if (showChat && meetingId) {
+      const reloadMessages = async () => {
+        try {
+          const messagesResponse = await getRoomMessages(meetingId);
+          if (!messagesResponse.error && messagesResponse.data) {
+            const sortedMessages = [...messagesResponse.data].sort((a, b) => {
+              const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+              const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+              return timeA - timeB;
+            });
+            setMessages(sortedMessages);
+            // Wait for DOM update then scroll
+            setTimeout(() => {
+              scrollToBottom();
+            }, 150);
+          }
+        } catch (err) {
+          console.error("[MEETING] Error reloading messages:", err);
+        }
+      };
+      reloadMessages();
+    }
+  }, [showChat, meetingId, scrollToBottom]);
+
+  /**
    * Handle sending a message
    */
   const handleSendMessage = async () => {
@@ -339,7 +416,6 @@ const Meeting: React.FC = () => {
     try {
       // Send message via Socket.IO to chat server
       if (socket.connected) {
-        console.log("[MEETING] 📤 Sending message via socket");
         socket.emit("sendMessage", {
           senderId: user.id,
           roomId: meetingId,
@@ -349,7 +425,7 @@ const Meeting: React.FC = () => {
         setMessageInput("");
         chatInputRef.current?.focus();
       } else {
-        console.error("[MEETING] ❌ Socket not connected, cannot send message");
+        console.error("[MEETING] Socket not connected");
         setError("No estás conectado al chat. Recarga la página.");
       }
     } catch (err) {
@@ -407,17 +483,8 @@ const Meeting: React.FC = () => {
     if (!user?.id || !meetingId) return;
     const userId = String(user.id);
     const newState = !isMicOn;
-    console.log("[MEETING] Toggle mic:", {
-      userId,
-      oldState: isMicOn,
-      newState,
-    });
     setIsMicOn(newState);
-    setMicStates((prev) => {
-      const updated = { ...prev, [userId]: newState };
-      console.log("[MEETING] Updated micStates:", updated);
-      return updated;
-    });
+    setMicStates((prev) => ({ ...prev, [userId]: newState }));
     socket.emit("toggleMic", { roomId: meetingId, userId, isOn: newState });
   };
 
@@ -428,17 +495,8 @@ const Meeting: React.FC = () => {
     if (!user?.id || !meetingId) return;
     const userId = String(user.id);
     const newState = !isCameraOn;
-    console.log("[MEETING] Toggle camera:", {
-      userId,
-      oldState: isCameraOn,
-      newState,
-    });
     setIsCameraOn(newState);
-    setCameraStates((prev) => {
-      const updated = { ...prev, [userId]: newState };
-      console.log("[MEETING] Updated cameraStates:", updated);
-      return updated;
-    });
+    setCameraStates((prev) => ({ ...prev, [userId]: newState }));
     socket.emit("toggleCamera", { roomId: meetingId, userId, isOn: newState });
   };
 
@@ -618,13 +676,15 @@ const Meeting: React.FC = () => {
         <div className="video-area">
           <div className="video-grid">
             {/* Video placeholder - can be replaced with actual video streams */}
-            {participants.map((participant) => {
+            {participants
+              .filter((p) => p.userId != null) // Filter out null userIds
+              .map((participant) => {
               // Ensure userId is string for consistent comparison
               const participantUserId = String(participant.userId);
               const currentUserId = String(user?.id);
               const isCurrentUser = participantUserId === currentUserId;
 
-              // Determine display name with detailed logging
+              // Determine display name
               let displayName: string;
               if (isCurrentUser) {
                 displayName =
@@ -632,17 +692,6 @@ const Meeting: React.FC = () => {
                   user?.displayName ||
                   user?.email?.split("@")[0] ||
                   "Usuario";
-                console.log(
-                  `[MEETING] Current user name: "${displayName}" (from: ${
-                    user?.nickname
-                      ? "nickname"
-                      : user?.displayName
-                      ? "displayName"
-                      : user?.email
-                      ? "email"
-                      : "fallback"
-                  })`
-                );
               } else {
                 // Use participant.user data from backend
                 const pUser = participant.user;
@@ -651,29 +700,9 @@ const Meeting: React.FC = () => {
                   pUser?.displayName ||
                   pUser?.email?.split("@")[0] ||
                   "Usuario";
-                console.log(
-                  `[MEETING] Participant ${participantUserId} name: "${displayName}"`
-                );
-                console.log(`  - participant.user:`, pUser);
-                console.log(
-                  `  - nickname: "${pUser?.nickname}", displayName: "${pUser?.displayName}", email: "${pUser?.email}"`
-                );
-
-                if (displayName === "Usuario") {
-                  console.error(
-                    `  ❌ PROBLEMA: No se encontró nombre para userId ${participantUserId}`
-                  );
-                  console.error(`  - participant.user existe?:`, !!pUser);
-                  console.error(`  - Objeto completo:`, participant);
-                }
               }
 
               const initial = displayName[0].toUpperCase();
-
-              // Log mic/camera states
-              console.log(
-                `[MEETING] Video tile ${participantUserId}: mic=${micStates[participantUserId]}, camera=${cameraStates[participantUserId]}`
-              );
 
               return (
                 <div key={participant.id} className="video-tile">
@@ -886,7 +915,9 @@ const Meeting: React.FC = () => {
                   </button>
                 </div>
                 <div className="participants-list">
-                  {participants.map((participant) => {
+                  {participants
+                    .filter((p) => p.userId != null) // Filter out null userIds
+                    .map((participant) => {
                     const participantUserId = String(participant.userId);
                     const currentUserId = String(user?.id);
                     const isCurrentUser = participantUserId === currentUserId;
@@ -1018,48 +1049,55 @@ const Meeting: React.FC = () => {
                   </button>
                 </div>
                 <div className="chat-messages">
-                  {messages.map((message) => {
-                    const isOwnMessage = message.userId === user?.id;
-                    const displayName = isOwnMessage
-                      ? user?.displayName ||
-                        user?.nickname ||
-                        user?.email ||
-                        "Usuario"
-                      : message.user?.displayName ||
-                        message.user?.nickname ||
-                        message.user?.email ||
-                        "Usuario";
-                    const initial = displayName[0].toUpperCase();
-
-                    return (
-                      <div
-                        key={message.id}
-                        className={`chat-message ${
-                          isOwnMessage ? "own-message" : ""
-                        }`}
-                      >
-                        <div className="message-avatar">{initial}</div>
-                        <div className="message-content">
-                          <div className="message-header">
-                            <span className="message-author">
-                              {displayName}
-                            </span>
-                            <span className="message-time">
-                              {message.createdAt
-                                ? new Date(
-                                    message.createdAt
-                                  ).toLocaleTimeString("es-ES", {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })
-                                : ""}
-                            </span>
-                          </div>
-                          <p className="message-text">{message.content}</p>
-                        </div>
+                  {messages.length === 0 ? (
+                    <div className="chat-empty-state">
+                        {/* Large chat icon removed per UX request */}
+                        <p>No hay mensajes aún</p>
+                        <span>Comienza la conversación</span>
                       </div>
-                    );
-                  })}
+                  ) : (
+                    messages.map((message) => {
+                      const isOwnMessage = message.userId === user?.id;
+                      const displayName = isOwnMessage
+                        ? user?.displayName ||
+                          user?.nickname ||
+                          user?.email ||
+                          "Usuario"
+                        : message.user?.displayName ||
+                          message.user?.nickname ||
+                          message.user?.email ||
+                          "Usuario";
+                      const initial = displayName[0].toUpperCase();
+
+                      return (
+                        <div
+                          key={message.id}
+                          className={`chat-message ${
+                            isOwnMessage ? "own-message" : ""
+                          }`}
+                        >
+                          <div className="message-bubble">
+                            <div className="message-header">
+                              <span className="message-author">
+                                {displayName}
+                              </span>
+                              <span className="message-time">
+                                {message.createdAt
+                                  ? new Date(
+                                      message.createdAt
+                                    ).toLocaleTimeString("es-ES", {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })
+                                  : ""}
+                              </span>
+                            </div>
+                            <p className="message-text">{message.content}</p>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
                   <div ref={messagesEndRef} />
                 </div>
                 <div className="chat-input-container">
