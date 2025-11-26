@@ -1,7 +1,8 @@
 import type React from "react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { socket } from "../../lib/socket.config";
+import { connectToChat, disconnectFromChat, getSocket } from "../../lib/socket.config";
+import type { Socket } from "socket.io-client";
 import useAuthStore from "../../stores/useAuthStore";
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
@@ -42,48 +43,60 @@ const Chat: React.FC = () => {
       return;
     }
 
-    // Solo conectar si no está manualmente desconectado
-    if (!isManuallyDisconnected) {
-      socket.connect();
-    }
+    let socketInstance: Socket | null = null;
 
-    // Event listeners
-    socket.on("connect", () => {
-      setIsConnected(true);
-      console.log("✅ Conectado al servidor de chat");
+    const setupSocket = async () => {
+      // Solo conectar si no está manualmente desconectado
+      if (isManuallyDisconnected) return;
 
-      // Registrar usuario en el servidor
-      if (user?.email) {
-        socket.emit("newUser", user.email);
-        console.log("👤 Usuario registrado:", user.email);
+      socketInstance = await connectToChat();
+      if (!socketInstance) {
+        console.error("❌ No se pudo conectar al chat");
+        return;
       }
-    });
 
-    socket.on("disconnect", () => {
-      setIsConnected(false);
-      console.log("❌ Desconectado del servidor de chat");
-    });
+      // Event listeners
+      socketInstance.on("connect", () => {
+        setIsConnected(true);
+        console.log("✅ Conectado al servidor de chat");
 
-    // Escuchar nuevos mensajes
-    socket.on("newMessage", (message: Message) => {
-      console.log("📨 Nuevo mensaje recibido:", message);
-      setMessages((prev) => [...prev, message]);
-    });
+        // Registrar usuario en el servidor
+        if (user?.email && socketInstance) {
+          socketInstance.emit("newUser", user.email);
+          console.log("👤 Usuario registrado:", user.email);
+        }
+      });
 
-    // Escuchar usuarios online
-    socket.on("usersOnline", (users: OnlineUser[]) => {
-      console.log("👥 Usuarios online:", users.length);
-      setOnlineUsers(users);
-    });
+      socketInstance.on("disconnect", () => {
+        setIsConnected(false);
+        console.log("❌ Desconectado del servidor de chat");
+      });
+
+      // Escuchar nuevos mensajes
+      socketInstance.on("newMessage", (message: Message) => {
+        console.log("📨 Nuevo mensaje recibido:", message);
+        setMessages((prev) => [...prev, message]);
+      });
+
+      // Escuchar usuarios online
+      socketInstance.on("usersOnline", (users: OnlineUser[]) => {
+        console.log("👥 Usuarios online:", users.length);
+        setOnlineUsers(users);
+      });
+    };
+
+    setupSocket();
 
     // Cleanup
     return () => {
-      socket.off("connect");
-      socket.off("disconnect");
-      socket.off("newMessage");
-      socket.off("usersOnline");
+      if (socketInstance) {
+        socketInstance.off("connect");
+        socketInstance.off("disconnect");
+        socketInstance.off("newMessage");
+        socketInstance.off("usersOnline");
+      }
       if (!isManuallyDisconnected) {
-        socket.disconnect();
+        disconnectFromChat();
       }
     };
   }, [user, navigate, isManuallyDisconnected]);
@@ -132,10 +145,16 @@ const Chat: React.FC = () => {
     e.preventDefault();
     if (!messageInput.trim() || !user || !isConnected) return;
 
+    const socketInstance = getSocket();
+    if (!socketInstance || !socketInstance.connected) {
+      console.error("❌ No conectado al servidor de chat");
+      return;
+    }
+
     console.log("📤 Enviando mensaje:", messageInput);
 
     // Enviar mensaje al servidor
-    socket.emit("sendMessage", {
+    socketInstance.emit("sendMessage", {
       senderId: user.email || user.displayName || "Usuario",
       text: messageInput.trim(),
     });
@@ -144,21 +163,25 @@ const Chat: React.FC = () => {
   };
 
   const handleLogout = () => {
-    socket.disconnect();
+    disconnectFromChat();
     navigate("/login");
   };
 
-  const handleToggleConnection = () => {
+  const handleToggleConnection = async () => {
     if (isConnected) {
       // Desconectar manualmente
-      socket.disconnect();
+      disconnectFromChat();
       setIsManuallyDisconnected(true);
+      setIsConnected(false);
       console.log("🔌 Desconectado manualmente del chat");
     } else {
       // Reconectar
-      socket.connect();
       setIsManuallyDisconnected(false);
-      console.log("🔌 Reconectando al chat...");
+      const socketInstance = await connectToChat();
+      if (socketInstance) {
+        setIsConnected(true);
+        console.log("🔌 Reconectado al chat");
+      }
     }
   };
 
