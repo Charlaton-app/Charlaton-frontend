@@ -147,7 +147,7 @@ const Navbar: React.FC<NavbarProps> = ({
         )}
 
         {/* Menú de usuario - solo para usuarios logueados en páginas privadas */}
-        {!showAuthButtons && user && (
+        {user && (
           <div className="user-menu-container" ref={userMenuRef}>
             <button
               className="user-icon-btn"
