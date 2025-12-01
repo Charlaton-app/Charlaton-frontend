@@ -77,7 +77,6 @@ const Meeting: React.FC = () => {
   
   // WebRTC state
   const [isWebRTCInitialized, setIsWebRTCInitialized] = useState(false);
-  const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
   /**
    * Helper to refresh participants from backend
    */
@@ -242,10 +241,10 @@ const Meeting: React.FC = () => {
         console.log("[MEETING] ✅ Successfully joined room:", response);
         
         // Initialize WebRTC after successfully joining the room
-        if (!isWebRTCInitialized && socketInstance) {
+        if (!isWebRTCInitialized && socketInstance && meetingId && user.id) {
           console.log("[MEETING] Initializing WebRTC...");
           try {
-            await webrtcManager.initialize(meetingId, user.id, socketInstance);
+            await webrtcManager.initialize(meetingId, String(user.id), socketInstance);
             
             // Start local media (audio only by default)
             const localStream = await webrtcManager.startLocalMedia(false, false);
@@ -481,12 +480,6 @@ const Meeting: React.FC = () => {
    */
   const handleRemoteStream = useCallback((stream: MediaStream, userId: string) => {
     console.log(`[MEETING] 📥 Received remote stream from user ${userId}`);
-    
-    setRemoteStreams((prev) => {
-      const updated = new Map(prev);
-      updated.set(userId, stream);
-      return updated;
-    });
     
     // Create audio element for this user if it doesn't exist
     if (!remoteAudiosRef.current.has(userId)) {

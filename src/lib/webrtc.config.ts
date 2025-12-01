@@ -12,14 +12,7 @@
  * - Forward ICE candidates and session descriptions
  */
 
-import { io, Socket } from "socket.io-client";
-import { getAccessToken } from "./getAccessToken";
-
-/**
- * Base URL of the WebRTC signaling server
- */
-const WEBRTC_SERVER_URL =
-  import.meta.env.VITE_WEBRTC_SERVER_URL || "http://localhost:5050";
+import { Socket } from "socket.io-client";
 
 /**
  * STUN/TURN server configuration for NAT traversal
@@ -47,7 +40,6 @@ class WebRTCManager {
   private peerConnections: Map<string, PeerConnectionInfo> = new Map();
   private socket: Socket | null = null;
   private roomId: string | null = null;
-  private userId: string | null = null;
   private isInitialized = false;
 
   /**
@@ -71,7 +63,6 @@ class WebRTCManager {
     console.log(`[WEBRTC] Initializing for room ${roomId}, user ${userId}`);
 
     this.roomId = roomId;
-    this.userId = userId;
     this.socket = chatSocket;
 
     // Setup WebRTC signaling listeners
@@ -462,7 +453,6 @@ class WebRTCManager {
 
     this.isInitialized = false;
     this.roomId = null;
-    this.userId = null;
     this.socket = null;
 
     console.log("[WEBRTC] ✅ Cleanup complete");
