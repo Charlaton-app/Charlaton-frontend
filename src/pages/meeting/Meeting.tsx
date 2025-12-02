@@ -63,8 +63,6 @@ interface UserData {
   };
 }
 
-const POLLING_INTERVAL = 3000; // 3 seconds
-
 const Meeting: React.FC = () => {
   const { meetingId } = useParams<{ meetingId: string }>();
   const navigate = useNavigate();
@@ -110,8 +108,6 @@ const Meeting: React.FC = () => {
   // WebRTC state
   const [isWebRTCInitialized, setIsWebRTCInitialized] = useState(false);
   const webrtcJoinedRef = useRef(false);
-  // Polling interval ref
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   /**
    * Helper to refresh participants from backend
@@ -205,35 +201,6 @@ const Meeting: React.FC = () => {
       return updated;
     });
   }, [meetingId, user?.id, isMicOn, isCameraOn]);
-
-  /**
-   * Polling effect: checks meeting status and participants every 3 seconds
-   */
-  useEffect(() => {
-    if (!meetingId) return;
-    // Clear any previous interval
-    if (pollingRef.current) clearInterval(pollingRef.current);
-    pollingRef.current = setInterval(async () => {
-      // 1. Check if meeting still exists
-      const roomResponse = await getRoomById(meetingId);
-      if (roomResponse.error || !roomResponse.data) {
-        // Meeting ended or deleted
-        setRoom(null);
-        setShowFinalizeModal(true); // Show modal or navigate
-        // Optionally, navigate to dashboard after a delay
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 2000);
-        return;
-      }
-      // 2. Refresh participants
-      await refreshParticipants();
-    }, POLLING_INTERVAL);
-    // Cleanup on unmount
-    return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
-    };
-  }, [meetingId, refreshParticipants, navigate]);
 
   /**
    * Scroll to bottom of messages
@@ -620,6 +587,23 @@ const Meeting: React.FC = () => {
             displayName: user.displayName || undefined,
             nickname: user.nickname || undefined,
           };
+        } else if (!normalized.user && normalized.userId) {
+          // Fallback: try to resolve user data from cache/participants
+          const cachedUser = userCacheRef.current.get(
+            String(normalized.userId)
+          );
+          if (cachedUser) {
+            normalized.user = {
+              id: String(cachedUser.id),
+              email: cachedUser.email || "",
+              nickname: cachedUser.nickname,
+              displayName:
+                cachedUser.displayName ||
+                cachedUser.nickname ||
+                cachedUser.email?.split("@")[0] ||
+                undefined,
+            };
+          }
         }
         console.log("[MEETING] 📨 Normalized message:", {
           id: normalized.id,
@@ -1665,15 +1649,46 @@ const Meeting: React.FC = () => {
                 <div className="chat-messages">
                   {messages.map((message) => {
                     const isOwnMessage = message.userId === user?.id;
-                    const displayName = isOwnMessage
-                      ? user?.displayName ||
+
+                    // Try to resolve a friendly name for the author
+                    let displayName: string | undefined;
+
+                    if (isOwnMessage) {
+                      // 1) Current user from auth store
+                      displayName =
+                        user?.displayName ||
                         user?.nickname ||
-                        user?.email ||
-                        "Usuario"
-                      : message.user?.displayName ||
+                        user?.email?.split("@")[0];
+
+                      // 2) Fallback to participant info if available
+                      if (!displayName && participants.length > 0) {
+                        const selfParticipant = participants.find(
+                          (p) => String(p.userId) === String(user?.id)
+                        );
+                        const pUser = selfParticipant?.user;
+                        displayName =
+                          pUser?.nickname ||
+                          pUser?.displayName ||
+                          pUser?.email?.split("@")[0];
+                      }
+                    } else {
+                      // Message from other user
+                      const participant = participants.find(
+                        (p) => String(p.userId) === String(message.userId)
+                      );
+                      const pUser = participant?.user;
+
+                      displayName =
                         message.user?.nickname ||
-                        message.user?.email ||
-                        "Usuario";
+                        message.user?.displayName ||
+                        message.user?.email?.split("@")[0] ||
+                        pUser?.nickname ||
+                        pUser?.displayName ||
+                        pUser?.email?.split("@")[0];
+                    }
+
+                    // Final fallback
+                    displayName = displayName || "Usuario";
                     const initial = displayName[0].toUpperCase();
 
                     return (
