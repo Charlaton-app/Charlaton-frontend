@@ -63,6 +63,8 @@ interface UserData {
   };
 }
 
+const POLLING_INTERVAL = 3000; // 3 seconds
+
 const Meeting: React.FC = () => {
   const { meetingId } = useParams<{ meetingId: string }>();
   const navigate = useNavigate();
@@ -108,6 +110,9 @@ const Meeting: React.FC = () => {
   // WebRTC state
   const [isWebRTCInitialized, setIsWebRTCInitialized] = useState(false);
   const webrtcJoinedRef = useRef(false);
+  // Polling interval ref
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   /**
    * Helper to refresh participants from backend
    */
@@ -198,6 +203,35 @@ const Meeting: React.FC = () => {
       return updated;
     });
   }, [meetingId, user?.id, isMicOn, isCameraOn]);
+
+  /**
+   * Polling effect: checks meeting status and participants every 3 seconds
+   */
+  useEffect(() => {
+    if (!meetingId) return;
+    // Clear any previous interval
+    if (pollingRef.current) clearInterval(pollingRef.current);
+    pollingRef.current = setInterval(async () => {
+      // 1. Check if meeting still exists
+      const roomResponse = await getRoomById(meetingId);
+      if (roomResponse.error || !roomResponse.data) {
+        // Meeting ended or deleted
+        setRoom(null);
+        setShowFinalizeModal(true); // Show modal or navigate
+        // Optionally, navigate to dashboard after a delay
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 2000);
+        return;
+      }
+      // 2. Refresh participants
+      await refreshParticipants();
+    }, POLLING_INTERVAL);
+    // Cleanup on unmount
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, [meetingId, refreshParticipants, navigate]);
 
   /**
    * Scroll to bottom of messages
@@ -350,7 +384,9 @@ const Meeting: React.FC = () => {
         webrtcSocket.emit("join_room", { roomId: meetingId, success: true });
         webrtcJoinedRef.current = true;
       } else {
-        console.log(`[MEETING] ⚠️ WebRTC join_room already emitted, skipping duplicate`);
+        console.log(
+          `[MEETING] ⚠️ WebRTC join_room already emitted, skipping duplicate`
+        );
       }
 
       // Listen for WEBRTC join room success
@@ -358,7 +394,10 @@ const Meeting: React.FC = () => {
         if (isCleanedUp) return;
 
         console.log("[MEETING] ✅ Successfully joined WEBRTC room:", response);
-        console.log("[MEETING] WEBRTC response:", JSON.stringify(response, null, 2));
+        console.log(
+          "[MEETING] WEBRTC response:",
+          JSON.stringify(response, null, 2)
+        );
 
         // Initialize WebRTC after successfully joining the WebRTC room
         if (!isWebRTCInitialized && webrtcSocket && meetingId && user.id) {
@@ -372,22 +411,31 @@ const Meeting: React.FC = () => {
 
             // Start local media (audio enabled by default, video disabled)
             console.log("[MEETING] Starting local media...");
-            const localStream = await webrtcManager.startLocalMedia(true, false);
+            const localStream = await webrtcManager.startLocalMedia(
+              true,
+              false
+            );
 
             if (localStream && localAudioRef.current) {
               localAudioRef.current.srcObject = localStream;
-              console.log("[MEETING] ✅ Local audio stream attached to element");
+              console.log(
+                "[MEETING] ✅ Local audio stream attached to element"
+              );
             }
             if (localStream && localVideoRef.current) {
               localVideoRef.current.srcObject = localStream;
-              console.log("[MEETING] ✅ Local video stream attached to element");
+              console.log(
+                "[MEETING] ✅ Local video stream attached to element"
+              );
             }
 
             setIsWebRTCInitialized(true);
             // Start with mic muted to align initial UI state
             setIsMicOn(false);
             webrtcManager.toggleAudio(false);
-            console.log("[MEETING] ✅ WebRTC initialized successfully (mic muted by default)");
+            console.log(
+              "[MEETING] ✅ WebRTC initialized successfully (mic muted by default)"
+            );
           } catch (error) {
             console.error("[MEETING] ❌ Error initializing WebRTC:", error);
             toast.error("Error al inicializar audio/video");
@@ -417,7 +465,9 @@ const Meeting: React.FC = () => {
         // Establish WebRTC connections to all existing users
         if (isWebRTCInitialized && users.length > 1) {
           console.log(
-            `[MEETING] Establishing WebRTC connections to ${users.length - 1} existing user(s)`
+            `[MEETING] Establishing WebRTC connections to ${
+              users.length - 1
+            } existing user(s)`
           );
           for (const u of users) {
             const userId = u.userId;
@@ -474,11 +524,16 @@ const Meeting: React.FC = () => {
 
         if (userData && userData.id) {
           const userName =
-            userData.displayName || userData.nickname || userData.email || "Usuario";
+            userData.displayName ||
+            userData.nickname ||
+            userData.email ||
+            "Usuario";
           toast.info(`${userName} salió de la reunión`);
           notificationSounds.userLeft();
           // Optimistic UI update: remove from participants immediately
-          setParticipants((prev) => prev.filter((p) => String(p.userId) !== String(userData.id)));
+          setParticipants((prev) =>
+            prev.filter((p) => String(p.userId) !== String(userData.id))
+          );
           setMicStates((prev) => {
             const updated = { ...prev };
             delete updated[String(userData.id)];
@@ -495,7 +550,9 @@ const Meeting: React.FC = () => {
             audioEl.srcObject = null as any;
             remoteAudiosRef.current.delete(String(userData.id));
           }
-          const remoteStream = remoteStreamsRef.current.get(String(userData.id));
+          const remoteStream = remoteStreamsRef.current.get(
+            String(userData.id)
+          );
           if (remoteStream) {
             remoteStream.getTracks().forEach((t) => t.stop());
             remoteStreamsRef.current.delete(String(userData.id));
@@ -548,7 +605,11 @@ const Meeting: React.FC = () => {
               : undefined,
         };
         // If message is from current user and user field missing, populate it
-        if (normalized.userId === String(user?.id) && !normalized.user && user) {
+        if (
+          normalized.userId === String(user?.id) &&
+          !normalized.user &&
+          user
+        ) {
           normalized.user = {
             id: String(user.id),
             email: user.email || "",
@@ -587,7 +648,11 @@ const Meeting: React.FC = () => {
       webrtcSocket.on("disconnect", handleDisconnect);
 
       // Listen for room ended (host finalization)
-      const handleRoomEnded = (payload: { success: boolean; roomId: string; message?: string }) => {
+      const handleRoomEnded = (payload: {
+        success: boolean;
+        roomId: string;
+        message?: string;
+      }) => {
         if (isCleanedUp) return;
         console.log("[MEETING] 🔚 Room ended:", payload);
         toast.error(payload.message || "La reunión ha finalizado");
@@ -655,9 +720,11 @@ const Meeting: React.FC = () => {
       console.log(`[MEETING] 📥 Received remote stream from user ${userId}`);
       console.log(`[MEETING] Stream has ${stream.getTracks().length} tracks:`);
       stream.getTracks().forEach((track) => {
-        console.log(`[MEETING]   - ${track.kind} track: enabled=${track.enabled}, readyState=${track.readyState}`);
+        console.log(
+          `[MEETING]   - ${track.kind} track: enabled=${track.enabled}, readyState=${track.readyState}`
+        );
       });
-      
+
       // Store stream for potential video rendering
       remoteStreamsRef.current.set(userId, stream);
 
@@ -676,14 +743,18 @@ const Meeting: React.FC = () => {
           console.log(`[MEETING] ✅ Updated audio element for user ${userId}`);
         }
       }
-      
+
       // Attach to a video element if available
-      const videoEl = document.getElementById(`video-${userId}`) as HTMLVideoElement | null;
+      const videoEl = document.getElementById(
+        `video-${userId}`
+      ) as HTMLVideoElement | null;
       if (videoEl) {
         videoEl.srcObject = stream;
         console.log(`[MEETING] 🎥 Remote video attached for user ${userId}`);
       } else {
-        console.log(`[MEETING] ⚠️ Video element not yet rendered for user ${userId}, will attach when rendered`);
+        console.log(
+          `[MEETING] ⚠️ Video element not yet rendered for user ${userId}, will attach when rendered`
+        );
       }
     },
     []
@@ -704,10 +775,14 @@ const Meeting: React.FC = () => {
   useEffect(() => {
     // For each remote stream, try to attach to video element
     remoteStreamsRef.current.forEach((stream, userId) => {
-      const videoEl = document.getElementById(`video-${userId}`) as HTMLVideoElement | null;
+      const videoEl = document.getElementById(
+        `video-${userId}`
+      ) as HTMLVideoElement | null;
       if (videoEl && videoEl.srcObject !== stream) {
         videoEl.srcObject = stream;
-        console.log(`[MEETING] 🎥 Attached remote stream to video element for ${userId}`);
+        console.log(
+          `[MEETING] 🎥 Attached remote stream to video element for ${userId}`
+        );
       }
     });
   }, [cameraStates, participants]); // Re-run when camera states or participants change
@@ -734,12 +809,16 @@ const Meeting: React.FC = () => {
       });
 
       // Send message via Socket.IO (standalone chat microservice echoes back to sender)
-      socketInstance.emit("message", { msg: content, visibility: "public", target: null });
+      socketInstance.emit("message", {
+        msg: content,
+        visibility: "public",
+        target: null,
+      });
 
       // Clear input
       setMessageInput("");
       chatInputRef.current?.focus();
-      
+
       console.log("[MEETING] ✅ Message sent successfully");
     } catch (err) {
       console.error("[MEETING] ❌ Error sending message:", err);
@@ -942,7 +1021,9 @@ const Meeting: React.FC = () => {
               }
               if (localVideoRef.current) {
                 localVideoRef.current.srcObject = stream;
-                console.log("[MEETING] ✅ Video stream attached to local video element");
+                console.log(
+                  "[MEETING] ✅ Video stream attached to local video element"
+                );
               }
               console.log("[MEETING] ✅ Camera enabled, stream attached");
             }
