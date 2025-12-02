@@ -547,7 +547,7 @@ const Meeting: React.FC = () => {
           // Stop any remote audio/video for this user
           const audioEl = remoteAudiosRef.current.get(String(userData.id));
           if (audioEl) {
-            audioEl.srcObject = null as any;
+            audioEl.srcObject = null;
             remoteAudiosRef.current.delete(String(userData.id));
           }
           const remoteStream = remoteStreamsRef.current.get(
