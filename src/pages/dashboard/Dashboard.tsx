@@ -215,7 +215,7 @@ const Dashboard: React.FC = () => {
   /**
    * Load user's recent meetings (dummy data, sin llamadas al backend)
    */
-  const loadRecentMeetings = useCallback((page: number = 1) => {
+  const loadRecentMeetings = useCallback(() => {
     // Datos ficticios de ejemplo
     const fakeMeetings = [
       {
@@ -251,7 +251,7 @@ const Dashboard: React.FC = () => {
 
   // Load meetings and stats on mount
   useEffect(() => {
-    loadRecentMeetings(1);
+    loadRecentMeetings();
     loadUserStats();
   }, [loadRecentMeetings, loadUserStats]);
 
