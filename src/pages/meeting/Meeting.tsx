@@ -246,8 +246,8 @@ const Meeting: React.FC = () => {
           try {
             await webrtcManager.initialize(meetingId, String(user.id), socketInstance);
             
-            // Start local media (audio only by default)
-            const localStream = await webrtcManager.startLocalMedia(false, false);
+            // Start local media (audio enabled by default, video disabled)
+            const localStream = await webrtcManager.startLocalMedia(true, false);
             
             if (localStream && localAudioRef.current) {
               localAudioRef.current.srcObject = localStream;
