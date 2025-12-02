@@ -6,10 +6,29 @@
 
 class NotificationSounds {
   private audioContext: AudioContext | null = null;
+  private initialized = false;
 
   constructor() {
+    // Don't create AudioContext until first user interaction
+  }
+
+  /**
+   * Initialize AudioContext on first call (user gesture required)
+   */
+  private ensureAudioContext(): void {
+    if (this.initialized) return;
+    
     if (typeof window !== 'undefined' && 'AudioContext' in window) {
-      this.audioContext = new AudioContext();
+      try {
+        this.audioContext = new AudioContext();
+        // Resume context if it's suspended
+        if (this.audioContext.state === 'suspended') {
+          this.audioContext.resume();
+        }
+        this.initialized = true;
+      } catch (error) {
+        console.warn('[NotificationSounds] Failed to initialize AudioContext:', error);
+      }
     }
   }
 
@@ -24,28 +43,33 @@ class NotificationSounds {
     duration: number,
     type: OscillatorType = 'sine'
   ): void {
+    this.ensureAudioContext();
     if (!this.audioContext) return;
 
-    const oscillator = this.audioContext.createOscillator();
-    const gainNode = this.audioContext.createGain();
+    try {
+      const oscillator = this.audioContext.createOscillator();
+      const gainNode = this.audioContext.createGain();
 
-    oscillator.connect(gainNode);
-    gainNode.connect(this.audioContext.destination);
+      oscillator.connect(gainNode);
+      gainNode.connect(this.audioContext.destination);
 
-    oscillator.frequency.value = frequency;
-    oscillator.type = type;
+      oscillator.frequency.value = frequency;
+      oscillator.type = type;
 
-    // Envelope for smooth sound
-    const now = this.audioContext.currentTime;
-    gainNode.gain.setValueAtTime(0, now);
-    gainNode.gain.linearRampToValueAtTime(0.3, now + 0.01);
-    gainNode.gain.exponentialRampToValueAtTime(
-      0.01,
-      now + duration / 1000
-    );
+      // Envelope for smooth sound
+      const now = this.audioContext.currentTime;
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.3, now + 0.01);
+      gainNode.gain.exponentialRampToValueAtTime(
+        0.01,
+        now + duration / 1000
+      );
 
-    oscillator.start(now);
-    oscillator.stop(now + duration / 1000);
+      oscillator.start(now);
+      oscillator.stop(now + duration / 1000);
+    } catch (error) {
+      console.warn('[NotificationSounds] Failed to play tone:', error);
+    }
   }
 
   /**

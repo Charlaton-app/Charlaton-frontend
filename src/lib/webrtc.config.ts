@@ -289,31 +289,42 @@ class WebRTCManager {
     peerConnection.ontrack = (event) => {
       console.log(`[WEBRTC] 📥 Received remote track from ${targetUserId}`);
       console.log(
-        `[WEBRTC] Track kind: ${event.track.kind}, enabled: ${event.track.enabled}`
+        `[WEBRTC] Track kind: ${event.track.kind}, enabled: ${event.track.enabled}, readyState: ${event.track.readyState}`
       );
       console.log(`[WEBRTC] Streams count: ${event.streams.length}`);
       
-      // Clear existing tracks from remoteStream to avoid duplicates
-      remoteStream.getTracks().forEach(track => {
-        remoteStream.removeTrack(track);
-      });
-      
-      // Add all tracks from the incoming stream
-      event.streams[0].getTracks().forEach((track) => {
-        console.log(`[WEBRTC] Adding remote ${track.kind} track to stream`);
-        remoteStream.addTrack(track);
-      });
+      if (event.streams && event.streams[0]) {
+        // Use the stream provided by the event directly
+        const incomingStream = event.streams[0];
+        
+        console.log(`[WEBRTC] Stream has ${incomingStream.getTracks().length} tracks`);
+        incomingStream.getTracks().forEach(track => {
+          console.log(`[WEBRTC]   - ${track.kind}: enabled=${track.enabled}, readyState=${track.readyState}`);
+        });
+        
+        // Update remoteStream with the incoming stream
+        // Clear existing tracks first
+        remoteStream.getTracks().forEach(track => {
+          remoteStream.removeTrack(track);
+        });
+        
+        // Add all tracks from incoming stream
+        incomingStream.getTracks().forEach((track) => {
+          remoteStream.addTrack(track);
+          console.log(`[WEBRTC] Added ${track.kind} track to remoteStream`);
+        });
 
-      // Call the callback immediately with the updated stream
-      if (storedCallback) {
-        console.log(
-          `[WEBRTC] Calling onRemoteStream callback for ${targetUserId}`
-        );
-        storedCallback(remoteStream, targetUserId);
-      } else {
-        console.warn(
-          `[WEBRTC] ⚠️ No onRemoteStream callback registered for ${targetUserId}`
-        );
+        // Call the callback with the updated stream
+        if (storedCallback) {
+          console.log(
+            `[WEBRTC] Calling onRemoteStream callback for ${targetUserId}`
+          );
+          storedCallback(remoteStream, targetUserId);
+        } else {
+          console.warn(
+            `[WEBRTC] ⚠️ No onRemoteStream callback registered for ${targetUserId}`
+          );
+        }
       }
     };
 
@@ -370,7 +381,18 @@ class WebRTCManager {
     }
 
     try {
-      const offer = await peerConnection.createOffer();
+      // Ensure we have local tracks before creating offer
+      if (this.localStream) {
+        console.log(`[WEBRTC] Local stream has ${this.localStream.getTracks().length} tracks before offer`);
+        this.localStream.getTracks().forEach(track => {
+          console.log(`[WEBRTC]   - ${track.kind}: enabled=${track.enabled}, readyState=${track.readyState}`);
+        });
+      }
+
+      const offer = await peerConnection.createOffer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: true
+      });
       await peerConnection.setLocalDescription(offer);
 
       this.socket.emit("webrtc_offer", {
@@ -416,7 +438,18 @@ class WebRTCManager {
     try {
       await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
 
-      const answer = await peerConnection.createAnswer();
+      // Ensure we have local tracks before creating answer
+      if (this.localStream) {
+        console.log(`[WEBRTC] Local stream has ${this.localStream.getTracks().length} tracks before answer`);
+        this.localStream.getTracks().forEach(track => {
+          console.log(`[WEBRTC]   - ${track.kind}: enabled=${track.enabled}, readyState=${track.readyState}`);
+        });
+      }
+
+      const answer = await peerConnection.createAnswer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: true
+      });
       await peerConnection.setLocalDescription(answer);
 
       this.socket.emit("webrtc_answer", {
