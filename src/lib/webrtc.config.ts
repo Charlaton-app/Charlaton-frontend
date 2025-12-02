@@ -41,6 +41,7 @@ class WebRTCManager {
   private socket: Socket | null = null;
   private roomId: string | null = null;
   private isInitialized = false;
+  private defaultOnRemoteStream: ((stream: MediaStream, userId: string) => void) | undefined;
 
   /**
    * Initialize the WebRTC manager
@@ -48,12 +49,14 @@ class WebRTCManager {
    * @param roomId - The room ID to join
    * @param userId - The current user's ID
    * @param webrtcSocket - The WebSocket connection for WebRTC signaling
+   * @param onRemoteStream - Default callback when remote stream is available
    * @returns Promise that resolves when initialization is complete
    */
   async initialize(
     roomId: string,
     userId: string,
-    webrtcSocket: Socket
+    webrtcSocket: Socket,
+    onRemoteStream?: (stream: MediaStream, userId: string) => void
   ): Promise<void> {
     if (this.isInitialized) {
       console.log("[WEBRTC] Already initialized");
@@ -66,6 +69,7 @@ class WebRTCManager {
 
     this.roomId = roomId;
     this.socket = webrtcSocket;
+    this.defaultOnRemoteStream = onRemoteStream;
 
     // Setup WebRTC signaling listeners
     this.setupSignalingListeners();
@@ -266,6 +270,9 @@ class WebRTCManager {
       );
     }
 
+    // Store the onRemoteStream callback for later use
+    const storedCallback = onRemoteStream;
+
     // Handle ICE candidates
     peerConnection.onicecandidate = (event) => {
       if (event.candidate && this.socket && this.roomId) {
@@ -285,16 +292,24 @@ class WebRTCManager {
         `[WEBRTC] Track kind: ${event.track.kind}, enabled: ${event.track.enabled}`
       );
       console.log(`[WEBRTC] Streams count: ${event.streams.length}`);
+      
+      // Clear existing tracks from remoteStream to avoid duplicates
+      remoteStream.getTracks().forEach(track => {
+        remoteStream.removeTrack(track);
+      });
+      
+      // Add all tracks from the incoming stream
       event.streams[0].getTracks().forEach((track) => {
         console.log(`[WEBRTC] Adding remote ${track.kind} track to stream`);
         remoteStream.addTrack(track);
       });
 
-      if (onRemoteStream) {
+      // Call the callback immediately with the updated stream
+      if (storedCallback) {
         console.log(
           `[WEBRTC] Calling onRemoteStream callback for ${targetUserId}`
         );
-        onRemoteStream(remoteStream, targetUserId);
+        storedCallback(remoteStream, targetUserId);
       } else {
         console.warn(
           `[WEBRTC] ⚠️ No onRemoteStream callback registered for ${targetUserId}`
@@ -390,7 +405,8 @@ class WebRTCManager {
 
     console.log(`[WEBRTC] Handling offer from ${senderId}`);
 
-    const peerConnection = await this.createPeerConnection(senderId);
+    // Create peer connection with the default onRemoteStream callback stored during initialization
+    const peerConnection = await this.createPeerConnection(senderId, this.defaultOnRemoteStream);
 
     if (!peerConnection) {
       console.error("[WEBRTC] Failed to create peer connection for offer");

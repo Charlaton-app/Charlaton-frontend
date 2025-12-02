@@ -205,6 +205,54 @@ const Meeting: React.FC = () => {
   }, [meetingId, user?.id, isMicOn, isCameraOn]);
 
   /**
+   * Handle incoming remote media streams from other participants
+   */
+  const handleRemoteStream = useCallback(
+    (stream: MediaStream, userId: string) => {
+      console.log(`[MEETING] 📥 Received remote stream from user ${userId}`);
+      console.log(`[MEETING] Stream has ${stream.getTracks().length} tracks:`);
+      stream.getTracks().forEach((track) => {
+        console.log(
+          `[MEETING]   - ${track.kind} track: enabled=${track.enabled}, readyState=${track.readyState}`
+        );
+      });
+
+      // Store stream for potential video rendering
+      remoteStreamsRef.current.set(userId, stream);
+
+      // Create audio element for this user if it doesn't exist
+      if (!remoteAudiosRef.current.has(userId)) {
+        const audio = new Audio();
+        audio.autoplay = true;
+        audio.srcObject = stream;
+        remoteAudiosRef.current.set(userId, audio);
+        console.log(`[MEETING] ✅ Audio element created for user ${userId}`);
+      } else {
+        // Update existing audio element
+        const existingAudio = remoteAudiosRef.current.get(userId);
+        if (existingAudio) {
+          existingAudio.srcObject = stream;
+          console.log(`[MEETING] ✅ Updated audio element for user ${userId}`);
+        }
+      }
+
+      // Attach to a video element if available
+      const videoEl = document.getElementById(
+        `video-${userId}`
+      ) as HTMLVideoElement | null;
+      if (videoEl) {
+        videoEl.srcObject = stream;
+        console.log(`[MEETING] 🎥 Remote video attached for user ${userId}`);
+      } else {
+        console.log(
+          `[MEETING] ⚠️ Video element not yet rendered for user ${userId}, will attach when rendered`
+        );
+      }
+    },
+    []
+  );
+
+  /**
    * Polling effect: checks meeting status and participants every 3 seconds
    */
   useEffect(() => {
@@ -406,7 +454,8 @@ const Meeting: React.FC = () => {
             await webrtcManager.initialize(
               meetingId,
               String(user.id),
-              webrtcSocket
+              webrtcSocket,
+              handleRemoteStream
             );
 
             // Start local media (audio enabled by default, video disabled)
@@ -469,11 +518,14 @@ const Meeting: React.FC = () => {
               users.length - 1
             } existing user(s)`
           );
+          
+          // Create peer connections to all other users
           for (const u of users) {
             const userId = u.userId;
             if (userId && userId !== String(user.id)) {
               console.log(`[MEETING] 🔗 Creating peer connection to ${userId}`);
               try {
+                // Send offer to establish connection
                 await webrtcManager.sendOffer(userId, handleRemoteStream);
               } catch (error) {
                 console.error(
@@ -510,7 +562,14 @@ const Meeting: React.FC = () => {
             console.log(
               `[MEETING] Sending WebRTC offer to new user ${userData.id}`
             );
-            await webrtcManager.sendOffer(userData.id, handleRemoteStream);
+            try {
+              await webrtcManager.sendOffer(userData.id, handleRemoteStream);
+            } catch (error) {
+              console.error(
+                `[MEETING] ❌ Error sending offer to ${userData.id}:`,
+                error
+              );
+            }
           }
         }
       };
@@ -708,57 +767,6 @@ const Meeting: React.FC = () => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [meetingId, user?.id]);
-
-  /**
-   * Handle remote stream from WebRTC connection
-   *
-   * @param stream - The remote media stream
-   * @param userId - The ID of the remote user
-   */
-  const handleRemoteStream = useCallback(
-    (stream: MediaStream, userId: string) => {
-      console.log(`[MEETING] 📥 Received remote stream from user ${userId}`);
-      console.log(`[MEETING] Stream has ${stream.getTracks().length} tracks:`);
-      stream.getTracks().forEach((track) => {
-        console.log(
-          `[MEETING]   - ${track.kind} track: enabled=${track.enabled}, readyState=${track.readyState}`
-        );
-      });
-
-      // Store stream for potential video rendering
-      remoteStreamsRef.current.set(userId, stream);
-
-      // Create audio element for this user if it doesn't exist
-      if (!remoteAudiosRef.current.has(userId)) {
-        const audio = new Audio();
-        audio.autoplay = true;
-        audio.srcObject = stream;
-        remoteAudiosRef.current.set(userId, audio);
-        console.log(`[MEETING] ✅ Audio element created for user ${userId}`);
-      } else {
-        // Update existing audio element
-        const existingAudio = remoteAudiosRef.current.get(userId);
-        if (existingAudio) {
-          existingAudio.srcObject = stream;
-          console.log(`[MEETING] ✅ Updated audio element for user ${userId}`);
-        }
-      }
-
-      // Attach to a video element if available
-      const videoEl = document.getElementById(
-        `video-${userId}`
-      ) as HTMLVideoElement | null;
-      if (videoEl) {
-        videoEl.srcObject = stream;
-        console.log(`[MEETING] 🎥 Remote video attached for user ${userId}`);
-      } else {
-        console.log(
-          `[MEETING] ⚠️ Video element not yet rendered for user ${userId}, will attach when rendered`
-        );
-      }
-    },
-    []
-  );
 
   /**
    * Auto-scroll when new messages arrive
