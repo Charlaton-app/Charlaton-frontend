@@ -5,7 +5,7 @@ import Footer from "../../components/Footer/Footer";
 import useAuthStore from "../../stores/useAuthStore";
 import WebContentReader from "../../components/web-reader/WebContentReader";
 import Toast from "../../components/Toast/Toast";
-import { createRoom, getRoomById, getUserRooms, getUserStats } from "../../services/room.service";
+import { createRoom, getRoomById } from "../../services/room.service";
 import "./Dashboard.scss";
 
 interface ToastState {
@@ -213,72 +213,47 @@ const Dashboard: React.FC = () => {
   };
 
   /**
-   * Load user's recent meetings
+   * Load user's recent meetings (dummy data, sin llamadas al backend)
    */
-  const loadRecentMeetings = useCallback(async (page: number = 1) => {
-    if (!user?.id) return;
-    
+  const loadRecentMeetings = useCallback((page: number = 1) => {
+    // En modo dummy solo tenemos una página, pero usamos el parámetro
+    // para mantener el mismo contrato de paginación.
+    const targetPage = Math.max(1, page);
+
+    // Datos ficticios de ejemplo
+    const fakeMeetings = [
+      {
+        id: "demo-123",
+        name: "Reunión de demostración",
+        createdAt: new Date().toISOString(),
+        participants: 0,
+        duration: 0,
+        isCreator: true,
+      },
+    ];
+
     setLoadingMeetings(true);
-    try {
-      const response = await getUserRooms(user.id, page, 3);
-      
-      if (response.error) {
-        console.error("[DASHBOARD] Error loading meetings:", response.error);
-        setRecentMeetings([]);
-        return;
-      }
-      
-      if (response.data) {
-        setRecentMeetings(response.data.rooms || []);
-        setTotalPages(response.data.pagination?.totalPages || 1);
-        setCurrentPage(response.data.pagination?.currentPage || 1);
-        console.log(`[DASHBOARD] Loaded ${response.data.rooms?.length || 0} meetings`);
-      }
-    } catch (error) {
-      console.error("[DASHBOARD] Error loading meetings:", error);
-      setRecentMeetings([]);
-    } finally {
-      setLoadingMeetings(false);
-    }
-  }, [user?.id]);
+    setRecentMeetings(fakeMeetings);
+    setTotalPages(1);
+    setCurrentPage(targetPage);
+    setLoadingMeetings(false);
+  }, []);
 
   /**
-   * Load user statistics
+   * Load user statistics (dummy data, sin llamadas al backend)
    */
-  const loadUserStats = useCallback(async () => {
-    if (!user?.id) {
-      console.log("[DASHBOARD] No user ID, skipping stats load");
-      return;
-    }
+  const loadUserStats = useCallback(() => {
+    setLoadingStats(true);
+    // Valores fijos ficticios
+    setStats({
+      meetingsThisMonth: 0,
+      totalDuration: "0min",
+      activeContacts: 0,
+    });
+    setLoadingStats(false);
+  }, []);
 
-    try {
-      setLoadingStats(true);
-      console.log(`[DASHBOARD] Loading stats for user ${user.id}`);
-      
-      const response = await getUserStats(user.id);
-      
-      if (response.error) {
-        console.error("[DASHBOARD] Error loading stats:", response.error);
-        showToast(`Error al cargar estadísticas: ${response.error}`, "error");
-        return;
-      }
-
-      if (response.data) {
-        setStats({
-          meetingsThisMonth: response.data.meetingsThisMonth || 0,
-          totalDuration: response.data.totalDuration || "0min",
-          activeContacts: response.data.activeContacts || 0,
-        });
-        console.log("[DASHBOARD] Stats loaded:", response.data);
-      }
-    } catch (error) {
-      console.error("[DASHBOARD] Error in loadUserStats:", error);
-    } finally {
-      setLoadingStats(false);
-    }
-  }, [user?.id, showToast]);
-
-  // Load meetings and stats on mount and when user changes
+  // Load meetings and stats on mount
   useEffect(() => {
     loadRecentMeetings(1);
     loadUserStats();

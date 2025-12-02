@@ -28,13 +28,40 @@ import {
   endRoom,
   getRoomParticipants,
   type Participant,
+  type Room,
 } from "../../services/room.service";
+import { getRoomMessages, type Message } from "../../services/message.service";
+import { getUserById, type BasicUser } from "../../services/user.service";
 import {
-  getRoomMessages,
-  type Message,
-} from "../../services/message.service";
-import { connectToChat, disconnectFromChat, getSocket } from "../../lib/socket.config";
+  connectToChat,
+  disconnectFromChat,
+  getSocket,
+} from "../../lib/socket.config";
+import { connectToWebRTC } from "../../lib/webrtcSocket.config";
+import { webrtcManager } from "../../lib/webrtc.config";
+import type { Socket } from "socket.io-client";
 import "./Meeting.scss";
+
+// Socket event response interfaces
+interface JoinRoomResponse {
+  success: boolean;
+  message?: string;
+  roomId?: string;
+}
+
+interface UserData {
+  id: string;
+  userId: string;
+  email: string;
+  nickname?: string;
+  displayName?: string;
+  user?: {
+    id: string;
+    email: string;
+    nickname?: string;
+    displayName?: string;
+  };
+}
 
 const Meeting: React.FC = () => {
   const { meetingId } = useParams<{ meetingId: string }>();
@@ -48,7 +75,7 @@ const Meeting: React.FC = () => {
   }, []);
 
   // State
-  const [room, setRoom] = useState<any>(null);
+  const [room, setRoom] = useState<Room | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState("");
@@ -69,6 +96,19 @@ const Meeting: React.FC = () => {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLInputElement>(null);
+
+  // WebRTC refs for media elements
+  const localAudioRef = useRef<HTMLAudioElement>(null);
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteAudiosRef = useRef<Map<string, HTMLAudioElement>>(new Map());
+  const remoteStreamsRef = useRef<Map<string, MediaStream>>(new Map());
+  // Cache for fetched users to avoid refetching repeatedly
+  const userCacheRef = useRef<Map<string, BasicUser>>(new Map());
+
+  // WebRTC state
+  const [isWebRTCInitialized, setIsWebRTCInitialized] = useState(false);
+  const webrtcJoinedRef = useRef(false);
+
   /**
    * Helper to refresh participants from backend
    */
@@ -78,8 +118,54 @@ const Meeting: React.FC = () => {
     if (participantsResponse.error || !participantsResponse.data) {
       return;
     }
+    // Prefer connections that have resolved user information (backend-created)
+    // to avoid duplicates coming from auxiliary services that only store userId.
+    const fetched = participantsResponse.data.filter((p) => p.user);
+    // De-duplicate by userId, prefer entries with user info
+    const byUserId = new Map<string, Participant>();
+    for (const p of fetched) {
+      const key = String(p.userId);
+      const existing = byUserId.get(key);
+      if (!existing) {
+        byUserId.set(key, p);
+      } else {
+        const preferred = existing.user ? existing : p.user ? p : existing;
+        byUserId.set(key, preferred);
+      }
+    }
+    setParticipants(Array.from(byUserId.values()));
 
-    setParticipants(participantsResponse.data);
+    // Enrich participants missing `user` with a lightweight fetch
+    // This runs in background and updates state once resolved
+    (async () => {
+      try {
+        const updates: Record<string, BasicUser> = {};
+        await Promise.all(
+          fetched
+            .filter((p) => !p.user && p.userId)
+            .map(async (p) => {
+              const uid = String(p.userId);
+              if (userCacheRef.current.has(uid)) {
+                updates[p.id] = userCacheRef.current.get(uid)!;
+                return;
+              }
+              const res = await getUserById(uid);
+              if (res.data) {
+                userCacheRef.current.set(uid, res.data);
+                updates[p.id] = res.data;
+              }
+            })
+        );
+
+        if (Object.keys(updates).length > 0) {
+          setParticipants((prev) =>
+            prev.map((p) => (updates[p.id] ? { ...p, user: updates[p.id] } : p))
+          );
+        }
+      } catch {
+        // Silent fail; console noise avoided
+      }
+    })();
 
     const participantIds = participantsResponse.data.map((p) =>
       String(p.userId)
@@ -115,7 +201,6 @@ const Meeting: React.FC = () => {
       return updated;
     });
   }, [meetingId, user?.id, isMicOn, isCameraOn]);
-
 
   /**
    * Scroll to bottom of messages
@@ -193,208 +278,671 @@ const Meeting: React.FC = () => {
   }, [meetingId, user?.id]);
 
   /**
-   * Setup Socket.io listeners
+   * Setup Socket.io listeners and WebRTC
+   * Connects to TWO separate servers:
+   * 1. Chat server (port 3000/5000) - for messages and room management
+   * 2. WebRTC server (port 5050) - for audio/video signaling
    */
   useEffect(() => {
     if (!meetingId || !user?.id) return;
 
-    let socketInstance: any = null;
+    let chatSocket: Socket | null = null;
+    let webrtcSocket: Socket | null = null;
     let isCleanedUp = false;
 
-    const setupSocket = async () => {
-      console.log("[MEETING] Setting up Socket.io listeners");
-      
-      // Connect to chat server with authentication
-      socketInstance = await connectToChat();
-      if (!socketInstance) {
-        console.error("[MEETING] Failed to connect to chat server");
+    const setupSockets = async () => {
+      console.log("[MEETING] Setting up Socket connections");
+      console.log(`[MEETING] Room ID: ${meetingId}, User ID: ${user.id}`);
+
+      // ===== 1. Connect to CHAT server =====
+      console.log("[MEETING] Connecting to CHAT server...");
+      chatSocket = await connectToChat();
+      if (!chatSocket) {
+        console.error("[MEETING] ❌ Failed to connect to chat server");
         toast.error("Error al conectar con el servidor de chat");
         return;
       }
+      console.log("[MEETING] ✅ Connected to CHAT server");
+
+      // ===== 2. Connect to WEBRTC server =====
+      console.log("[MEETING] Connecting to WEBRTC server...");
+      webrtcSocket = await connectToWebRTC();
+      if (!webrtcSocket) {
+        console.error("[MEETING] ❌ Failed to connect to WebRTC server");
+        toast.error("Error al conectar con el servidor WebRTC");
+        return;
+      }
+      console.log("[MEETING] ✅ Connected to WEBRTC server");
 
       // Remove any existing listeners first to prevent duplicates
       console.log("[MEETING] Removing any existing listeners before setup");
-      socketInstance.off("join_room_success");
-      socketInstance.off("join_room_error");
-      socketInstance.off("usersOnline");
-      socketInstance.off("newMessage");
-      socketInstance.off("disconnect");
-      socketInstance.off("userLeft");
+      chatSocket.off("join_room_success");
+      chatSocket.off("join_room_error");
+      chatSocket.off("user_joined");
+      chatSocket.off("usersOnline");
+      chatSocket.off("new_success");
+      chatSocket.off("disconnect");
+      chatSocket.off("userLeft");
+      chatSocket.off("room_users");
+      chatSocket.off("message_success");
 
-      // Join room in socket (chat server format)
-      console.log(`[MEETING] Joining room: ${meetingId}`);
-      socketInstance.emit("join_room", meetingId);
+      // Join room in CHAT socket
+      console.log(`[MEETING] Joining CHAT room: ${meetingId}`);
+      chatSocket.emit("join_room", meetingId);
 
-      // Listen for join room success
-      const handleJoinRoomSuccess = (response: any) => {
-        if (isCleanedUp) return; // Ignore if component is unmounted
-        
-        console.log("[MEETING] ✅ Successfully joined room:", response);
-        if (response.user && response.user.id !== user.id) {
-          // Another user joined - only show notification once
+      // Listen for CHAT join room success
+      const handleChatJoinSuccess = async (response: JoinRoomResponse) => {
+        if (isCleanedUp) return;
+        console.log("[MEETING] ✅ Successfully joined CHAT room:", response);
+      };
+
+      chatSocket.on("join_room_success", handleChatJoinSuccess);
+
+      // Listen for CHAT join room error
+      const handleChatJoinError = (response: JoinRoomResponse) => {
+        if (isCleanedUp) return;
+        console.error("[MEETING] ❌ Error joining CHAT room:", response);
+        toast.error(response.message || "Error al unirse al chat");
+      };
+
+      chatSocket.on("join_room_error", handleChatJoinError);
+
+      // Join room in WEBRTC socket (guard against double emission)
+      if (!webrtcJoinedRef.current) {
+        console.log(`[MEETING] Joining WEBRTC room: ${meetingId}`);
+        webrtcSocket.emit("join_room", { roomId: meetingId, success: true });
+        webrtcJoinedRef.current = true;
+      } else {
+        console.log(
+          `[MEETING] ⚠️ WebRTC join_room already emitted, skipping duplicate`
+        );
+      }
+
+      // Listen for WEBRTC join room success
+      const handleWebRTCJoinSuccess = async (response: JoinRoomResponse) => {
+        if (isCleanedUp) return;
+
+        console.log("[MEETING] ✅ Successfully joined WEBRTC room:", response);
+        console.log(
+          "[MEETING] WEBRTC response:",
+          JSON.stringify(response, null, 2)
+        );
+
+        // Initialize WebRTC after successfully joining the WebRTC room
+        if (!isWebRTCInitialized && webrtcSocket && meetingId && user.id) {
+          console.log("[MEETING] Initializing WebRTC manager...");
+          try {
+            await webrtcManager.initialize(
+              meetingId,
+              String(user.id),
+              webrtcSocket
+            );
+
+            // Start local media with audio + video tracks negotiated,
+            // but keep mic and camera muted/disabled by default.
+            console.log("[MEETING] Starting local media...");
+            const localStream = await webrtcManager.startLocalMedia(
+              true,
+              true
+            );
+
+            if (localStream && localAudioRef.current) {
+              localAudioRef.current.srcObject = localStream;
+              console.log(
+                "[MEETING] ✅ Local audio stream attached to element"
+              );
+            }
+            if (localStream && localVideoRef.current) {
+              localVideoRef.current.srcObject = localStream;
+              console.log(
+                "[MEETING] ✅ Local video stream attached to element"
+              );
+            }
+
+            setIsWebRTCInitialized(true);
+            // Start with mic and camera muted to align initial UI state
+            setIsMicOn(false);
+            webrtcManager.toggleAudio(false);
+            webrtcManager.toggleVideo(false);
+            console.log(
+              "[MEETING] ✅ WebRTC initialized successfully (mic/camera muted by default)"
+            );
+          } catch (error) {
+            console.error("[MEETING] ❌ Error initializing WebRTC:", error);
+            toast.error("Error al inicializar audio/video");
+          }
+        }
+      };
+
+      webrtcSocket.on("join_room_success", handleWebRTCJoinSuccess);
+
+      // Listen for WEBRTC join room error
+      const handleWebRTCJoinError = (response: JoinRoomResponse) => {
+        if (isCleanedUp) return;
+        console.error("[MEETING] ❌ Error joining WEBRTC room:", response);
+        toast.error(response.message || "Error al unirse a WebRTC");
+      };
+
+      webrtcSocket.on("join_room_error", handleWebRTCJoinError);
+
+      // Listen for users online in WEBRTC
+      const handleUsersOnline = async (users: UserData[]) => {
+        if (isCleanedUp) return;
+        console.log("[MEETING] 👥 Users online in WebRTC:", users);
+
+        // Build a participants list directly from WebRTC usersOnline payload.
+        // This ensures that the `userId` used in media events and WebRTC
+        // signaling matches the IDs used to render tiles and manage state.
+        const syntheticParticipants: Participant[] = users.map((u) => ({
+          id: String(u.userId),
+          userId: String(u.userId),
+          roomId: meetingId || "",
+          joinedAt: new Date().toISOString(),
+          user: {
+            id: String(u.userId),
+            email: u.email,
+            nickname: u.nickname,
+            displayName: u.displayName,
+          },
+        }));
+
+        setParticipants(syntheticParticipants);
+
+        const ids = syntheticParticipants.map((p) => String(p.userId));
+
+        // Ensure mic/camera state maps contain entries for all online users
+        setMicStates((prev) => {
+          const updated = { ...prev };
+          ids.forEach((id) => {
+            if (!(id in updated)) {
+              updated[id] = false;
+            }
+          });
+          // Cleanup states for users that are no longer online
+          Object.keys(updated).forEach((id) => {
+            if (!ids.includes(id)) {
+              delete updated[id];
+            }
+          });
+          return updated;
+        });
+
+        setCameraStates((prev) => {
+          const updated = { ...prev };
+          ids.forEach((id) => {
+            if (!(id in updated)) {
+              updated[id] = false;
+            }
+          });
+          Object.keys(updated).forEach((id) => {
+            if (!ids.includes(id)) {
+              delete updated[id];
+            }
+          });
+          return updated;
+        });
+
+        // Establish WebRTC connections to all existing users
+        if (isWebRTCInitialized && users.length > 1) {
+          console.log(
+            `[MEETING] Establishing WebRTC connections to ${
+              users.length - 1
+            } existing user(s)`
+          );
+          for (const u of users) {
+            const userId = u.userId;
+            if (userId && userId !== String(user.id)) {
+              console.log(`[MEETING] 🔗 Creating peer connection to ${userId}`);
+              try {
+                await webrtcManager.sendOffer(userId, handleRemoteStream);
+              } catch (error) {
+                console.error(
+                  `[MEETING] ❌ Error creating connection to ${userId}:`,
+                  error
+                );
+              }
+            }
+          }
+        }
+      };
+
+      webrtcSocket.on("usersOnline", handleUsersOnline);
+
+      // Listen for user joined via WebRTC
+      const handleUserJoinedWebRTC = async (userData: UserData) => {
+        if (isCleanedUp) return;
+        console.log("[MEETING] 👤 User joined WebRTC:", userData);
+
+        if (userData && userData.id && userData.id !== String(user.id)) {
           const userName =
-            response.user.displayName ||
-            response.user.nickname ||
-            response.user.email ||
+            userData.displayName ||
+            userData.nickname ||
+            userData.email ||
             "Usuario";
-          
-          console.log(`[MEETING] User ${userName} (${response.user.id}) joined, current user: ${user.id}`);
+
+          console.log(`[MEETING] User ${userName} (${userData.id}) joined`);
           toast.info(`${userName} se unió a la reunión`);
           notificationSounds.userJoined();
-          refreshParticipants();
+
+          // Add the new user to participants list directly (don't call backend)
+          setParticipants((prev) => {
+            const userId = String(userData.id);
+            // Check if user already exists
+            const exists = prev.some((p) => String(p.userId) === userId);
+            if (exists) {
+              console.log(`[MEETING] User ${userId} already in participants list`);
+              return prev;
+            }
+
+            // Add new participant
+            const newParticipant: Participant = {
+              id: userId,
+              userId: userId,
+              roomId: meetingId || "",
+              joinedAt: new Date().toISOString(),
+              user: {
+                id: userId,
+                email: userData.email || "",
+                nickname: userData.nickname,
+                displayName: userData.displayName,
+              },
+            };
+
+            console.log(`[MEETING] ✅ Added participant ${userId} to list`);
+            return [...prev, newParticipant];
+          });
+
+          // Initialize media states for the new user
+          const userId = String(userData.id);
+          setMicStates((prev) => {
+            if (!(userId in prev)) {
+              return { ...prev, [userId]: false };
+            }
+            return prev;
+          });
+          setCameraStates((prev) => {
+            if (!(userId in prev)) {
+              return { ...prev, [userId]: false };
+            }
+            return prev;
+          });
+
+          // If WebRTC is initialized, send offer to new user
+          if (isWebRTCInitialized) {
+            console.log(
+              `[MEETING] Sending WebRTC offer to new user ${userData.id}`
+            );
+            await webrtcManager.sendOffer(userData.id, handleRemoteStream);
+          }
         }
       };
-      
-      socketInstance.on("join_room_success", handleJoinRoomSuccess);
 
-      // Listen for join room error
-      const handleJoinRoomError = (response: any) => {
-        if (isCleanedUp) return; // Ignore if component is unmounted
-        
-        console.error("[MEETING] ❌ Error joining room:", response);
-        toast.error(response.message || "Error al unirse a la sala");
-      };
-      
-      socketInstance.on("join_room_error", handleJoinRoomError);
+      webrtcSocket.on("user_joined", handleUserJoinedWebRTC);
 
-      // Listen for online users updates
-      const handleUsersOnline = (users: any[]) => {
-        if (isCleanedUp) return; // Ignore if component is unmounted
-        console.log("[MEETING] 👥 Users online:", users.length);
-        // Note: We don't show notifications here to avoid spam
-        // The participants list is managed by the backend's getRoomParticipants
-      };
-      
-      socketInstance.on("usersOnline", handleUsersOnline);
+      // Chat server also emits user_joined with different structure
+      chatSocket.on("user_joined", (payload: any) => {
+        console.log("[MEETING] 👤 user_joined event from chat server:", payload);
+        const rawUser = payload?.user;
+        if (!rawUser) return;
 
-      // Listen for new messages (chat server format)
-      const handleNewMessage = (message: any) => {
-        if (isCleanedUp) return; // Ignore if component is unmounted
-        
-        console.log("[MEETING] New message received:", message);
-        
-        // Convert chat server message format to local Message format
-        const localMessage: Message = {
-          id: message.id || crypto.randomUUID(),
-          userId: message.senderId,
-          roomId: message.roomId,
-          content: message.text,
-          visibility: "public",
-          user: message.user || {
-            id: message.senderId,
-            email: message.user?.email || "",
-            displayName: message.user?.displayName,
-            nickname: message.user?.nickname,
+        const normalizedUser: UserData = {
+          id: String(rawUser.id ?? rawUser.userId ?? rawUser.uid ?? ""),
+          userId: String(rawUser.id ?? rawUser.userId ?? rawUser.uid ?? ""),
+          email: rawUser.email ?? "",
+          nickname: rawUser.nickname,
+          displayName: rawUser.displayName || rawUser.nickname || rawUser.email?.split("@")[0],
+          user: {
+            id: String(rawUser.id ?? rawUser.userId ?? rawUser.uid ?? ""),
+            email: rawUser.email ?? "",
+            nickname: rawUser.nickname,
+            displayName: rawUser.displayName || rawUser.nickname || rawUser.email?.split("@")[0],
           },
-          createdAt: message.createAt
-            ? typeof message.createAt === "number"
-              ? new Date(message.createAt).toISOString()
-              : message.createAt.toDate
-              ? message.createAt.toDate().toISOString()
-              : new Date().toISOString()
-            : new Date().toISOString(),
         };
-        
-        // Check if message already exists to avoid duplicates
-        setMessages((prev) => {
-          // Check if message with same ID already exists
-          if (message.id && prev.some((msg) => msg.id === message.id)) {
-            console.log("[MEETING] Message already exists (by ID), skipping duplicate");
-            return prev;
-          }
-          
-          // Check if message with same content, sender, and similar timestamp already exists
-          const isDuplicate = prev.some(
-            (msg) =>
-              msg.userId === localMessage.userId &&
-              msg.content === localMessage.content &&
-              msg.createdAt &&
-              localMessage.createdAt &&
-              Math.abs(
-                new Date(msg.createdAt).getTime() -
-                  new Date(localMessage.createdAt).getTime()
-              ) < 3000 // Within 3 seconds
-          );
-          
-          if (isDuplicate) {
-            console.log("[MEETING] Duplicate message detected (by content), skipping");
-            return prev;
-          }
-          
-          console.log("[MEETING] Adding new message to state");
-          return [...prev, localMessage];
-        });
-        
-        // Only play sound if it's not from current user
-        if (message.senderId !== user.id) {
-          notificationSounds.newMessage();
-        }
-        scrollToBottom();
-      };
-      
-      socketInstance.on("newMessage", handleNewMessage);
 
-      // Listen for disconnect events
-      const handleDisconnect = (response: any) => {
-        if (isCleanedUp) return; // Ignore if component is unmounted
-        
-        console.log("[MEETING] User disconnected:", response);
-        if (response.user && response.user.id !== user.id) {
+        handleUserJoinedWebRTC(normalizedUser);
+      });
+
+      // Listen for user left
+      const handleUserLeft = (userData: UserData) => {
+        if (isCleanedUp) return;
+        console.log("[MEETING] 👋 User left:", userData);
+
+        if (userData && userData.id) {
           const userName =
-            response.user.displayName ||
-            response.user.nickname ||
-            response.user.email ||
+            userData.displayName ||
+            userData.nickname ||
+            userData.email ||
             "Usuario";
           toast.info(`${userName} salió de la reunión`);
           notificationSounds.userLeft();
-          
-          // Remove the disconnected user from participants list
+          // Optimistic UI update: remove from participants immediately
           setParticipants((prev) =>
-            prev.filter((p) => String(p.userId) !== String(response.user.id))
+            prev.filter((p) => String(p.userId) !== String(userData.id))
           );
+          setMicStates((prev) => {
+            const updated = { ...prev };
+            delete updated[String(userData.id)];
+            return updated;
+          });
+          setCameraStates((prev) => {
+            const updated = { ...prev };
+            delete updated[String(userData.id)];
+            return updated;
+          });
+          // Stop any remote audio/video for this user
+          const audioEl = remoteAudiosRef.current.get(String(userData.id));
+          if (audioEl) {
+            audioEl.srcObject = null;
+            remoteAudiosRef.current.delete(String(userData.id));
+          }
+          const remoteStream = remoteStreamsRef.current.get(
+            String(userData.id)
+          );
+          if (remoteStream) {
+            remoteStream.getTracks().forEach((t) => t.stop());
+            remoteStreamsRef.current.delete(String(userData.id));
+          }
+          // Then reconcile with backend state
+          refreshParticipants();
         }
       };
-      
-      socketInstance.on("disconnect", handleDisconnect);
 
-      // Listen for when users leave the room
-      const handleUserLeft = (data: any) => {
-        if (isCleanedUp) return; // Ignore if component is unmounted
-        
-        console.log("[MEETING] User left room:", data);
-        if (data.userId && data.userId !== user.id) {
-          // Remove the user from participants list
-          setParticipants((prev) =>
-            prev.filter((p) => String(p.userId) !== String(data.userId))
+      webrtcSocket.on("user_left", handleUserLeft);
+      // Chat server emits payload as { success, message, user }
+      chatSocket.on("userLeft", (payload: any) => {
+        console.log("[MEETING] 👋 userLeft event from chat server:", payload);
+        const rawUser = payload?.user;
+        if (!rawUser) return;
+
+        const normalizedUser: UserData = {
+          id: String(rawUser.id ?? rawUser.userId ?? rawUser.uid ?? ""),
+          userId: String(rawUser.id ?? rawUser.userId ?? rawUser.uid ?? ""),
+          email: rawUser.email ?? "",
+          nickname: rawUser.nickname,
+          displayName: rawUser.displayName,
+          user: {
+            id: String(rawUser.id ?? rawUser.userId ?? rawUser.uid ?? ""),
+            email: rawUser.email ?? "",
+            nickname: rawUser.nickname,
+            displayName: rawUser.displayName,
+          },
+        };
+
+        handleUserLeft(normalizedUser);
+      });
+
+      // Listen for media state changes from other users
+      const handleMediaStateChange = ({
+        userId,
+        micEnabled,
+        cameraEnabled,
+      }: {
+        userId: string;
+        micEnabled: boolean;
+        cameraEnabled: boolean;
+      }) => {
+        if (isCleanedUp) return;
+        console.log(
+          `[MEETING] 📡 Media state changed for user ${userId}: mic=${micEnabled}, camera=${cameraEnabled}`
+        );
+
+        setMicStates((prev) => ({ ...prev, [userId]: micEnabled }));
+        setCameraStates((prev) => ({ ...prev, [userId]: cameraEnabled }));
+      };
+
+      chatSocket.on("user_media_changed", handleMediaStateChange);
+
+      // Listen for messages from CHAT server
+      const handleNewMessage = (messageData: unknown) => {
+        if (isCleanedUp) return;
+        console.log("[MEETING] 📨 New message received:", messageData);
+        // Normalize payloads from different chat servers
+        const payload = (messageData as Record<string, unknown>) || {};
+        const normalized: Message = {
+          id: (payload.id as string) || `srv-${Date.now()}`,
+          userId: (payload.userId as string) || "",
+          roomId: meetingId,
+          content: (payload.content as string) || (payload.msg as string) || "",
+          visibility: (payload.visibility as Message["visibility"]) || "public",
+          createdAt: (payload.createdAt as string) || new Date().toISOString(),
+          user:
+            typeof payload.user === "object" && payload.user !== null
+              ? (payload.user as Message["user"])
+              : undefined,
+        };
+        // If message is from current user and user field missing, populate it
+        if (
+          normalized.userId === String(user?.id) &&
+          !normalized.user &&
+          user
+        ) {
+          normalized.user = {
+            id: String(user.id),
+            email: user.email || "",
+            displayName: user.displayName || undefined,
+            nickname: user.nickname || undefined,
+          };
+        } else if (!normalized.user && normalized.userId) {
+          // Fallback: try to resolve user data from cache/participants
+          const cachedUser = userCacheRef.current.get(
+            String(normalized.userId)
           );
-          notificationSounds.userLeft();
-          toast.info("Un usuario salió de la reunión");
+          if (cachedUser) {
+            normalized.user = {
+              id: String(cachedUser.id),
+              email: cachedUser.email || "",
+              nickname: cachedUser.nickname,
+              displayName:
+                cachedUser.displayName ||
+                cachedUser.nickname ||
+                cachedUser.email?.split("@")[0] ||
+                undefined,
+            };
+          }
+        }
+        console.log("[MEETING] 📨 Normalized message:", {
+          id: normalized.id,
+          userId: normalized.userId,
+          user: normalized.user,
+          content: normalized.content.substring(0, 50),
+        });
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === normalized.id)) return prev;
+          return [...prev, normalized];
+        });
+        scrollToBottom();
+        notificationSounds.newMessage();
+      };
+
+      // Standalone chat microservice events
+      chatSocket.on("new_success", handleNewMessage);
+      chatSocket.on("message_success", handleNewMessage);
+
+      // Handle disconnection
+      const handleDisconnect = (reason: string) => {
+        if (isCleanedUp) return;
+        console.log("[MEETING] ⚠️ Disconnected:", reason);
+        if (reason === "io server disconnect") {
+          toast.warning("Desconectado del servidor");
         }
       };
-      
-      socketInstance.on("userLeft", handleUserLeft);
+
+      chatSocket.on("disconnect", handleDisconnect);
+      webrtcSocket.on("disconnect", handleDisconnect);
+
+      // Listen for room ended (host finalization)
+      const handleRoomEnded = (payload: {
+        success: boolean;
+        roomId: string;
+        message?: string;
+      }) => {
+        if (isCleanedUp) return;
+        console.log("[MEETING] 🔚 Room ended:", payload);
+        toast.error(payload.message || "La reunión ha finalizado");
+        notificationSounds.error();
+        // Cleanup and navigate
+        disconnectFromChat();
+        webrtcManager.cleanup();
+        navigate("/dashboard");
+      };
+
+      chatSocket.on("room_ended", handleRoomEnded);
+      webrtcSocket.on("room_ended", handleRoomEnded);
     };
 
-    setupSocket();
+    setupSockets();
 
+    // Cleanup function
     return () => {
-      console.log("[MEETING] Cleaning up Socket.io listeners");
+      console.log("[MEETING] Cleaning up sockets and WebRTC");
       isCleanedUp = true;
-      if (socketInstance) {
-        // Remove all listeners to prevent duplicates
-        console.log("[MEETING] Removing all socket listeners");
-        socketInstance.off("join_room_success");
-        socketInstance.off("join_room_error");
-        socketInstance.off("usersOnline");
-        socketInstance.off("newMessage");
-        socketInstance.off("disconnect");
-        socketInstance.off("userLeft");
-        console.log("[MEETING] All listeners removed");
+      webrtcJoinedRef.current = false;
+
+      // Remove all listeners from chat socket
+      if (chatSocket) {
+        chatSocket.off("join_room_success");
+        chatSocket.off("join_room_error");
+        chatSocket.off("user_joined");
+        chatSocket.off("usersOnline");
+        chatSocket.off("new_success");
+        chatSocket.off("message_success");
+        chatSocket.off("disconnect");
+        chatSocket.off("userLeft");
+        chatSocket.off("room_users");
+        chatSocket.off("user_media_changed");
+        chatSocket.off("room_ended");
       }
-      // Don't disconnect here - let it stay connected for the meeting
-      // disconnectFromChat();
+
+      // Remove all listeners from WebRTC socket
+      if (webrtcSocket) {
+        webrtcSocket.off("join_room_success");
+        webrtcSocket.off("join_room_error");
+        webrtcSocket.off("user_joined");
+        webrtcSocket.off("user_left");
+        webrtcSocket.off("usersOnline");
+        webrtcSocket.off("disconnect");
+        webrtcSocket.off("room_ended");
+      }
+
+      // Cleanup WebRTC
+      if (isWebRTCInitialized) {
+        webrtcManager.cleanup();
+      }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [meetingId, user?.id]);
+
+  /**
+   * Handle remote stream from WebRTC connection
+   *
+   * @param stream - The remote media stream
+   * @param userId - The ID of the remote user
+   */
+  const handleRemoteStream = useCallback(
+    (stream: MediaStream, userId: string) => {
+      console.log(`[MEETING] 📥 Received remote stream from user ${userId}`);
+      console.log(`[MEETING] Stream has ${stream.getTracks().length} tracks:`);
+      
+      const audioTracks = stream.getAudioTracks();
+      const videoTracks = stream.getVideoTracks();
+      
+      stream.getTracks().forEach((track) => {
+        console.log(
+          `[MEETING]   - ${track.kind} track: enabled=${track.enabled}, readyState=${track.readyState}, muted=${track.muted}`
+        );
+      });
+
+      // Update mic/camera states based on actual track states
+      if (audioTracks.length > 0) {
+        const micEnabled = audioTracks.some(t => t.enabled && t.readyState === 'live');
+        setMicStates((prev) => ({ ...prev, [userId]: micEnabled }));
+        console.log(`[MEETING] 🎤 Updated mic state for ${userId}: ${micEnabled}`);
+      }
+      
+      if (videoTracks.length > 0) {
+        const cameraEnabled = videoTracks.some(t => t.enabled && t.readyState === 'live');
+        setCameraStates((prev) => ({ ...prev, [userId]: cameraEnabled }));
+        console.log(`[MEETING] 📹 Updated camera state for ${userId}: ${cameraEnabled}`);
+      }
+
+      // Store stream for potential video rendering
+      remoteStreamsRef.current.set(userId, stream);
+
+      // Create or update audio element for this user
+      let audioEl = remoteAudiosRef.current.get(userId);
+      if (!audioEl) {
+        audioEl = new Audio();
+        audioEl.autoplay = true;
+        remoteAudiosRef.current.set(userId, audioEl);
+        console.log(`[MEETING] ✅ Audio element created for user ${userId}`);
+      }
+      
+      // Always update the audio element's srcObject to ensure it plays the latest stream
+      if (audioEl.srcObject !== stream) {
+        audioEl.srcObject = stream;
+        // Try to play the audio
+        audioEl.play().catch((err) => {
+          console.warn(`[MEETING] ⚠️ Could not autoplay audio for ${userId}:`, err);
+        });
+        console.log(`[MEETING] ✅ Updated audio element for user ${userId}`);
+      }
+
+      // Attach to a video element if available
+      const videoEl = document.getElementById(
+        `video-${userId}`
+      ) as HTMLVideoElement | null;
+      if (videoEl) {
+        if (videoEl.srcObject !== stream) {
+          videoEl.srcObject = stream;
+          videoEl.play().catch((err) => {
+            console.warn(`[MEETING] ⚠️ Could not play video for ${userId}:`, err);
+          });
+          console.log(`[MEETING] 🎥 Remote video attached for user ${userId}`);
+        }
+      } else {
+        console.log(
+          `[MEETING] ⚠️ Video element not yet rendered for user ${userId}, will attach when rendered`
+        );
+      }
+
+      // Listen for track changes to update states dynamically
+      stream.getTracks().forEach((track) => {
+        track.onended = () => {
+          console.log(`[MEETING] Track ${track.kind} ended for ${userId}`);
+          if (track.kind === 'audio') {
+            setMicStates((prev) => ({ ...prev, [userId]: false }));
+          } else if (track.kind === 'video') {
+            setCameraStates((prev) => ({ ...prev, [userId]: false }));
+          }
+        };
+        
+        track.onmute = () => {
+          console.log(`[MEETING] Track ${track.kind} muted for ${userId}`);
+          if (track.kind === 'audio') {
+            setMicStates((prev) => ({ ...prev, [userId]: false }));
+          } else if (track.kind === 'video') {
+            setCameraStates((prev) => ({ ...prev, [userId]: false }));
+          }
+        };
+        
+        track.onunmute = () => {
+          console.log(`[MEETING] Track ${track.kind} unmuted for ${userId}`);
+          if (track.kind === 'audio') {
+            setMicStates((prev) => ({ ...prev, [userId]: true }));
+          } else if (track.kind === 'video') {
+            setCameraStates((prev) => ({ ...prev, [userId]: true }));
+          }
+        };
+      });
+    },
+    []
+  );
+
+  // Register remote stream handler with WebRTC manager so that
+  // incoming offers/answers also use it by default.
+  useEffect(() => {
+    webrtcManager.setOnRemoteStreamCallback(handleRemoteStream);
+  }, [handleRemoteStream]);
 
   /**
    * Auto-scroll when new messages arrive
@@ -406,6 +954,49 @@ const Meeting: React.FC = () => {
   }, [messages, scrollToBottom]);
 
   /**
+   * Attach remote streams to video and audio elements when they are rendered
+   */
+  useEffect(() => {
+    // For each remote stream, try to attach to video and audio elements
+    remoteStreamsRef.current.forEach((stream, userId) => {
+      // Attach to video element
+      const videoEl = document.getElementById(
+        `video-${userId}`
+      ) as HTMLVideoElement | null;
+      if (videoEl) {
+        if (videoEl.srcObject !== stream) {
+          videoEl.srcObject = stream;
+          videoEl.play().catch((err) => {
+            console.warn(`[MEETING] ⚠️ Could not play video for ${userId}:`, err);
+          });
+          console.log(
+            `[MEETING] 🎥 Attached remote stream to video element for ${userId}`
+          );
+        }
+      }
+
+      // Ensure audio element exists and is updated
+      let audioEl = remoteAudiosRef.current.get(userId);
+      if (!audioEl && stream.getAudioTracks().length > 0) {
+        audioEl = new Audio();
+        audioEl.autoplay = true;
+        audioEl.srcObject = stream;
+        remoteAudiosRef.current.set(userId, audioEl);
+        audioEl.play().catch((err) => {
+          console.warn(`[MEETING] ⚠️ Could not autoplay audio for ${userId}:`, err);
+        });
+        console.log(`[MEETING] 🔊 Created audio element for ${userId}`);
+      } else if (audioEl && audioEl.srcObject !== stream) {
+        audioEl.srcObject = stream;
+        audioEl.play().catch((err) => {
+          console.warn(`[MEETING] ⚠️ Could not play audio for ${userId}:`, err);
+        });
+        console.log(`[MEETING] 🔊 Updated audio element for ${userId}`);
+      }
+    });
+  }, [cameraStates, participants, micStates]); // Re-run when camera/mic states or participants change
+
+  /**
    * Handle sending a message
    */
   const handleSendMessage = async () => {
@@ -415,24 +1006,31 @@ const Meeting: React.FC = () => {
     try {
       const socketInstance = getSocket();
       if (!socketInstance || !socketInstance.connected) {
+        console.error("[MEETING] ❌ Chat socket not connected");
         toast.error("No conectado al servidor de chat");
         return;
       }
 
-      // Send message via Socket.IO (chat server format)
-      socketInstance.emit("sendMessage", {
-        senderId: user.id,
+      console.log("[MEETING] 📤 Sending message:", {
+        msg: content,
+        userId: user.id,
         roomId: meetingId,
-        text: content,
       });
 
-      // Don't add message locally - wait for server response via newMessage event
-      // This prevents duplicate messages
+      // Send message via Socket.IO (standalone chat microservice echoes back to sender)
+      socketInstance.emit("message", {
+        msg: content,
+        visibility: "public",
+        target: null,
+      });
 
+      // Clear input
       setMessageInput("");
       chatInputRef.current?.focus();
+
+      console.log("[MEETING] ✅ Message sent successfully");
     } catch (err) {
-      console.error("[MEETING] Error sending message:", err);
+      console.error("[MEETING] ❌ Error sending message:", err);
       toast.error("Error al enviar mensaje");
     }
   };
@@ -479,6 +1077,18 @@ const Meeting: React.FC = () => {
           roomId: meetingId,
           userId: user?.id || "",
         });
+        // Also broadcast room end so all users exit immediately
+        socketInstance.emit("end_room");
+      }
+
+      // Notify WebRTC server too
+      try {
+        const webrtcSocket = await connectToWebRTC();
+        if (webrtcSocket && webrtcSocket.connected) {
+          webrtcSocket.emit("end_room");
+        }
+      } catch (e) {
+        console.warn("[MEETING] Could not notify WebRTC server end_room", e);
       }
 
       notificationSounds.error();
@@ -507,7 +1117,7 @@ const Meeting: React.FC = () => {
 
       toast?.success("Reunión finalizada correctamente");
       notificationSounds.success();
-      
+
       // Leave room and disconnect
       await leaveRoom(user.id, meetingId);
       const socketInstance = getSocket();
@@ -517,7 +1127,7 @@ const Meeting: React.FC = () => {
           userId: user.id,
         });
       }
-      
+
       disconnectFromChat();
       navigate("/dashboard");
     } catch (err) {
@@ -544,12 +1154,36 @@ const Meeting: React.FC = () => {
       console.log("[MEETING] Updated micStates:", updated);
       return updated;
     });
-    // Note: Mic/camera state changes are handled locally
-    // If you need to sync with other participants, add custom events to chat server
+
+    // Broadcast media state change to other participants
     const socketInstance = getSocket();
     if (socketInstance && socketInstance.connected) {
-      // You can emit custom events here if needed
-      // socketInstance.emit("toggleMic", { roomId: meetingId, userId, isOn: newState });
+      socketInstance.emit("media_state_changed", {
+        micEnabled: newState,
+        cameraEnabled: isCameraOn,
+      });
+      console.log("[MEETING] 📡 Broadcasted mic state change:", newState);
+    }
+
+    // Update WebRTC audio track
+    if (isWebRTCInitialized) {
+      if (newState && !webrtcManager.getLocalStream()) {
+        // Need to start media if not already started
+        webrtcManager
+          .startLocalMedia(true, isCameraOn)
+          .then((stream) => {
+            if (stream && localAudioRef.current) {
+              localAudioRef.current.srcObject = stream;
+            }
+          })
+          .catch((error) => {
+            console.error("[MEETING] ❌ Error starting media:", error);
+            toast.error("Error al activar el micrófono");
+            setIsMicOn(false);
+          });
+      } else {
+        webrtcManager.toggleAudio(newState);
+      }
     }
   };
 
@@ -571,12 +1205,52 @@ const Meeting: React.FC = () => {
       console.log("[MEETING] Updated cameraStates:", updated);
       return updated;
     });
-    // Note: Mic/camera state changes are handled locally
-    // If you need to sync with other participants, add custom events to chat server
+
+    // Broadcast media state change to other participants
     const socketInstance = getSocket();
     if (socketInstance && socketInstance.connected) {
-      // You can emit custom events here if needed
-      // socketInstance.emit("toggleCamera", { roomId: meetingId, userId, isOn: newState });
+      socketInstance.emit("media_state_changed", {
+        micEnabled: isMicOn,
+        cameraEnabled: newState,
+      });
+      console.log("[MEETING] 📡 Broadcasted camera state change:", newState);
+    }
+
+    // Update WebRTC video track
+    if (isWebRTCInitialized) {
+      if (newState) {
+        // When turning camera on, need to acquire video stream
+        console.log("[MEETING] Requesting video stream...");
+        webrtcManager
+          .startLocalMedia(isMicOn, true)
+          .then((stream) => {
+            if (stream) {
+              // Propagate new stream to all existing peer connections
+              webrtcManager.updateLocalStream(stream);
+
+              if (localAudioRef.current) {
+                localAudioRef.current.srcObject = stream;
+              }
+              if (localVideoRef.current) {
+                localVideoRef.current.srcObject = stream;
+                console.log(
+                  "[MEETING] ✅ Video stream attached to local video element"
+                );
+              }
+              console.log("[MEETING] ✅ Camera enabled, stream attached");
+            }
+          })
+          .catch((error) => {
+            console.error("[MEETING] ❌ Error starting camera:", error);
+            toast.error("Error al activar la cámara");
+            setIsCameraOn(false);
+            setCameraStates((prev) => ({ ...prev, [userId]: false }));
+          });
+      } else {
+        // When turning camera off, just disable the track
+        console.log("[MEETING] Disabling video track...");
+        webrtcManager.toggleVideo(false);
+      }
     }
   };
 
@@ -810,12 +1484,10 @@ const Meeting: React.FC = () => {
                   `  - nickname: "${pUser?.nickname}", displayName: "${pUser?.displayName}", email: "${pUser?.email}"`
                 );
 
-                if (displayName === "Usuario") {
-                  console.error(
-                    `  ❌ PROBLEMA: No se encontró nombre para userId ${participantUserId}`
+                if (displayName === "Usuario" && import.meta.env.DEV) {
+                  console.debug(
+                    `[MEETING] Nombre no resuelto para userId ${participantUserId} (mostrando "Usuario")`
                   );
-                  console.error(`  - participant.user existe?:`, !!pUser);
-                  console.error(`  - Objeto completo:`, participant);
                 }
               }
 
@@ -828,7 +1500,18 @@ const Meeting: React.FC = () => {
 
               return (
                 <div key={participant.id} className="video-tile">
-                  <div className="participant-avatar">{initial}</div>
+                  {cameraStates[participantUserId] ? (
+                    <video
+                      id={`video-${participantUserId}`}
+                      ref={isCurrentUser ? localVideoRef : undefined}
+                      autoPlay
+                      playsInline
+                      muted={isCurrentUser}
+                      className="participant-video"
+                    />
+                  ) : (
+                    <div className="participant-avatar">{initial}</div>
+                  )}
                   <div className="participant-info">
                     <span className="participant-name">
                       {displayName}
@@ -1181,15 +1864,46 @@ const Meeting: React.FC = () => {
                 <div className="chat-messages">
                   {messages.map((message) => {
                     const isOwnMessage = message.userId === user?.id;
-                    const displayName = isOwnMessage
-                      ? user?.displayName ||
+
+                    // Try to resolve a friendly name for the author
+                    let displayName: string | undefined;
+
+                    if (isOwnMessage) {
+                      // 1) Current user from auth store
+                      displayName =
+                        user?.displayName ||
                         user?.nickname ||
-                        user?.email ||
-                        "Usuario"
-                      : message.user?.displayName ||
+                        user?.email?.split("@")[0];
+
+                      // 2) Fallback to participant info if available
+                      if (!displayName && participants.length > 0) {
+                        const selfParticipant = participants.find(
+                          (p) => String(p.userId) === String(user?.id)
+                        );
+                        const pUser = selfParticipant?.user;
+                        displayName =
+                          pUser?.nickname ||
+                          pUser?.displayName ||
+                          pUser?.email?.split("@")[0];
+                      }
+                    } else {
+                      // Message from other user
+                      const participant = participants.find(
+                        (p) => String(p.userId) === String(message.userId)
+                      );
+                      const pUser = participant?.user;
+
+                      displayName =
                         message.user?.nickname ||
-                        message.user?.email ||
-                        "Usuario";
+                        message.user?.displayName ||
+                        message.user?.email?.split("@")[0] ||
+                        pUser?.nickname ||
+                        pUser?.displayName ||
+                        pUser?.email?.split("@")[0];
+                    }
+
+                    // Final fallback
+                    displayName = displayName || "Usuario";
                     const initial = displayName[0].toUpperCase();
 
                     return (
@@ -1261,6 +1975,9 @@ const Meeting: React.FC = () => {
           </aside>
         )}
       </div>
+
+      {/* Hidden audio element for local stream (muted to prevent echo) */}
+      <audio ref={localAudioRef} muted autoPlay style={{ display: "none" }} />
     </div>
   );
 };

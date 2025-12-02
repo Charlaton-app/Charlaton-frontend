@@ -5,7 +5,7 @@ import { getAccessToken } from "./getAccessToken";
  * Base URL of the chat microservice.
  *
  * - In production it should come from `VITE_CHAT_SERVER_URL`.
- * - During local development it falls back to `http://localhost:4000`.
+ * - During local development it falls back to `http://localhost:3000` (backend with chat)
  */
 const CHAT_SERVER_URL =
   import.meta.env.VITE_CHAT_SERVER_URL || "http://localhost:4000";
@@ -43,7 +43,9 @@ export async function connectToChat(): Promise<Socket | null> {
     return null;
   }
 
-  console.log(`[SOCKET] Creating new connection to chat server: ${CHAT_SERVER_URL}`);
+  console.log(
+    `[SOCKET] Creating new connection to chat server: ${CHAT_SERVER_URL}`
+  );
   console.log("[SOCKET] Connecting with JWT token...");
 
   // Create new socket connection with authentication
