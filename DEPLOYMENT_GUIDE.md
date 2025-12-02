@@ -5,6 +5,7 @@ This guide provides step-by-step instructions for deploying the Charlaton applic
 ## Prerequisites
 
 Before deploying, ensure you have:
+
 - [ ] Firebase project with Firestore enabled
 - [ ] Firebase service account JSON key
 - [ ] JWT secret keys (must be the same across all services)
@@ -121,6 +122,7 @@ VITE_WEBRTC_SERVER_URL=https://your-webrtc-server.render.com
    ```
 
 4. **Important Settings**:
+
    - Select Node.js runtime
    - Choose appropriate instance type (Starter or higher)
    - Enable "Auto-Deploy" for automatic updates
@@ -225,7 +227,7 @@ Open browser console and run:
 
 ```javascript
 const socket = io("https://your-chat-server.render.com", {
-  auth: { token: "your-jwt-token" }
+  auth: { token: "your-jwt-token" },
 });
 
 socket.on("connect", () => console.log("✅ Connected"));
@@ -248,6 +250,7 @@ socket.on("connect_error", (err) => console.error("❌ Error:", err));
 **Symptoms**: "Failed to connect to chat server" error
 
 **Solutions**:
+
 1. Verify chat server is running: `curl https://your-chat-server/health`
 2. Check CORS settings in chat server `.env`
 3. Ensure JWT tokens are valid
@@ -259,6 +262,7 @@ socket.on("connect_error", (err) => console.error("❌ Error:", err));
 **Symptoms**: Users join but can't hear each other
 
 **Solutions**:
+
 1. Verify HTTPS is enabled (required for getUserMedia)
 2. Check browser permissions for microphone
 3. Test with different browsers/devices
@@ -270,6 +274,7 @@ socket.on("connect_error", (err) => console.error("❌ Error:", err));
 **Symptoms**: ICE candidates not exchanging or connection state stuck at "connecting"
 
 **Solutions**:
+
 1. Check firewall/NAT settings
 2. Verify STUN/TURN server configuration
 3. Test with different network environments
@@ -281,6 +286,7 @@ socket.on("connect_error", (err) => console.error("❌ Error:", err));
 **Symptoms**: Audio cuts out or significant delay
 
 **Solutions**:
+
 1. Verify server resources (CPU, memory, bandwidth)
 2. Check network quality between users
 3. Consider using TURN server for relay
@@ -292,11 +298,13 @@ socket.on("connect_error", (err) => console.error("❌ Error:", err));
 ### Backend Services
 
 **View Logs on Render**:
+
 1. Go to your service dashboard
 2. Click "Logs" tab
 3. Monitor for errors or warnings
 
 **Important Log Patterns**:
+
 ```
 [AUTH] ✅ JWT verified for user
 [ROOM] 👤 User attempting to join room
@@ -307,6 +315,7 @@ socket.on("connect_error", (err) => console.error("❌ Error:", err));
 ### Frontend Monitoring
 
 Use browser DevTools Console to monitor:
+
 ```
 [MEETING] Setting up Socket.io listeners
 [MEETING] ✅ Successfully joined room
@@ -324,13 +333,14 @@ Use browser DevTools Console to monitor:
 Add to backend servers:
 
 ```typescript
-import compression from 'compression';
+import compression from "compression";
 app.use(compression());
 ```
 
 ### 2. CDN Configuration
 
 Use Cloudflare or similar CDN for:
+
 - Static assets
 - Frontend hosting
 - DDoS protection
@@ -362,7 +372,7 @@ Use Cloudflare or similar CDN for:
 ### 2. CORS Configuration
 
 - Explicitly list allowed origins
-- Don't use wildcard (*) in production
+- Don't use wildcard (\*) in production
 - Include credentials: true only when needed
 
 ### 3. Rate Limiting
@@ -370,14 +380,14 @@ Use Cloudflare or similar CDN for:
 Implement rate limiting on all endpoints:
 
 ```typescript
-import rateLimit from 'express-rate-limit';
+import rateLimit from "express-rate-limit";
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: 100, // limit each IP to 100 requests per windowMs
 });
 
-app.use('/api/', limiter);
+app.use("/api/", limiter);
 ```
 
 ### 4. Input Validation
@@ -392,6 +402,7 @@ app.use('/api/', limiter);
 ### Horizontal Scaling
 
 For high traffic, consider:
+
 - Load balancing across multiple instances
 - Session affinity for WebSocket connections
 - Distributed state management (Redis)
@@ -437,6 +448,7 @@ For high traffic, consider:
 ### Getting Help
 
 If you encounter issues:
+
 1. Check application logs
 2. Review browser console errors
 3. Test individual components

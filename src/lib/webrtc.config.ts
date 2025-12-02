@@ -1,10 +1,10 @@
 /**
  * WebRTC Configuration and Service
- * 
+ *
  * This module handles WebRTC peer-to-peer connections for audio and video streaming.
  * It follows a 1:1 connection model where each participant creates individual connections
  * to every other participant in the room.
- * 
+ *
  * Key responsibilities:
  * - Manage local media streams (audio/video)
  * - Create and manage peer connections
@@ -44,16 +44,16 @@ class WebRTCManager {
 
   /**
    * Initialize the WebRTC manager
-   * 
+   *
    * @param roomId - The room ID to join
    * @param userId - The current user's ID
-   * @param chatSocket - The WebSocket connection for signaling
+   * @param webrtcSocket - The WebSocket connection for WebRTC signaling
    * @returns Promise that resolves when initialization is complete
    */
   async initialize(
     roomId: string,
     userId: string,
-    chatSocket: Socket
+    webrtcSocket: Socket
   ): Promise<void> {
     if (this.isInitialized) {
       console.log("[WEBRTC] Already initialized");
@@ -61,9 +61,11 @@ class WebRTCManager {
     }
 
     console.log(`[WEBRTC] Initializing for room ${roomId}, user ${userId}`);
+    console.log(`[WEBRTC] Socket connected: ${webrtcSocket?.connected}`);
+    console.log(`[WEBRTC] Socket ID: ${webrtcSocket?.id}`);
 
     this.roomId = roomId;
-    this.socket = chatSocket;
+    this.socket = webrtcSocket;
 
     // Setup WebRTC signaling listeners
     this.setupSignalingListeners();
@@ -111,7 +113,9 @@ class WebRTCManager {
 
     this.socket.on("userDisconnected", ({ user }) => {
       if (user && user.id) {
-        console.log(`[WEBRTC] User ${user.id} disconnected, closing connection`);
+        console.log(
+          `[WEBRTC] User ${user.id} disconnected, closing connection`
+        );
         this.closePeerConnection(user.id);
       }
     });
@@ -119,7 +123,7 @@ class WebRTCManager {
 
   /**
    * Start local media (audio and/or video)
-   * 
+   *
    * @param audioEnabled - Enable audio capture
    * @param videoEnabled - Enable video capture
    * @returns Promise that resolves with the local media stream
@@ -129,7 +133,9 @@ class WebRTCManager {
     videoEnabled: boolean = false
   ): Promise<MediaStream | null> {
     try {
-      console.log(`[WEBRTC] Starting local media - audio: ${audioEnabled}, video: ${videoEnabled}`);
+      console.log(
+        `[WEBRTC] Starting local media - audio: ${audioEnabled}, video: ${videoEnabled}`
+      );
 
       const constraints: MediaStreamConstraints = {
         audio: audioEnabled,
@@ -138,6 +144,11 @@ class WebRTCManager {
 
       this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
       console.log("[WEBRTC] ✅ Local media stream acquired");
+      console.log(`[WEBRTC] 🎤 Audio tracks: ${this.localStream.getAudioTracks().length}`);
+      console.log(`[WEBRTC] 📹 Video tracks: ${this.localStream.getVideoTracks().length}`);
+      this.localStream.getTracks().forEach((track) => {
+        console.log(`[WEBRTC] Track: ${track.kind}, enabled: ${track.enabled}, readyState: ${track.readyState}`);
+      });
 
       return this.localStream;
     } catch (error) {
@@ -161,35 +172,43 @@ class WebRTCManager {
 
   /**
    * Toggle local audio track
-   * 
+   *
    * @param enabled - Whether audio should be enabled
    */
   toggleAudio(enabled: boolean): void {
     if (this.localStream) {
-      this.localStream.getAudioTracks().forEach((track) => {
+      const audioTracks = this.localStream.getAudioTracks();
+      console.log(`[WEBRTC] 🎤 Toggling audio to ${enabled}, tracks: ${audioTracks.length}`);
+      audioTracks.forEach((track) => {
         track.enabled = enabled;
+        console.log(`[WEBRTC] Audio track ${track.id} enabled: ${track.enabled}`);
       });
-      console.log(`[WEBRTC] Audio ${enabled ? "enabled" : "disabled"}`);
+    } else {
+      console.warn("[WEBRTC] ⚠️ Cannot toggle audio: no local stream");
     }
   }
 
   /**
    * Toggle local video track
-   * 
+   *
    * @param enabled - Whether video should be enabled
    */
   toggleVideo(enabled: boolean): void {
     if (this.localStream) {
-      this.localStream.getVideoTracks().forEach((track) => {
+      const videoTracks = this.localStream.getVideoTracks();
+      console.log(`[WEBRTC] 📹 Toggling video to ${enabled}, tracks: ${videoTracks.length}`);
+      videoTracks.forEach((track) => {
         track.enabled = enabled;
+        console.log(`[WEBRTC] Video track ${track.id} enabled: ${track.enabled}`);
       });
-      console.log(`[WEBRTC] Video ${enabled ? "enabled" : "disabled"}`);
+    } else {
+      console.warn("[WEBRTC] ⚠️ Cannot toggle video: no local stream");
     }
   }
 
   /**
    * Create a peer connection to another user
-   * 
+   *
    * @param targetUserId - The ID of the user to connect to
    * @param onRemoteStream - Callback when remote stream is available
    * @returns The created peer connection
@@ -218,9 +237,13 @@ class WebRTCManager {
 
     // Add local tracks to peer connection
     if (this.localStream) {
+      console.log(`[WEBRTC] Adding local tracks to peer connection for ${targetUserId}`);
       this.localStream.getTracks().forEach((track) => {
+        console.log(`[WEBRTC] Adding ${track.kind} track (enabled: ${track.enabled}) to ${targetUserId}`);
         peerConnection.addTrack(track, this.localStream!);
       });
+    } else {
+      console.warn(`[WEBRTC] ⚠️ No local stream available when creating peer to ${targetUserId}`);
     }
 
     // Handle ICE candidates
@@ -238,12 +261,18 @@ class WebRTCManager {
     // Handle incoming tracks
     peerConnection.ontrack = (event) => {
       console.log(`[WEBRTC] 📥 Received remote track from ${targetUserId}`);
+      console.log(`[WEBRTC] Track kind: ${event.track.kind}, enabled: ${event.track.enabled}`);
+      console.log(`[WEBRTC] Streams count: ${event.streams.length}`);
       event.streams[0].getTracks().forEach((track) => {
+        console.log(`[WEBRTC] Adding remote ${track.kind} track to stream`);
         remoteStream.addTrack(track);
       });
 
       if (onRemoteStream) {
+        console.log(`[WEBRTC] Calling onRemoteStream callback for ${targetUserId}`);
         onRemoteStream(remoteStream, targetUserId);
+      } else {
+        console.warn(`[WEBRTC] ⚠️ No onRemoteStream callback registered for ${targetUserId}`);
       }
     };
 
@@ -274,7 +303,7 @@ class WebRTCManager {
 
   /**
    * Create and send an offer to another user
-   * 
+   *
    * @param targetUserId - The ID of the user to send the offer to
    * @param onRemoteStream - Callback when remote stream is available
    */
@@ -311,13 +340,16 @@ class WebRTCManager {
 
       console.log(`[WEBRTC] ✅ Offer sent to ${targetUserId}`);
     } catch (error) {
-      console.error(`[WEBRTC] ❌ Error creating offer for ${targetUserId}:`, error);
+      console.error(
+        `[WEBRTC] ❌ Error creating offer for ${targetUserId}:`,
+        error
+      );
     }
   }
 
   /**
    * Handle incoming offer from another user
-   * 
+   *
    * @param senderId - The ID of the user who sent the offer
    * @param sdp - The session description
    */
@@ -353,13 +385,16 @@ class WebRTCManager {
 
       console.log(`[WEBRTC] ✅ Answer sent to ${senderId}`);
     } catch (error) {
-      console.error(`[WEBRTC] ❌ Error handling offer from ${senderId}:`, error);
+      console.error(
+        `[WEBRTC] ❌ Error handling offer from ${senderId}:`,
+        error
+      );
     }
   }
 
   /**
    * Handle incoming answer from another user
-   * 
+   *
    * @param senderId - The ID of the user who sent the answer
    * @param sdp - The session description
    */
@@ -382,13 +417,16 @@ class WebRTCManager {
       );
       console.log(`[WEBRTC] ✅ Remote description set for ${senderId}`);
     } catch (error) {
-      console.error(`[WEBRTC] ❌ Error handling answer from ${senderId}:`, error);
+      console.error(
+        `[WEBRTC] ❌ Error handling answer from ${senderId}:`,
+        error
+      );
     }
   }
 
   /**
    * Handle incoming ICE candidate from another user
-   * 
+   *
    * @param senderId - The ID of the user who sent the candidate
    * @param candidate - The ICE candidate
    */
@@ -399,7 +437,9 @@ class WebRTCManager {
     const peerInfo = this.peerConnections.get(senderId);
 
     if (!peerInfo) {
-      console.error(`[WEBRTC] No peer connection found for ICE candidate from ${senderId}`);
+      console.error(
+        `[WEBRTC] No peer connection found for ICE candidate from ${senderId}`
+      );
       return;
     }
 
@@ -407,13 +447,16 @@ class WebRTCManager {
       await peerInfo.connection.addIceCandidate(new RTCIceCandidate(candidate));
       console.log(`[WEBRTC] ✅ ICE candidate added for ${senderId}`);
     } catch (error) {
-      console.error(`[WEBRTC] ❌ Error adding ICE candidate from ${senderId}:`, error);
+      console.error(
+        `[WEBRTC] ❌ Error adding ICE candidate from ${senderId}:`,
+        error
+      );
     }
   }
 
   /**
    * Close a peer connection to a specific user
-   * 
+   *
    * @param userId - The ID of the user to disconnect from
    */
   closePeerConnection(userId: string): void {
@@ -460,7 +503,7 @@ class WebRTCManager {
 
   /**
    * Get all active peer connections
-   * 
+   *
    * @returns Map of user IDs to peer connection info
    */
   getPeerConnections(): Map<string, PeerConnectionInfo> {
@@ -469,7 +512,7 @@ class WebRTCManager {
 
   /**
    * Get the local media stream
-   * 
+   *
    * @returns The local media stream or null
    */
   getLocalStream(): MediaStream | null {
@@ -478,7 +521,7 @@ class WebRTCManager {
 
   /**
    * Check if the manager is initialized
-   * 
+   *
    * @returns True if initialized, false otherwise
    */
   isReady(): boolean {
