@@ -381,6 +381,24 @@ const Meeting: React.FC = () => {
         toast.error("Error al conectar con el servidor de chat");
         return;
       }
+
+      // Wait for chat socket to be fully connected
+      if (!chatSocket.connected) {
+        console.log("[MEETING] Waiting for chat socket to connect...");
+        await new Promise<void>((resolve) => {
+          const timeout = setTimeout(() => {
+            console.error("[MEETING] ❌ Chat socket connection timeout");
+            resolve();
+          }, 10000);
+
+          chatSocket!.once("connect", () => {
+            clearTimeout(timeout);
+            console.log("[MEETING] ✅ Chat socket connected");
+            resolve();
+          });
+        });
+      }
+
       console.log("[MEETING] ✅ Connected to CHAT server");
 
       // ===== 2. Connect to WEBRTC server =====
@@ -391,6 +409,24 @@ const Meeting: React.FC = () => {
         toast.error("Error al conectar con el servidor WebRTC");
         return;
       }
+
+      // Wait for WebRTC socket to be fully connected
+      if (!webrtcSocket.connected) {
+        console.log("[MEETING] Waiting for WebRTC socket to connect...");
+        await new Promise<void>((resolve) => {
+          const timeout = setTimeout(() => {
+            console.error("[MEETING] ❌ WebRTC socket connection timeout");
+            resolve();
+          }, 10000);
+
+          webrtcSocket!.once("connect", () => {
+            clearTimeout(timeout);
+            console.log("[MEETING] ✅ WebRTC socket connected");
+            resolve();
+          });
+        });
+      }
+
       console.log("[MEETING] ✅ Connected to WEBRTC server");
 
       // Remove any existing listeners first to prevent duplicates
@@ -429,6 +465,7 @@ const Meeting: React.FC = () => {
       // Join room in WEBRTC socket (guard against double emission)
       if (!webrtcJoinedRef.current) {
         console.log(`[MEETING] Joining WEBRTC room: ${meetingId}`);
+        console.log(`[MEETING] WebRTC socket connected: ${webrtcSocket.connected}, ID: ${webrtcSocket.id}`);
         webrtcSocket.emit("join_room", { roomId: meetingId, success: true });
         webrtcJoinedRef.current = true;
       } else {

@@ -365,10 +365,12 @@ class WebRTCManager {
   ): Promise<void> {
     if (!this.roomId || !this.socket) {
       console.error("[WEBRTC] Cannot send offer - not initialized");
+      console.error(`[WEBRTC] roomId: ${this.roomId}, socket: ${!!this.socket}`);
       return;
     }
 
     console.log(`[WEBRTC] 📤 Creating and sending offer to ${targetUserId}`);
+    console.log(`[WEBRTC] Socket connected: ${this.socket.connected}, Socket ID: ${this.socket.id}`);
 
     const peerConnection = await this.createPeerConnection(
       targetUserId,
@@ -380,6 +382,11 @@ class WebRTCManager {
       return;
     }
 
+    console.log(`[WEBRTC] Peer connection created for ${targetUserId}`);
+    console.log(`[WEBRTC] Connection state: ${peerConnection.connectionState}`);
+    console.log(`[WEBRTC] ICE connection state: ${peerConnection.iceConnectionState}`);
+    console.log(`[WEBRTC] Signaling state: ${peerConnection.signalingState}`);
+
     try {
       // Ensure we have local tracks before creating offer
       if (this.localStream) {
@@ -387,14 +394,21 @@ class WebRTCManager {
         this.localStream.getTracks().forEach(track => {
           console.log(`[WEBRTC]   - ${track.kind}: enabled=${track.enabled}, readyState=${track.readyState}`);
         });
+      } else {
+        console.warn("[WEBRTC] ⚠️ NO LOCAL STREAM when creating offer!");
       }
 
+      console.log(`[WEBRTC] Creating offer for ${targetUserId}...`);
       const offer = await peerConnection.createOffer({
         offerToReceiveAudio: true,
         offerToReceiveVideo: true
       });
+      console.log(`[WEBRTC] Offer created for ${targetUserId}:`, offer.type);
+      
       await peerConnection.setLocalDescription(offer);
+      console.log(`[WEBRTC] Local description set for ${targetUserId}`);
 
+      console.log(`[WEBRTC] Emitting webrtc_offer to socket...`);
       this.socket.emit("webrtc_offer", {
         roomId: this.roomId,
         targetUserId,
@@ -425,7 +439,8 @@ class WebRTCManager {
       return;
     }
 
-    console.log(`[WEBRTC] Handling offer from ${senderId}`);
+    console.log(`[WEBRTC] 🔵 Handling offer from ${senderId}`);
+    console.log(`[WEBRTC] Offer type: ${sdp.type}`);
 
     // Create peer connection with the default onRemoteStream callback stored during initialization
     const peerConnection = await this.createPeerConnection(senderId, this.defaultOnRemoteStream);
@@ -435,8 +450,13 @@ class WebRTCManager {
       return;
     }
 
+    console.log(`[WEBRTC] Peer connection created, setting remote description...`);
+
     try {
       await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
+      console.log(`[WEBRTC] ✅ Remote description set for ${senderId}`);
+      console.log(`[WEBRTC] Connection state: ${peerConnection.connectionState}`);
+      console.log(`[WEBRTC] Signaling state: ${peerConnection.signalingState}`);
 
       // Ensure we have local tracks before creating answer
       if (this.localStream) {
@@ -444,14 +464,21 @@ class WebRTCManager {
         this.localStream.getTracks().forEach(track => {
           console.log(`[WEBRTC]   - ${track.kind}: enabled=${track.enabled}, readyState=${track.readyState}`);
         });
+      } else {
+        console.warn("[WEBRTC] ⚠️ NO LOCAL STREAM when creating answer!");
       }
 
+      console.log(`[WEBRTC] Creating answer for ${senderId}...`);
       const answer = await peerConnection.createAnswer({
         offerToReceiveAudio: true,
         offerToReceiveVideo: true
       });
+      console.log(`[WEBRTC] Answer created for ${senderId}:`, answer.type);
+      
       await peerConnection.setLocalDescription(answer);
+      console.log(`[WEBRTC] Local description (answer) set for ${senderId}`);
 
+      console.log(`[WEBRTC] Emitting webrtc_answer to socket...`);
       this.socket.emit("webrtc_answer", {
         roomId: this.roomId,
         targetUserId: senderId,
@@ -477,20 +504,28 @@ class WebRTCManager {
     senderId: string,
     sdp: RTCSessionDescriptionInit
   ): Promise<void> {
-    console.log(`[WEBRTC] Handling answer from ${senderId}`);
+    console.log(`[WEBRTC] 🟢 Handling answer from ${senderId}`);
+    console.log(`[WEBRTC] Answer type: ${sdp.type}`);
 
     const peerInfo = this.peerConnections.get(senderId);
 
     if (!peerInfo) {
-      console.error(`[WEBRTC] No peer connection found for ${senderId}`);
+      console.error(`[WEBRTC] ❌ No peer connection found for ${senderId}`);
+      console.error(`[WEBRTC] Available peers: ${Array.from(this.peerConnections.keys()).join(', ')}`);
       return;
     }
+
+    console.log(`[WEBRTC] Peer connection found for ${senderId}`);
+    console.log(`[WEBRTC] Current signaling state: ${peerInfo.connection.signalingState}`);
 
     try {
       await peerInfo.connection.setRemoteDescription(
         new RTCSessionDescription(sdp)
       );
-      console.log(`[WEBRTC] ✅ Remote description set for ${senderId}`);
+      console.log(`[WEBRTC] ✅ Remote description (answer) set for ${senderId}`);
+      console.log(`[WEBRTC] Connection state: ${peerInfo.connection.connectionState}`);
+      console.log(`[WEBRTC] ICE connection state: ${peerInfo.connection.iceConnectionState}`);
+      console.log(`[WEBRTC] Signaling state: ${peerInfo.connection.signalingState}`);
     } catch (error) {
       console.error(
         `[WEBRTC] ❌ Error handling answer from ${senderId}:`,
@@ -509,18 +544,26 @@ class WebRTCManager {
     senderId: string,
     candidate: RTCIceCandidateInit
   ): Promise<void> {
+    console.log(`[WEBRTC] 🧊 Handling ICE candidate from ${senderId}`);
+    console.log(`[WEBRTC] Candidate: ${candidate.candidate?.substring(0, 50)}...`);
+
     const peerInfo = this.peerConnections.get(senderId);
 
     if (!peerInfo) {
       console.error(
-        `[WEBRTC] No peer connection found for ICE candidate from ${senderId}`
+        `[WEBRTC] ❌ No peer connection found for ICE candidate from ${senderId}`
       );
+      console.error(`[WEBRTC] Available peers: ${Array.from(this.peerConnections.keys()).join(', ')}`);
       return;
     }
+
+    console.log(`[WEBRTC] Peer connection found, adding ICE candidate`);
+    console.log(`[WEBRTC] Current ICE connection state: ${peerInfo.connection.iceConnectionState}`);
 
     try {
       await peerInfo.connection.addIceCandidate(new RTCIceCandidate(candidate));
       console.log(`[WEBRTC] ✅ ICE candidate added for ${senderId}`);
+      console.log(`[WEBRTC] New ICE connection state: ${peerInfo.connection.iceConnectionState}`);
     } catch (error) {
       console.error(
         `[WEBRTC] ❌ Error adding ICE candidate from ${senderId}:`,
