@@ -186,12 +186,26 @@ class WebRTCManager {
    */
   updateLocalStream(stream: MediaStream): void {
     console.log("[WEBRTC] 🔄 Updating local stream for all peer connections");
+    console.log(`[WEBRTC] New stream has ${stream.getTracks().length} tracks`);
+
+    // Stop old tracks if they exist
+    if (this.localStream) {
+      this.localStream.getTracks().forEach((track) => {
+        // Only stop tracks that are not in the new stream
+        const stillExists = stream.getTracks().some((t) => t.id === track.id);
+        if (!stillExists) {
+          console.log(`[WEBRTC] Stopping old ${track.kind} track ${track.id}`);
+          track.stop();
+        }
+      });
+    }
 
     // Replace reference
     this.localStream = stream;
 
-    this.peerConnections.forEach(({ connection }) => {
+    this.peerConnections.forEach(({ connection, userId }) => {
       const senders = connection.getSenders();
+      console.log(`[WEBRTC] Updating tracks for peer connection to ${userId}`);
 
       stream.getTracks().forEach((track) => {
         const existingSender = senders.find(
@@ -200,19 +214,22 @@ class WebRTCManager {
 
         if (existingSender) {
           console.log(
-            `[WEBRTC] Replacing ${track.kind} track on existing sender ${existingSender.track?.id}`
+            `[WEBRTC] Replacing ${track.kind} track on existing sender for ${userId}`
           );
           existingSender
             .replaceTrack(track)
+            .then(() => {
+              console.log(`[WEBRTC] ✅ Successfully replaced ${track.kind} track for ${userId}`);
+            })
             .catch((err) =>
               console.error(
-                `[WEBRTC] ❌ Error replacing ${track.kind} track:`,
+                `[WEBRTC] ❌ Error replacing ${track.kind} track for ${userId}:`,
                 err
               )
             );
         } else {
           console.log(
-            `[WEBRTC] Adding new ${track.kind} track to peer connection`
+            `[WEBRTC] Adding new ${track.kind} track to peer connection for ${userId}`
           );
           connection.addTrack(track, stream);
         }
@@ -326,19 +343,45 @@ class WebRTCManager {
     peerConnection.ontrack = (event) => {
       console.log(`[WEBRTC] 📥 Received remote track from ${targetUserId}`);
       console.log(
-        `[WEBRTC] Track kind: ${event.track.kind}, enabled: ${event.track.enabled}`
+        `[WEBRTC] Track kind: ${event.track.kind}, enabled: ${event.track.enabled}, readyState: ${event.track.readyState}`
       );
       console.log(`[WEBRTC] Streams count: ${event.streams.length}`);
-      event.streams[0].getTracks().forEach((track) => {
-        console.log(`[WEBRTC] Adding remote ${track.kind} track to stream`);
-        remoteStream.addTrack(track);
-      });
+      
+      // Check if track already exists in the stream
+      const existingTrack = remoteStream.getTracks().find(
+        (t) => t.id === event.track.id || t.kind === event.track.kind
+      );
+      
+      if (!existingTrack) {
+        console.log(`[WEBRTC] Adding remote ${event.track.kind} track to stream`);
+        remoteStream.addTrack(event.track);
+      } else {
+        console.log(`[WEBRTC] Track ${event.track.kind} already exists, updating reference`);
+        // Replace the existing track
+        remoteStream.removeTrack(existingTrack);
+        remoteStream.addTrack(event.track);
+      }
+
+      // Listen for track state changes
+      event.track.onended = () => {
+        console.log(`[WEBRTC] Remote ${event.track.kind} track ended for ${targetUserId}`);
+        remoteStream.removeTrack(event.track);
+      };
+      
+      event.track.onmute = () => {
+        console.log(`[WEBRTC] Remote ${event.track.kind} track muted for ${targetUserId}`);
+      };
+      
+      event.track.onunmute = () => {
+        console.log(`[WEBRTC] Remote ${event.track.kind} track unmuted for ${targetUserId}`);
+      };
 
       const handler = onRemoteStream || this.onRemoteStreamCallback;
       if (handler) {
         console.log(
           `[WEBRTC] Calling onRemoteStream callback for ${targetUserId}`
         );
+        // Call handler with the updated stream
         handler(remoteStream, targetUserId);
       } else {
         console.warn(
