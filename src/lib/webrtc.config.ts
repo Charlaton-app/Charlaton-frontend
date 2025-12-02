@@ -41,6 +41,9 @@ class WebRTCManager {
   private socket: Socket | null = null;
   private roomId: string | null = null;
   private isInitialized = false;
+  private onRemoteStreamCallback:
+    | ((stream: MediaStream, userId: string) => void)
+    | null = null;
 
   /**
    * Initialize the WebRTC manager
@@ -177,6 +180,47 @@ class WebRTCManager {
   }
 
   /**
+   * Update the local media stream used by all existing peer connections.
+   * This is useful when the user toggles the camera and we obtain
+   * a new MediaStream that includes video tracks.
+   */
+  updateLocalStream(stream: MediaStream): void {
+    console.log("[WEBRTC] 🔄 Updating local stream for all peer connections");
+
+    // Replace reference
+    this.localStream = stream;
+
+    this.peerConnections.forEach(({ connection }) => {
+      const senders = connection.getSenders();
+
+      stream.getTracks().forEach((track) => {
+        const existingSender = senders.find(
+          (s) => s.track && s.track.kind === track.kind
+        );
+
+        if (existingSender) {
+          console.log(
+            `[WEBRTC] Replacing ${track.kind} track on existing sender ${existingSender.track?.id}`
+          );
+          existingSender
+            .replaceTrack(track)
+            .catch((err) =>
+              console.error(
+                `[WEBRTC] ❌ Error replacing ${track.kind} track:`,
+                err
+              )
+            );
+        } else {
+          console.log(
+            `[WEBRTC] Adding new ${track.kind} track to peer connection`
+          );
+          connection.addTrack(track, stream);
+        }
+      });
+    });
+  }
+
+  /**
    * Toggle local audio track
    *
    * @param enabled - Whether audio should be enabled
@@ -290,17 +334,20 @@ class WebRTCManager {
         remoteStream.addTrack(track);
       });
 
-      if (onRemoteStream) {
+      const handler = onRemoteStream || this.onRemoteStreamCallback;
+      if (handler) {
         console.log(
           `[WEBRTC] Calling onRemoteStream callback for ${targetUserId}`
         );
-        onRemoteStream(remoteStream, targetUserId);
+        handler(remoteStream, targetUserId);
       } else {
         console.warn(
           `[WEBRTC] ⚠️ No onRemoteStream callback registered for ${targetUserId}`
         );
       }
     };
+
+    // Store peer connection
 
     // Handle connection state changes
     peerConnection.onconnectionstatechange = () => {
@@ -317,7 +364,6 @@ class WebRTCManager {
       }
     };
 
-    // Store peer connection
     this.peerConnections.set(targetUserId, {
       connection: peerConnection,
       userId: targetUserId,
@@ -325,6 +371,17 @@ class WebRTCManager {
     });
 
     return peerConnection;
+  }
+
+  /**
+   * Configure a default handler for remote streams.
+   * This is used when peer connections are created implicitly
+   * from incoming offers/answers.
+   */
+  setOnRemoteStreamCallback(
+    handler: (stream: MediaStream, userId: string) => void
+  ): void {
+    this.onRemoteStreamCallback = handler;
   }
 
   /**

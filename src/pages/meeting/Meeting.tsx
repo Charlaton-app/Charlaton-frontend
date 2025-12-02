@@ -122,7 +122,9 @@ const Meeting: React.FC = () => {
     if (participantsResponse.error || !participantsResponse.data) {
       return;
     }
-    const fetched = participantsResponse.data;
+    // Prefer connections that have resolved user information (backend-created)
+    // to avoid duplicates coming from auxiliary services that only store userId.
+    const fetched = participantsResponse.data.filter((p) => p.user);
     // De-duplicate by userId, prefer entries with user info
     const byUserId = new Map<string, Participant>();
     for (const p of fetched) {
@@ -409,11 +411,12 @@ const Meeting: React.FC = () => {
               webrtcSocket
             );
 
-            // Start local media (audio enabled by default, video disabled)
+            // Start local media with audio + video tracks negotiated,
+            // but keep mic and camera muted/disabled by default.
             console.log("[MEETING] Starting local media...");
             const localStream = await webrtcManager.startLocalMedia(
               true,
-              false
+              true
             );
 
             if (localStream && localAudioRef.current) {
@@ -430,11 +433,12 @@ const Meeting: React.FC = () => {
             }
 
             setIsWebRTCInitialized(true);
-            // Start with mic muted to align initial UI state
+            // Start with mic and camera muted to align initial UI state
             setIsMicOn(false);
             webrtcManager.toggleAudio(false);
+            webrtcManager.toggleVideo(false);
             console.log(
-              "[MEETING] ✅ WebRTC initialized successfully (mic muted by default)"
+              "[MEETING] ✅ WebRTC initialized successfully (mic/camera muted by default)"
             );
           } catch (error) {
             console.error("[MEETING] ❌ Error initializing WebRTC:", error);
@@ -760,6 +764,12 @@ const Meeting: React.FC = () => {
     []
   );
 
+  // Register remote stream handler with WebRTC manager so that
+  // incoming offers/answers also use it by default.
+  useEffect(() => {
+    webrtcManager.setOnRemoteStreamCallback(handleRemoteStream);
+  }, [handleRemoteStream]);
+
   /**
    * Auto-scroll when new messages arrive
    */
@@ -1016,6 +1026,9 @@ const Meeting: React.FC = () => {
           .startLocalMedia(isMicOn, true)
           .then((stream) => {
             if (stream) {
+              // Propagate new stream to all existing peer connections
+              webrtcManager.updateLocalStream(stream);
+
               if (localAudioRef.current) {
                 localAudioRef.current.srcObject = stream;
               }
