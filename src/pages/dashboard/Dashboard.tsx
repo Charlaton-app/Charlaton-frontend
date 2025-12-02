@@ -215,7 +215,11 @@ const Dashboard: React.FC = () => {
   /**
    * Load user's recent meetings (dummy data, sin llamadas al backend)
    */
-  const loadRecentMeetings = useCallback(() => {
+  const loadRecentMeetings = useCallback((page: number = 1) => {
+    // En modo dummy solo tenemos una página, pero usamos el parámetro
+    // para mantener el mismo contrato de paginación.
+    const targetPage = Math.max(1, page);
+
     // Datos ficticios de ejemplo
     const fakeMeetings = [
       {
@@ -231,7 +235,7 @@ const Dashboard: React.FC = () => {
     setLoadingMeetings(true);
     setRecentMeetings(fakeMeetings);
     setTotalPages(1);
-    setCurrentPage(1);
+    setCurrentPage(targetPage);
     setLoadingMeetings(false);
   }, []);
 
@@ -251,7 +255,7 @@ const Dashboard: React.FC = () => {
 
   // Load meetings and stats on mount
   useEffect(() => {
-    loadRecentMeetings();
+    loadRecentMeetings(1);
     loadUserStats();
   }, [loadRecentMeetings, loadUserStats]);
 
