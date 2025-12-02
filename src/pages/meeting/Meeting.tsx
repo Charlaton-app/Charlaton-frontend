@@ -399,13 +399,19 @@ const Meeting: React.FC = () => {
               );
             }
 
+            // Set initialized BEFORE updating states so usersOnline can send offers
             setIsWebRTCInitialized(true);
-            // Start with mic and camera muted to align initial UI state
-            setIsMicOn(false);
-            webrtcManager.toggleAudio(false);
-            webrtcManager.toggleVideo(false);
+            
+            // Start with mic and camera ENABLED for host
+            setIsMicOn(true);
+            setIsCameraOn(true);
+            
+            // Update mic/camera states for current user immediately
+            setMicStates((prev) => ({ ...prev, [String(user.id)]: true }));
+            setCameraStates((prev) => ({ ...prev, [String(user.id)]: true }));
+            
             console.log(
-              "[MEETING] ✅ WebRTC initialized successfully (mic/camera muted by default)"
+              "[MEETING] ✅ WebRTC initialized successfully (mic/camera enabled)"
             );
           } catch (error) {
             console.error("[MEETING] ❌ Error initializing WebRTC:", error);

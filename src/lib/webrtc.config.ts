@@ -40,6 +40,7 @@ class WebRTCManager {
   private peerConnections: Map<string, PeerConnectionInfo> = new Map();
   private socket: Socket | null = null;
   private roomId: string | null = null;
+  private userId: string | null = null; // Current user ID
   private isInitialized = false;
   private onRemoteStreamCallback:
     | ((stream: MediaStream, userId: string) => void)
@@ -68,6 +69,7 @@ class WebRTCManager {
     console.log(`[WEBRTC] Socket ID: ${webrtcSocket?.id}`);
 
     this.roomId = roomId;
+    this.userId = userId; // Store current user ID
     this.socket = webrtcSocket;
 
     // Setup WebRTC signaling listeners
@@ -91,17 +93,41 @@ class WebRTCManager {
     // Handle incoming WebRTC offers
     this.socket.on("webrtc_offer", async ({ senderId, sdp }) => {
       console.log(`[WEBRTC] 📥 Received offer from ${senderId}`);
+      console.log(`[WEBRTC] 🔍 Offer SDP analysis:`);
+      if (sdp && sdp.sdp) {
+        const hasAudio = sdp.sdp.includes('m=audio');
+        const hasVideo = sdp.sdp.includes('m=video');
+        const audioActive = sdp.sdp.match(/m=audio.*\s+a=sendrecv/);
+        const videoActive = sdp.sdp.match(/m=video.*\s+a=sendrecv/);
+        console.log(`[WEBRTC]   - Has audio track: ${hasAudio}`);
+        console.log(`[WEBRTC]   - Has video track: ${hasVideo}`);
+        console.log(`[WEBRTC]   - Audio active (sendrecv): ${!!audioActive}`);
+        console.log(`[WEBRTC]   - Video active (sendrecv): ${!!videoActive}`);
+        console.log(`[WEBRTC]   - SDP length: ${sdp.sdp.length} chars`);
+      }
       await this.handleOffer(senderId, sdp);
     });
 
     // Handle incoming WebRTC answers
     this.socket.on("webrtc_answer", async ({ senderId, sdp }) => {
       console.log(`[WEBRTC] 📥 Received answer from ${senderId}`);
+      console.log(`[WEBRTC] 🔍 Answer SDP analysis:`);
+      if (sdp && sdp.sdp) {
+        const hasAudio = sdp.sdp.includes('m=audio');
+        const hasVideo = sdp.sdp.includes('m=video');
+        const audioActive = sdp.sdp.match(/m=audio.*\s+a=sendrecv/);
+        const videoActive = sdp.sdp.match(/m=video.*\s+a=sendrecv/);
+        console.log(`[WEBRTC]   - Has audio track: ${hasAudio}`);
+        console.log(`[WEBRTC]   - Has video track: ${hasVideo}`);
+        console.log(`[WEBRTC]   - Audio active (sendrecv): ${!!audioActive}`);
+        console.log(`[WEBRTC]   - Video active (sendrecv): ${!!videoActive}`);
+      }
       await this.handleAnswer(senderId, sdp);
     });
 
     // Handle incoming ICE candidates
-    this.socket.on("webrtc_ice_candidate", async ({ senderId, candidate }) => {
+    // Backend emits as "ice_candidate" (without webrtc_ prefix)
+    this.socket.on("ice_candidate", async ({ senderId, candidate }) => {
       console.log(`[WEBRTC] 📥 Received ICE candidate from ${senderId}`);
       await this.handleIceCandidate(senderId, candidate);
     });
@@ -147,16 +173,28 @@ class WebRTCManager {
 
       this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
       console.log("[WEBRTC] ✅ Local media stream acquired");
-      console.log(
-        `[WEBRTC] 🎤 Audio tracks: ${this.localStream.getAudioTracks().length}`
-      );
-      console.log(
-        `[WEBRTC] 📹 Video tracks: ${this.localStream.getVideoTracks().length}`
-      );
+      console.log(`[WEBRTC] 🎤 Audio tracks: ${this.localStream.getAudioTracks().length}`);
+      console.log(`[WEBRTC] 📹 Video tracks: ${this.localStream.getVideoTracks().length}`);
+      console.log(`[WEBRTC] 📊 Local stream ID: ${this.localStream.id}`);
+      
       this.localStream.getTracks().forEach((track) => {
-        console.log(
-          `[WEBRTC] Track: ${track.kind}, enabled: ${track.enabled}, readyState: ${track.readyState}`
-        );
+        console.log(`[WEBRTC] 🎬 Track details:`);
+        console.log(`[WEBRTC]   - Kind: ${track.kind}`);
+        console.log(`[WEBRTC]   - ID: ${track.id}`);
+        console.log(`[WEBRTC]   - Label: ${track.label}`);
+        console.log(`[WEBRTC]   - Enabled: ${track.enabled}`);
+        console.log(`[WEBRTC]   - ReadyState: ${track.readyState}`);
+        console.log(`[WEBRTC]   - Muted: ${track.muted}`);
+        
+        // Log track settings
+        const settings = track.getSettings();
+        if (track.kind === 'audio') {
+          console.log(`[WEBRTC]   - Sample rate: ${settings.sampleRate}`);
+          console.log(`[WEBRTC]   - Channel count: ${settings.channelCount}`);
+        } else if (track.kind === 'video') {
+          console.log(`[WEBRTC]   - Resolution: ${settings.width}x${settings.height}`);
+          console.log(`[WEBRTC]   - Frame rate: ${settings.frameRate}`);
+        }
       });
 
       return this.localStream;
@@ -329,11 +367,12 @@ class WebRTCManager {
 
     // Handle ICE candidates
     peerConnection.onicecandidate = (event) => {
-      if (event.candidate && this.socket && this.roomId) {
-        console.log(`[WEBRTC] 📤 Sending ICE candidate to ${targetUserId}`);
+      if (event.candidate && this.socket && this.userId) {
+        console.log(`[WEBRTC] 📤 Sending ICE candidate to room (target: ${targetUserId})`);
+        // Backend expects: { senderId, candidate }
+        // senderId should be the current user's ID, not socket.id
         this.socket.emit("webrtc_ice_candidate", {
-          roomId: this.roomId,
-          targetUserId,
+          senderId: this.userId,
           candidate: event.candidate,
         });
       }
@@ -341,11 +380,33 @@ class WebRTCManager {
 
     // Handle incoming tracks
     peerConnection.ontrack = (event) => {
-      console.log(`[WEBRTC] 📥 Received remote track from ${targetUserId}`);
-      console.log(
-        `[WEBRTC] Track kind: ${event.track.kind}, enabled: ${event.track.enabled}, readyState: ${event.track.readyState}`
-      );
-      console.log(`[WEBRTC] Streams count: ${event.streams.length}`);
+      console.log(`[WEBRTC] 📥 ========== RECEIVED REMOTE TRACK ==========`);
+      console.log(`[WEBRTC] 📥 From user: ${targetUserId}`);
+      console.log(`[WEBRTC] 📥 Track details:`);
+      console.log(`[WEBRTC]   - Kind: ${event.track.kind}`);
+      console.log(`[WEBRTC]   - ID: ${event.track.id}`);
+      console.log(`[WEBRTC]   - Label: ${event.track.label}`);
+      console.log(`[WEBRTC]   - Enabled: ${event.track.enabled}`);
+      console.log(`[WEBRTC]   - ReadyState: ${event.track.readyState}`);
+      console.log(`[WEBRTC]   - Muted: ${event.track.muted}`);
+      console.log(`[WEBRTC] 📥 Streams count: ${event.streams.length}`);
+      
+      if (event.streams.length > 0) {
+        console.log(`[WEBRTC] 📥 Stream ID: ${event.streams[0].id}`);
+        console.log(`[WEBRTC] 📥 Stream tracks count: ${event.streams[0].getTracks().length}`);
+      }
+      
+      // Get track settings
+      const settings = event.track.getSettings();
+      if (event.track.kind === 'audio') {
+        console.log(`[WEBRTC] 🎤 Audio settings:`);
+        console.log(`[WEBRTC]   - Sample rate: ${settings.sampleRate || 'N/A'}`);
+        console.log(`[WEBRTC]   - Channel count: ${settings.channelCount || 'N/A'}`);
+      } else if (event.track.kind === 'video') {
+        console.log(`[WEBRTC] 📹 Video settings:`);
+        console.log(`[WEBRTC]   - Resolution: ${settings.width}x${settings.height}`);
+        console.log(`[WEBRTC]   - Frame rate: ${settings.frameRate}`);
+      }
       
       // Check if track already exists in the stream
       const existingTrack = remoteStream.getTracks().find(
@@ -353,13 +414,14 @@ class WebRTCManager {
       );
       
       if (!existingTrack) {
-        console.log(`[WEBRTC] Adding remote ${event.track.kind} track to stream`);
+        console.log(`[WEBRTC] ➕ Adding remote ${event.track.kind} track to stream`);
         remoteStream.addTrack(event.track);
+        console.log(`[WEBRTC] ✅ Remote stream now has ${remoteStream.getTracks().length} tracks`);
       } else {
-        console.log(`[WEBRTC] Track ${event.track.kind} already exists, updating reference`);
-        // Replace the existing track
+        console.log(`[WEBRTC] 🔄 Track ${event.track.kind} already exists, updating reference`);
         remoteStream.removeTrack(existingTrack);
         remoteStream.addTrack(event.track);
+        console.log(`[WEBRTC] ✅ Track replaced, stream has ${remoteStream.getTracks().length} tracks`);
       }
 
       // Listen for track state changes
@@ -394,15 +456,38 @@ class WebRTCManager {
 
     // Handle connection state changes
     peerConnection.onconnectionstatechange = () => {
-      console.log(
-        `[WEBRTC] Connection state with ${targetUserId}: ${peerConnection.connectionState}`
-      );
+      console.log(`[WEBRTC] 🔌 ========== CONNECTION STATE CHANGE ==========`);
+      console.log(`[WEBRTC] 🔌 User: ${targetUserId}`);
+      console.log(`[WEBRTC] 🔌 Connection State: ${peerConnection.connectionState}`);
+      console.log(`[WEBRTC] 🔌 ICE Connection State: ${peerConnection.iceConnectionState}`);
+      console.log(`[WEBRTC] 🔌 ICE Gathering State: ${peerConnection.iceGatheringState}`);
+      console.log(`[WEBRTC] 🔌 Signaling State: ${peerConnection.signalingState}`);
+      
+      // Log current tracks being sent/received
+      const senders = peerConnection.getSenders();
+      const receivers = peerConnection.getReceivers();
+      console.log(`[WEBRTC] 📤 Senders (outgoing): ${senders.length}`);
+      senders.forEach((sender, index) => {
+        if (sender.track) {
+          console.log(`[WEBRTC]   ${index + 1}. ${sender.track.kind}: enabled=${sender.track.enabled}, readyState=${sender.track.readyState}`);
+        } else {
+          console.warn(`[WEBRTC]   ${index + 1}. NO TRACK`);
+        }
+      });
+      console.log(`[WEBRTC] 📥 Receivers (incoming): ${receivers.length}`);
+      receivers.forEach((receiver, index) => {
+        if (receiver.track) {
+          console.log(`[WEBRTC]   ${index + 1}. ${receiver.track.kind}: enabled=${receiver.track.enabled}, readyState=${receiver.track.readyState}`);
+        }
+      });
 
-      if (
+      if (peerConnection.connectionState === "connected") {
+        console.log(`[WEBRTC] ✅ ========== SUCCESSFULLY CONNECTED to ${targetUserId} ==========`);
+      } else if (
         peerConnection.connectionState === "failed" ||
         peerConnection.connectionState === "closed"
       ) {
-        console.log(`[WEBRTC] Connection to ${targetUserId} failed/closed`);
+        console.error(`[WEBRTC] ❌ Connection to ${targetUserId} ${peerConnection.connectionState}`);
         this.closePeerConnection(targetUserId);
       }
     };
@@ -455,16 +540,63 @@ class WebRTCManager {
     }
 
     try {
+      // Log senders BEFORE creating offer
+      const sendersBeforeOffer = peerConnection.getSenders();
+      console.log(`[WEBRTC] 🔍 ========== CREATING OFFER ==========`);
+      console.log(`[WEBRTC] 🔍 Target user: ${targetUserId}`);
+      console.log(`[WEBRTC] 🔍 Current user (senderId): ${this.userId}`);
+      console.log(`[WEBRTC] 🔍 Senders before offer: ${sendersBeforeOffer.length}`);
+      sendersBeforeOffer.forEach((sender, index) => {
+        if (sender.track) {
+          console.log(`[WEBRTC] 🔍 Sender ${index + 1}:`);
+          console.log(`[WEBRTC]   - Kind: ${sender.track.kind}`);
+          console.log(`[WEBRTC]   - Track ID: ${sender.track.id}`);
+          console.log(`[WEBRTC]   - Enabled: ${sender.track.enabled}`);
+          console.log(`[WEBRTC]   - ReadyState: ${sender.track.readyState}`);
+          console.log(`[WEBRTC]   - Muted: ${sender.track.muted}`);
+        } else {
+          console.warn(`[WEBRTC] ⚠️ Sender ${index + 1} has NO track attached!`);
+        }
+      });
+      
+      console.log(`[WEBRTC] 🎬 Creating offer...`);
       const offer = await peerConnection.createOffer();
+      
+      console.log(`[WEBRTC] 📝 Offer created successfully`);
+      console.log(`[WEBRTC] 📝 Offer SDP analysis:`);
+      if (offer.sdp) {
+        const hasAudio = offer.sdp.includes('m=audio');
+        const hasVideo = offer.sdp.includes('m=video');
+        const audioSendrecv = offer.sdp.includes('a=sendrecv') && hasAudio;
+        const videoSendrecv = offer.sdp.includes('a=sendrecv') && hasVideo;
+        
+        console.log(`[WEBRTC]   - Type: ${offer.type}`);
+        console.log(`[WEBRTC]   - SDP length: ${offer.sdp.length} chars`);
+        console.log(`[WEBRTC]   - Has audio track: ${hasAudio}`);
+        console.log(`[WEBRTC]   - Has video track: ${hasVideo}`);
+        console.log(`[WEBRTC]   - Audio sendrecv: ${audioSendrecv}`);
+        console.log(`[WEBRTC]   - Video sendrecv: ${videoSendrecv}`);
+        
+        // Log first 300 chars of SDP for debugging
+        console.log(`[WEBRTC]   - SDP preview: ${offer.sdp.substring(0, 300)}...`);
+      }
+      
       await peerConnection.setLocalDescription(offer);
+      console.log(`[WEBRTC] ✅ Local description set`);
 
+      // Backend expects: { senderId, sdp }
+      // senderId should be the current user's ID, not socket.id
+      console.log(`[WEBRTC] 📤 Emitting offer to server:`);
+      console.log(`[WEBRTC]   - Event: webrtc_offer`);
+      console.log(`[WEBRTC]   - senderId: ${this.userId}`);
+      console.log(`[WEBRTC]   - Target (for routing): ${targetUserId}`);
+      
       this.socket.emit("webrtc_offer", {
-        roomId: this.roomId,
-        targetUserId,
+        senderId: this.userId,
         sdp: offer,
       });
 
-      console.log(`[WEBRTC] ✅ Offer sent to ${targetUserId}`);
+      console.log(`[WEBRTC] ✅ Offer successfully sent to server (from: ${this.userId}, target: ${targetUserId})`); 
     } catch (error) {
       console.error(
         `[WEBRTC] ❌ Error creating offer for ${targetUserId}:`,
@@ -498,18 +630,64 @@ class WebRTCManager {
     }
 
     try {
+      console.log(`[WEBRTC] 📝 ========== SETTING REMOTE DESCRIPTION (OFFER) ==========`);
+      console.log(`[WEBRTC] 📝 From user: ${senderId}`);
+      console.log(`[WEBRTC] 📝 Setting remote description...`);
       await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
+      console.log(`[WEBRTC] ✅ Remote description set successfully`);
+      
+      // Log receivers after setting remote description
+      const receivers = peerConnection.getReceivers();
+      console.log(`[WEBRTC] 📥 Receivers after setRemoteDescription: ${receivers.length}`);
+      receivers.forEach((receiver, index) => {
+        if (receiver.track) {
+          console.log(`[WEBRTC]   Receiver ${index + 1}: ${receiver.track.kind} (id: ${receiver.track.id})`);
+        }
+      });
 
+      console.log(`[WEBRTC] 🎬 Creating answer for ${senderId}...`);
       const answer = await peerConnection.createAnswer();
+      
+      console.log(`[WEBRTC] 📝 Answer created successfully`);
+      console.log(`[WEBRTC] 📝 Answer SDP analysis:`);
+      if (answer.sdp) {
+        const hasAudio = answer.sdp.includes('m=audio');
+        const hasVideo = answer.sdp.includes('m=video');
+        const audioSendrecv = answer.sdp.includes('a=sendrecv') && hasAudio;
+        const videoSendrecv = answer.sdp.includes('a=sendrecv') && hasVideo;
+        
+        console.log(`[WEBRTC]   - Type: ${answer.type}`);
+        console.log(`[WEBRTC]   - Has audio track: ${hasAudio}`);
+        console.log(`[WEBRTC]   - Has video track: ${hasVideo}`);
+        console.log(`[WEBRTC]   - Audio sendrecv: ${audioSendrecv}`);
+        console.log(`[WEBRTC]   - Video sendrecv: ${videoSendrecv}`);
+      }
+      
       await peerConnection.setLocalDescription(answer);
+      console.log(`[WEBRTC] ✅ Local description (answer) set successfully`);
+      
+      // Log senders in answer
+      const senders = peerConnection.getSenders();
+      console.log(`[WEBRTC] 📤 Senders in answer: ${senders.length}`);
+      senders.forEach((sender, index) => {
+        if (sender.track) {
+          console.log(`[WEBRTC]   Sender ${index + 1}: ${sender.track.kind} (enabled: ${sender.track.enabled}, readyState: ${sender.track.readyState})`);
+        }
+      });
 
+      // Backend expects: { senderId, sdp }
+      // senderId should be the current user's ID, not socket.id
+      console.log(`[WEBRTC] 📤 Emitting answer to server:`);
+      console.log(`[WEBRTC]   - Event: webrtc_answer`);
+      console.log(`[WEBRTC]   - senderId: ${this.userId}`);
+      console.log(`[WEBRTC]   - Target (for routing): ${senderId}`);
+      
       this.socket.emit("webrtc_answer", {
-        roomId: this.roomId,
-        targetUserId: senderId,
+        senderId: this.userId,
         sdp: answer,
       });
 
-      console.log(`[WEBRTC] ✅ Answer sent to ${senderId}`);
+      console.log(`[WEBRTC] ✅ Answer successfully sent to server (from: ${this.userId}, target: ${senderId})`); 
     } catch (error) {
       console.error(
         `[WEBRTC] ❌ Error handling offer from ${senderId}:`,
@@ -538,10 +716,35 @@ class WebRTCManager {
     }
 
     try {
+      console.log(`[WEBRTC] 📝 ========== SETTING REMOTE DESCRIPTION (ANSWER) ==========`);
+      console.log(`[WEBRTC] 📝 From user: ${senderId}`);
+      console.log(`[WEBRTC] 📝 Setting remote description (answer)...`);
       await peerInfo.connection.setRemoteDescription(
         new RTCSessionDescription(sdp)
       );
-      console.log(`[WEBRTC] ✅ Remote description set for ${senderId}`);
+      console.log(`[WEBRTC] ✅ Remote description (answer) set successfully`);
+      
+      // Log final state after answer
+      const pc = peerInfo.connection;
+      console.log(`[WEBRTC] 🔍 Final connection state:`);
+      console.log(`[WEBRTC]   - Signaling state: ${pc.signalingState}`);
+      console.log(`[WEBRTC]   - ICE connection state: ${pc.iceConnectionState}`);
+      console.log(`[WEBRTC]   - Connection state: ${pc.connectionState}`);
+      
+      const senders = pc.getSenders();
+      const receivers = pc.getReceivers();
+      console.log(`[WEBRTC] 📤 Final senders: ${senders.length}`);
+      senders.forEach((sender, index) => {
+        if (sender.track) {
+          console.log(`[WEBRTC]   ${index + 1}. ${sender.track.kind} (enabled: ${sender.track.enabled})`);
+        }
+      });
+      console.log(`[WEBRTC] 📥 Final receivers: ${receivers.length}`);
+      receivers.forEach((receiver, index) => {
+        if (receiver.track) {
+          console.log(`[WEBRTC]   ${index + 1}. ${receiver.track.kind} (enabled: ${receiver.track.enabled})`);
+        }
+      });
     } catch (error) {
       console.error(
         `[WEBRTC] ❌ Error handling answer from ${senderId}:`,
@@ -622,6 +825,7 @@ class WebRTCManager {
 
     this.isInitialized = false;
     this.roomId = null;
+    this.userId = null;
     this.socket = null;
 
     console.log("[WEBRTC] ✅ Cleanup complete");
