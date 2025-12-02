@@ -1,6 +1,6 @@
 /**
  * WebRTC Socket Configuration
- * 
+ *
  * Manages connection to the dedicated WebRTC signaling server (port 5050)
  * This is SEPARATE from the chat server connection.
  */
@@ -76,7 +76,9 @@ export async function connectToWebRTC(): Promise<Socket | null> {
 
   webrtcSocket.on("connect_error", (error) => {
     if (error.message === "timeout") {
-      console.log("[WEBRTC-SOCKET] Connection attempt is still pending, retrying...");
+      console.log(
+        "[WEBRTC-SOCKET] Connection attempt is still pending, retrying..."
+      );
       return;
     }
     console.error("[WEBRTC-SOCKET] ❌ Connection error:", error.message);

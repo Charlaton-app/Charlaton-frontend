@@ -144,10 +144,16 @@ class WebRTCManager {
 
       this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
       console.log("[WEBRTC] ✅ Local media stream acquired");
-      console.log(`[WEBRTC] 🎤 Audio tracks: ${this.localStream.getAudioTracks().length}`);
-      console.log(`[WEBRTC] 📹 Video tracks: ${this.localStream.getVideoTracks().length}`);
+      console.log(
+        `[WEBRTC] 🎤 Audio tracks: ${this.localStream.getAudioTracks().length}`
+      );
+      console.log(
+        `[WEBRTC] 📹 Video tracks: ${this.localStream.getVideoTracks().length}`
+      );
       this.localStream.getTracks().forEach((track) => {
-        console.log(`[WEBRTC] Track: ${track.kind}, enabled: ${track.enabled}, readyState: ${track.readyState}`);
+        console.log(
+          `[WEBRTC] Track: ${track.kind}, enabled: ${track.enabled}, readyState: ${track.readyState}`
+        );
       });
 
       return this.localStream;
@@ -178,10 +184,14 @@ class WebRTCManager {
   toggleAudio(enabled: boolean): void {
     if (this.localStream) {
       const audioTracks = this.localStream.getAudioTracks();
-      console.log(`[WEBRTC] 🎤 Toggling audio to ${enabled}, tracks: ${audioTracks.length}`);
+      console.log(
+        `[WEBRTC] 🎤 Toggling audio to ${enabled}, tracks: ${audioTracks.length}`
+      );
       audioTracks.forEach((track) => {
         track.enabled = enabled;
-        console.log(`[WEBRTC] Audio track ${track.id} enabled: ${track.enabled}`);
+        console.log(
+          `[WEBRTC] Audio track ${track.id} enabled: ${track.enabled}`
+        );
       });
     } else {
       console.warn("[WEBRTC] ⚠️ Cannot toggle audio: no local stream");
@@ -196,10 +206,14 @@ class WebRTCManager {
   toggleVideo(enabled: boolean): void {
     if (this.localStream) {
       const videoTracks = this.localStream.getVideoTracks();
-      console.log(`[WEBRTC] 📹 Toggling video to ${enabled}, tracks: ${videoTracks.length}`);
+      console.log(
+        `[WEBRTC] 📹 Toggling video to ${enabled}, tracks: ${videoTracks.length}`
+      );
       videoTracks.forEach((track) => {
         track.enabled = enabled;
-        console.log(`[WEBRTC] Video track ${track.id} enabled: ${track.enabled}`);
+        console.log(
+          `[WEBRTC] Video track ${track.id} enabled: ${track.enabled}`
+        );
       });
     } else {
       console.warn("[WEBRTC] ⚠️ Cannot toggle video: no local stream");
@@ -237,13 +251,19 @@ class WebRTCManager {
 
     // Add local tracks to peer connection
     if (this.localStream) {
-      console.log(`[WEBRTC] Adding local tracks to peer connection for ${targetUserId}`);
+      console.log(
+        `[WEBRTC] Adding local tracks to peer connection for ${targetUserId}`
+      );
       this.localStream.getTracks().forEach((track) => {
-        console.log(`[WEBRTC] Adding ${track.kind} track (enabled: ${track.enabled}) to ${targetUserId}`);
+        console.log(
+          `[WEBRTC] Adding ${track.kind} track (enabled: ${track.enabled}) to ${targetUserId}`
+        );
         peerConnection.addTrack(track, this.localStream!);
       });
     } else {
-      console.warn(`[WEBRTC] ⚠️ No local stream available when creating peer to ${targetUserId}`);
+      console.warn(
+        `[WEBRTC] ⚠️ No local stream available when creating peer to ${targetUserId}`
+      );
     }
 
     // Handle ICE candidates
@@ -261,7 +281,9 @@ class WebRTCManager {
     // Handle incoming tracks
     peerConnection.ontrack = (event) => {
       console.log(`[WEBRTC] 📥 Received remote track from ${targetUserId}`);
-      console.log(`[WEBRTC] Track kind: ${event.track.kind}, enabled: ${event.track.enabled}`);
+      console.log(
+        `[WEBRTC] Track kind: ${event.track.kind}, enabled: ${event.track.enabled}`
+      );
       console.log(`[WEBRTC] Streams count: ${event.streams.length}`);
       event.streams[0].getTracks().forEach((track) => {
         console.log(`[WEBRTC] Adding remote ${track.kind} track to stream`);
@@ -269,10 +291,14 @@ class WebRTCManager {
       });
 
       if (onRemoteStream) {
-        console.log(`[WEBRTC] Calling onRemoteStream callback for ${targetUserId}`);
+        console.log(
+          `[WEBRTC] Calling onRemoteStream callback for ${targetUserId}`
+        );
         onRemoteStream(remoteStream, targetUserId);
       } else {
-        console.warn(`[WEBRTC] ⚠️ No onRemoteStream callback registered for ${targetUserId}`);
+        console.warn(
+          `[WEBRTC] ⚠️ No onRemoteStream callback registered for ${targetUserId}`
+        );
       }
     };
 
