@@ -180,8 +180,8 @@ class WebRTCService {
    * 
    * @param enabled - Whether audio should be enabled
    */
-  toggleAudio(enabled: boolean): void {
-    webrtcManager.toggleAudio(enabled);
+  async toggleAudio(enabled: boolean): Promise<void> {
+    await webrtcManager.toggleAudio(enabled);
   }
 
   /**
@@ -189,8 +189,8 @@ class WebRTCService {
    * 
    * @param enabled - Whether video should be enabled
    */
-  toggleVideo(enabled: boolean): void {
-    webrtcManager.toggleVideo(enabled);
+  async toggleVideo(enabled: boolean): Promise<void> {
+    await webrtcManager.toggleVideo(enabled);
   }
 
   /**
@@ -198,8 +198,8 @@ class WebRTCService {
    * 
    * @param stream - The new media stream
    */
-  updateLocalStream(stream: MediaStream): void {
-    webrtcManager.updateLocalStream(stream);
+  async updateLocalStream(stream: MediaStream): Promise<void> {
+    await webrtcManager.updateLocalStream(stream);
   }
 
   /**

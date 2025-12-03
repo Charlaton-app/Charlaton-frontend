@@ -227,13 +227,16 @@ class WebRTCManager {
    * This is useful when the user toggles the camera and we obtain
    * a new MediaStream that includes video tracks.
    */
-  updateLocalStream(stream: MediaStream): void {
+  async updateLocalStream(stream: MediaStream): Promise<void> {
     console.log("[WEBRTC] 🔄 Updating local stream for all peer connections");
 
     // Replace reference
     this.localStream = stream;
 
-    this.peerConnections.forEach(({ connection }) => {
+    // Track if we need to renegotiate
+    const needsRenegotiation: string[] = [];
+
+    this.peerConnections.forEach(({ connection, userId }) => {
       const senders = connection.getSenders();
 
       stream.getTracks().forEach((track) => {
@@ -243,10 +246,13 @@ class WebRTCManager {
 
         if (existingSender) {
           console.log(
-            `[WEBRTC] Replacing ${track.kind} track on existing sender ${existingSender.track?.id}`
+            `[WEBRTC] Replacing ${track.kind} track for user ${userId}`
           );
           existingSender
             .replaceTrack(track)
+            .then(() => {
+              console.log(`[WEBRTC] ✅ ${track.kind} track replaced for ${userId}`);
+            })
             .catch((err) =>
               console.error(
                 `[WEBRTC] ❌ Error replacing ${track.kind} track:`,
@@ -255,12 +261,50 @@ class WebRTCManager {
             );
         } else {
           console.log(
-            `[WEBRTC] Adding new ${track.kind} track to peer connection`
+            `[WEBRTC] Adding new ${track.kind} track to peer connection for ${userId}`
           );
           connection.addTrack(track, stream);
+          // Mark for renegotiation when adding new track
+          if (!needsRenegotiation.includes(userId)) {
+            needsRenegotiation.push(userId);
+          }
         }
       });
     });
+
+    // Renegotiate connections that need it
+    for (const userId of needsRenegotiation) {
+      console.log(`[WEBRTC] 🔄 Renegotiating connection with ${userId}`);
+      await this.renegotiateConnection(userId);
+    }
+  }
+
+  /**
+   * Renegotiate an existing peer connection
+   * This is needed when adding new tracks
+   */
+  private async renegotiateConnection(userId: string): Promise<void> {
+    const peerInfo = this.peerConnections.get(userId);
+    
+    if (!peerInfo || !this.socket) {
+      console.error(`[WEBRTC] Cannot renegotiate - peer ${userId} not found`);
+      return;
+    }
+
+    try {
+      console.log(`[WEBRTC] Creating new offer for ${userId}`);
+      const offer = await peerInfo.connection.createOffer();
+      await peerInfo.connection.setLocalDescription(offer);
+
+      this.socket.emit("webrtc_offer", {
+        senderId: this.socket.id,
+        sdp: offer,
+      });
+
+      console.log(`[WEBRTC] ✅ Renegotiation offer sent to ${userId}`);
+    } catch (error) {
+      console.error(`[WEBRTC] ❌ Error renegotiating with ${userId}:`, error);
+    }
   }
 
   /**
@@ -268,18 +312,55 @@ class WebRTCManager {
    *
    * @param enabled - Whether audio should be enabled
    */
-  toggleAudio(enabled: boolean): void {
+  async toggleAudio(enabled: boolean): Promise<void> {
     if (this.localStream) {
       const audioTracks = this.localStream.getAudioTracks();
       console.log(
         `[WEBRTC] 🎤 Toggling audio to ${enabled}, tracks: ${audioTracks.length}`
       );
-      audioTracks.forEach((track) => {
-        track.enabled = enabled;
-        console.log(
-          `[WEBRTC] Audio track ${track.id} enabled: ${track.enabled}`
-        );
-      });
+      
+      if (audioTracks.length > 0) {
+        // If we have audio tracks, just enable/disable them
+        audioTracks.forEach((track) => {
+          track.enabled = enabled;
+          console.log(
+            `[WEBRTC] Audio track ${track.id} enabled: ${track.enabled}`
+          );
+        });
+      } else if (enabled) {
+        // If we want to enable audio but don't have tracks, we need to get them
+        console.log("[WEBRTC] No audio tracks found, requesting microphone access");
+        try {
+          const audioStream = await navigator.mediaDevices.getUserMedia({ 
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true
+            } 
+          });
+          
+          // Add audio tracks to existing stream
+          const audioTrack = audioStream.getAudioTracks()[0];
+          this.localStream.addTrack(audioTrack);
+          
+          // Add audio track to all peer connections
+          this.peerConnections.forEach(({ connection, userId }) => {
+            console.log(`[WEBRTC] Adding audio track to connection with ${userId}`);
+            connection.addTrack(audioTrack, this.localStream!);
+          });
+          
+          // Renegotiate all connections
+          const userIds = Array.from(this.peerConnections.keys());
+          for (const userId of userIds) {
+            await this.renegotiateConnection(userId);
+          }
+          
+          console.log("[WEBRTC] ✅ Audio track added to all connections");
+        } catch (error) {
+          console.error("[WEBRTC] ❌ Error accessing microphone:", error);
+          throw error;
+        }
+      }
     } else {
       console.warn("[WEBRTC] ⚠️ Cannot toggle audio: no local stream");
     }
@@ -290,18 +371,54 @@ class WebRTCManager {
    *
    * @param enabled - Whether video should be enabled
    */
-  toggleVideo(enabled: boolean): void {
+  async toggleVideo(enabled: boolean): Promise<void> {
     if (this.localStream) {
       const videoTracks = this.localStream.getVideoTracks();
       console.log(
         `[WEBRTC] 📹 Toggling video to ${enabled}, tracks: ${videoTracks.length}`
       );
-      videoTracks.forEach((track) => {
-        track.enabled = enabled;
-        console.log(
-          `[WEBRTC] Video track ${track.id} enabled: ${track.enabled}`
-        );
-      });
+      
+      if (videoTracks.length > 0) {
+        // If we have video tracks, just enable/disable them
+        videoTracks.forEach((track) => {
+          track.enabled = enabled;
+          console.log(
+            `[WEBRTC] Video track ${track.id} enabled: ${track.enabled}`
+          );
+        });
+      } else if (enabled) {
+        // If we want to enable video but don't have tracks, we need to get them
+        console.log("[WEBRTC] No video tracks found, requesting camera access");
+        try {
+          const videoStream = await navigator.mediaDevices.getUserMedia({ 
+            video: {
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            }
+          });
+          
+          // Add video tracks to existing stream
+          const videoTrack = videoStream.getVideoTracks()[0];
+          this.localStream.addTrack(videoTrack);
+          
+          // Add video track to all peer connections
+          this.peerConnections.forEach(({ connection, userId }) => {
+            console.log(`[WEBRTC] Adding video track to connection with ${userId}`);
+            connection.addTrack(videoTrack, this.localStream!);
+          });
+          
+          // Renegotiate all connections
+          const userIds = Array.from(this.peerConnections.keys());
+          for (const userId of userIds) {
+            await this.renegotiateConnection(userId);
+          }
+          
+          console.log("[WEBRTC] ✅ Video track added to all connections");
+        } catch (error) {
+          console.error("[WEBRTC] ❌ Error accessing camera:", error);
+          throw error;
+        }
+      }
     } else {
       console.warn("[WEBRTC] ⚠️ Cannot toggle video: no local stream");
     }
