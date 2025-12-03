@@ -430,13 +430,15 @@ const Meeting: React.FC = () => {
         if (isCleanedUp) return;
         console.log("[MEETING] 👥 Users online in WebRTC:", users);
         console.log(`[MEETING] isWebRTCInitialized: ${isWebRTCInitialized}`);
+        console.log(`[MEETING] webrtcManager.isReady(): ${webrtcManager.isReady()}`);
         console.log(`[MEETING] Current user ID: ${user.id}`);
 
         // Keep participants list in sync without reload
         await refreshParticipants();
 
         // Establish WebRTC connections to all existing users
-        if (isWebRTCInitialized && users.length > 1) {
+        // Use webrtcManager.isReady() instead of state to avoid timing issues
+        if (webrtcManager.isReady() && users.length > 1) {
           console.log(
             `[MEETING] Establishing WebRTC connections to ${
               users.length - 1
@@ -458,7 +460,7 @@ const Meeting: React.FC = () => {
             }
           }
         } else {
-          console.log(`[MEETING] ⚠️ Not creating connections - isWebRTCInitialized: ${isWebRTCInitialized}, users: ${users.length}`);
+          console.log(`[MEETING] ⚠️ Not creating connections - webrtcManager.isReady(): ${webrtcManager.isReady()}, users: ${users.length}`);
         }
       };
 
@@ -469,6 +471,7 @@ const Meeting: React.FC = () => {
         if (isCleanedUp) return;
         console.log("[MEETING] 👤 User joined WebRTC:", userData);
         console.log(`[MEETING] isWebRTCInitialized: ${isWebRTCInitialized}`);
+        console.log(`[MEETING] webrtcManager.isReady(): ${webrtcManager.isReady()}`);
 
         if (userData && userData.id !== user.id) {
           const userName =
@@ -483,7 +486,8 @@ const Meeting: React.FC = () => {
           await refreshParticipants();
 
           // If WebRTC is initialized, send offer to new user
-          if (isWebRTCInitialized) {
+          // Use webrtcManager.isReady() instead of state to avoid timing issues
+          if (webrtcManager.isReady()) {
             console.log(
               `[MEETING] Sending WebRTC offer to new user ${userData.id}`
             );
