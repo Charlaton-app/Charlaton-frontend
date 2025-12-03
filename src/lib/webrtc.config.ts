@@ -224,6 +224,7 @@ class WebRTCManager {
    */
   async updateLocalStream(stream: MediaStream): Promise<void> {
     console.log("[WEBRTC] 🔄 Updating local stream for all peer connections");
+    console.log(`[WEBRTC] Current peer connections: ${this.peerConnections.size}`);
 
     // Replace reference
     this.localStream = stream;
@@ -233,6 +234,7 @@ class WebRTCManager {
 
     this.peerConnections.forEach(({ connection, userId }) => {
       const senders = connection.getSenders();
+      console.log(`[WEBRTC] Updating tracks for user ${userId}, current senders: ${senders.length}`);
 
       stream.getTracks().forEach((track) => {
         const existingSender = senders.find(
@@ -268,6 +270,7 @@ class WebRTCManager {
     });
 
     // Renegotiate connections that need it
+    console.log(`[WEBRTC] Connections needing renegotiation: ${needsRenegotiation.length}`, needsRenegotiation);
     for (const userId of needsRenegotiation) {
       console.log(`[WEBRTC] 🔄 Renegotiating connection with ${userId}`);
       await this.renegotiateConnection(userId);
@@ -279,18 +282,30 @@ class WebRTCManager {
    * This is needed when adding new tracks
    */
   private async renegotiateConnection(userId: string): Promise<void> {
+    console.log(`[WEBRTC] 🔄 renegotiateConnection called for ${userId}`);
+    console.log(`[WEBRTC] Total peer connections: ${this.peerConnections.size}`);
+    console.log(`[WEBRTC] Socket exists: ${!!this.socket}, Socket ID: ${this.socket?.id}`);
+    
     const peerInfo = this.peerConnections.get(userId);
     
-    if (!peerInfo || !this.socket) {
-      console.error(`[WEBRTC] Cannot renegotiate - peer ${userId} not found`);
+    if (!peerInfo) {
+      console.error(`[WEBRTC] ❌ Cannot renegotiate - peer ${userId} not found in peerConnections`);
+      console.error(`[WEBRTC] Available peers:`, Array.from(this.peerConnections.keys()));
+      return;
+    }
+    
+    if (!this.socket) {
+      console.error(`[WEBRTC] ❌ Cannot renegotiate - no socket connection`);
       return;
     }
 
     try {
       console.log(`[WEBRTC] Creating new offer for ${userId}`);
       const offer = await peerInfo.connection.createOffer();
+      console.log(`[WEBRTC] Offer created, setting local description`);
       await peerInfo.connection.setLocalDescription(offer);
 
+      console.log(`[WEBRTC] Emitting webrtc_offer to room, senderId: ${this.socket.id}`);
       this.socket.emit("webrtc_offer", {
         senderId: this.socket.id,
         sdp: offer,
@@ -325,6 +340,8 @@ class WebRTCManager {
       } else if (enabled) {
         // If we want to enable audio but don't have tracks, we need to get them
         console.log("[WEBRTC] No audio tracks found, requesting microphone access");
+        console.log(`[WEBRTC] Current peer connections: ${this.peerConnections.size}`);
+        
         try {
           const audioStream = await navigator.mediaDevices.getUserMedia({ 
             audio: {
@@ -337,17 +354,21 @@ class WebRTCManager {
           // Add audio tracks to existing stream
           const audioTrack = audioStream.getAudioTracks()[0];
           this.localStream.addTrack(audioTrack);
+          console.log(`[WEBRTC] ✅ Audio track added to local stream: ${audioTrack.id}`);
           
-          // Add audio track to all peer connections
-          this.peerConnections.forEach(({ connection, userId }) => {
-            console.log(`[WEBRTC] Adding audio track to connection with ${userId}`);
-            connection.addTrack(audioTrack, this.localStream!);
-          });
-          
-          // Renegotiate all connections
+          // Add audio track to all peer connections and renegotiate
           const userIds = Array.from(this.peerConnections.keys());
+          console.log(`[WEBRTC] Adding audio to ${userIds.length} peer connection(s):`, userIds);
+          
           for (const userId of userIds) {
-            await this.renegotiateConnection(userId);
+            const peerInfo = this.peerConnections.get(userId);
+            if (peerInfo) {
+              console.log(`[WEBRTC] Adding audio track to connection with ${userId}`);
+              peerInfo.connection.addTrack(audioTrack, this.localStream!);
+              
+              console.log(`[WEBRTC] 🔄 Renegotiating connection with ${userId}`);
+              await this.renegotiateConnection(userId);
+            }
           }
           
           console.log("[WEBRTC] ✅ Audio track added to all connections");
@@ -384,6 +405,8 @@ class WebRTCManager {
       } else if (enabled) {
         // If we want to enable video but don't have tracks, we need to get them
         console.log("[WEBRTC] No video tracks found, requesting camera access");
+        console.log(`[WEBRTC] Current peer connections: ${this.peerConnections.size}`);
+        
         try {
           const videoStream = await navigator.mediaDevices.getUserMedia({ 
             video: {
@@ -395,17 +418,21 @@ class WebRTCManager {
           // Add video tracks to existing stream
           const videoTrack = videoStream.getVideoTracks()[0];
           this.localStream.addTrack(videoTrack);
+          console.log(`[WEBRTC] ✅ Video track added to local stream: ${videoTrack.id}`);
           
-          // Add video track to all peer connections
-          this.peerConnections.forEach(({ connection, userId }) => {
-            console.log(`[WEBRTC] Adding video track to connection with ${userId}`);
-            connection.addTrack(videoTrack, this.localStream!);
-          });
-          
-          // Renegotiate all connections
+          // Add video track to all peer connections and renegotiate
           const userIds = Array.from(this.peerConnections.keys());
+          console.log(`[WEBRTC] Adding video to ${userIds.length} peer connection(s):`, userIds);
+          
           for (const userId of userIds) {
-            await this.renegotiateConnection(userId);
+            const peerInfo = this.peerConnections.get(userId);
+            if (peerInfo) {
+              console.log(`[WEBRTC] Adding video track to connection with ${userId}`);
+              peerInfo.connection.addTrack(videoTrack, this.localStream!);
+              
+              console.log(`[WEBRTC] 🔄 Renegotiating connection with ${userId}`);
+              await this.renegotiateConnection(userId);
+            }
           }
           
           console.log("[WEBRTC] ✅ Video track added to all connections");
