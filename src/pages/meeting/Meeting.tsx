@@ -402,8 +402,8 @@ const Meeting: React.FC = () => {
             setIsWebRTCInitialized(true);
             // Start with mic and camera muted to align initial UI state
             setIsMicOn(false);
-            webrtcManager.toggleAudio(false);
-            webrtcManager.toggleVideo(false);
+            await webrtcManager.toggleAudio(false);
+            await webrtcManager.toggleVideo(false);
             console.log(
               "[MEETING] ✅ WebRTC initialized successfully (mic/camera muted by default)"
             );
@@ -429,6 +429,8 @@ const Meeting: React.FC = () => {
       const handleUsersOnline = async (users: UserData[]) => {
         if (isCleanedUp) return;
         console.log("[MEETING] 👥 Users online in WebRTC:", users);
+        console.log(`[MEETING] isWebRTCInitialized: ${isWebRTCInitialized}`);
+        console.log(`[MEETING] Current user ID: ${user.id}`);
 
         // Keep participants list in sync without reload
         await refreshParticipants();
@@ -446,6 +448,7 @@ const Meeting: React.FC = () => {
               console.log(`[MEETING] 🔗 Creating peer connection to ${userId}`);
               try {
                 await webrtcManager.sendOffer(userId, handleRemoteStream);
+                console.log(`[MEETING] ✅ Offer sent to ${userId}`);
               } catch (error) {
                 console.error(
                   `[MEETING] ❌ Error creating connection to ${userId}:`,
@@ -454,6 +457,8 @@ const Meeting: React.FC = () => {
               }
             }
           }
+        } else {
+          console.log(`[MEETING] ⚠️ Not creating connections - isWebRTCInitialized: ${isWebRTCInitialized}, users: ${users.length}`);
         }
       };
 
@@ -463,6 +468,7 @@ const Meeting: React.FC = () => {
       const handleUserJoinedWebRTC = async (userData: UserData) => {
         if (isCleanedUp) return;
         console.log("[MEETING] 👤 User joined WebRTC:", userData);
+        console.log(`[MEETING] isWebRTCInitialized: ${isWebRTCInitialized}`);
 
         if (userData && userData.id !== user.id) {
           const userName =
@@ -481,7 +487,14 @@ const Meeting: React.FC = () => {
             console.log(
               `[MEETING] Sending WebRTC offer to new user ${userData.id}`
             );
-            await webrtcManager.sendOffer(userData.id, handleRemoteStream);
+            try {
+              await webrtcManager.sendOffer(userData.id, handleRemoteStream);
+              console.log(`[MEETING] ✅ Offer sent to ${userData.id}`);
+            } catch (error) {
+              console.error(`[MEETING] ❌ Error sending offer to ${userData.id}:`, error);
+            }
+          } else {
+            console.log(`[MEETING] ⚠️ WebRTC not initialized yet, skipping offer to ${userData.id}`);
           }
         }
       };
