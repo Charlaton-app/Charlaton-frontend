@@ -8,25 +8,53 @@
  * Key responsibilities:
  * - Manage local media streams (audio/video)
  * - Create and manage peer connections
- * - Handle WebRTC signaling through the WebSocket chat server
+ * - Handle WebRTC signaling through the WebSocket WebRTC server
  * - Forward ICE candidates and session descriptions
  */
 
 import { Socket } from "socket.io-client";
 
 /**
+ * Load STUN/TURN server configuration from environment variables
+ */
+const getIceServers = (): RTCIceServer[] => {
+  const servers: RTCIceServer[] = [];
+
+  // Add STUN server from environment
+  const stunUrl = import.meta.env.VITE_STUN_SERVER_URL;
+  if (stunUrl) {
+    servers.push({ urls: stunUrl });
+    console.log("[WEBRTC-CONFIG] 📡 STUN server loaded:", stunUrl);
+  }
+
+  // Add TURN server from environment
+  const turnUrl = import.meta.env.VITE_TURN_SERVER_URL;
+  const turnUsername = import.meta.env.VITE_TURN_USERNAME;
+  const turnCredential = import.meta.env.VITE_TURN_CREDENTIAL;
+
+  if (turnUrl && turnUsername && turnCredential) {
+    servers.push({
+      urls: turnUrl,
+      username: turnUsername,
+      credential: turnCredential,
+    });
+    console.log("[WEBRTC-CONFIG] 🔄 TURN server loaded:", turnUrl);
+  }
+
+  // Fallback to Google STUN servers if no configuration provided
+  if (servers.length === 0) {
+    console.warn("[WEBRTC-CONFIG] ⚠️ No STUN/TURN config found, using Google STUN as fallback");
+    servers.push({ urls: "stun:stun.l.google.com:19302" });
+    servers.push({ urls: "stun:stun1.l.google.com:19302" });
+  }
+
+  return servers;
+};
+
+/**
  * STUN/TURN server configuration for NAT traversal
  */
-const ICE_SERVERS: RTCIceServer[] = [
-  { 
-    urls: "stun:relay1.expressturn.com:3478"
-  },
-  { 
-    urls: "turn:relay1.expressturn.com:3480",
-    username: "000000002080065511",
-    credential: "wt8JcNe7xofmCsmfdkwmXvG1QvA="
-  },
-];
+const ICE_SERVERS: RTCIceServer[] = getIceServers();
 
 /**
  * Peer connection configuration
@@ -106,27 +134,36 @@ class WebRTCManager {
       await this.handleAnswer(senderId, sdp);
     });
 
-    // Handle incoming ICE candidates
-    this.socket.on("webrtc_ice_candidate", async ({ senderId, candidate }) => {
+    // Handle incoming ICE candidates (backend sends "ice_candidate")
+    this.socket.on("ice_candidate", async ({ senderId, candidate }) => {
       console.log(`[WEBRTC] 📥 Received ICE candidate from ${senderId}`);
       await this.handleIceCandidate(senderId, candidate);
     });
 
     // Handle user leaving
-    this.socket.on("userLeft", ({ user }) => {
+    this.socket.on("user_left", (user) => {
       if (user && user.id) {
         console.log(`[WEBRTC] User ${user.id} left, closing connection`);
         this.closePeerConnection(user.id);
       }
     });
 
-    this.socket.on("userDisconnected", ({ user }) => {
+    // Handle user joined (to initiate connections)
+    this.socket.on("user_joined", (user) => {
       if (user && user.id) {
-        console.log(
-          `[WEBRTC] User ${user.id} disconnected, closing connection`
-        );
-        this.closePeerConnection(user.id);
+        console.log(`[WEBRTC] User ${user.id} joined, preparing connection`);
+        // The new user will receive offers from existing users
       }
+    });
+
+    // Handle users online updates
+    this.socket.on("usersOnline", (users: Array<{ userId: string; email?: string }>) => {
+      console.log(`[WEBRTC] Users online (${users.length}):`, users);
+    });
+
+    // Handle errors
+    this.socket.on("webrtc_error", (error) => {
+      console.error("[WEBRTC] ❌ Server error:", error.message);
     });
   }
 
@@ -321,8 +358,7 @@ class WebRTCManager {
       if (event.candidate && this.socket && this.roomId) {
         console.log(`[WEBRTC] 📤 Sending ICE candidate to ${targetUserId}`);
         this.socket.emit("webrtc_ice_candidate", {
-          roomId: this.roomId,
-          targetUserId,
+          senderId: this.socket.id,
           candidate: event.candidate,
         });
       }
@@ -422,8 +458,7 @@ class WebRTCManager {
       await peerConnection.setLocalDescription(offer);
 
       this.socket.emit("webrtc_offer", {
-        roomId: this.roomId,
-        targetUserId,
+        senderId: this.socket.id,
         sdp: offer,
       });
 
@@ -467,8 +502,7 @@ class WebRTCManager {
       await peerConnection.setLocalDescription(answer);
 
       this.socket.emit("webrtc_answer", {
-        roomId: this.roomId,
-        targetUserId: senderId,
+        senderId: this.socket.id,
         sdp: answer,
       });
 
@@ -578,9 +612,11 @@ class WebRTCManager {
     if (this.socket) {
       this.socket.off("webrtc_offer");
       this.socket.off("webrtc_answer");
-      this.socket.off("webrtc_ice_candidate");
-      this.socket.off("userLeft");
-      this.socket.off("userDisconnected");
+      this.socket.off("ice_candidate");
+      this.socket.off("user_left");
+      this.socket.off("user_joined");
+      this.socket.off("usersOnline");
+      this.socket.off("webrtc_error");
     }
 
     this.isInitialized = false;
@@ -588,6 +624,159 @@ class WebRTCManager {
     this.socket = null;
 
     console.log("[WEBRTC] ✅ Cleanup complete");
+  }
+
+  // ===== HELPER FUNCTIONS =====
+
+  /**
+   * Create an SDP offer for a specific peer
+   * 
+   * @param targetUserId - The user ID to create an offer for
+   * @returns Promise that resolves with the RTCSessionDescriptionInit or null
+   */
+  async createOffer(targetUserId: string): Promise<RTCSessionDescriptionInit | null> {
+    const peerConnection = this.peerConnections.get(targetUserId)?.connection;
+    
+    if (!peerConnection) {
+      console.error(`[WEBRTC] No peer connection found for ${targetUserId}`);
+      return null;
+    }
+
+    try {
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+      console.log(`[WEBRTC] ✅ Offer created for ${targetUserId}`);
+      return offer;
+    } catch (error) {
+      console.error(`[WEBRTC] ❌ Error creating offer for ${targetUserId}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Create an SDP answer for a specific peer
+   * 
+   * @param targetUserId - The user ID to create an answer for
+   * @returns Promise that resolves with the RTCSessionDescriptionInit or null
+   */
+  async createAnswer(targetUserId: string): Promise<RTCSessionDescriptionInit | null> {
+    const peerConnection = this.peerConnections.get(targetUserId)?.connection;
+    
+    if (!peerConnection) {
+      console.error(`[WEBRTC] No peer connection found for ${targetUserId}`);
+      return null;
+    }
+
+    try {
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+      console.log(`[WEBRTC] ✅ Answer created for ${targetUserId}`);
+      return answer;
+    } catch (error) {
+      console.error(`[WEBRTC] ❌ Error creating answer for ${targetUserId}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Add an ICE candidate to a peer connection
+   * 
+   * @param targetUserId - The user ID to add the candidate for
+   * @param candidate - The ICE candidate to add
+   * @returns Promise that resolves when the candidate is added
+   */
+  async addIceCandidate(
+    targetUserId: string,
+    candidate: RTCIceCandidateInit
+  ): Promise<boolean> {
+    const peerConnection = this.peerConnections.get(targetUserId)?.connection;
+    
+    if (!peerConnection) {
+      console.error(`[WEBRTC] No peer connection found for ${targetUserId}`);
+      return false;
+    }
+
+    try {
+      await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+      console.log(`[WEBRTC] ✅ ICE candidate added for ${targetUserId}`);
+      return true;
+    } catch (error) {
+      console.error(`[WEBRTC] ❌ Error adding ICE candidate for ${targetUserId}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Set the remote description for a peer connection
+   * 
+   * @param targetUserId - The user ID to set the remote description for
+   * @param sdp - The session description to set
+   * @returns Promise that resolves when the description is set
+   */
+  async setRemoteDescription(
+    targetUserId: string,
+    sdp: RTCSessionDescriptionInit
+  ): Promise<boolean> {
+    const peerConnection = this.peerConnections.get(targetUserId)?.connection;
+    
+    if (!peerConnection) {
+      console.error(`[WEBRTC] No peer connection found for ${targetUserId}`);
+      return false;
+    }
+
+    try {
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
+      console.log(`[WEBRTC] ✅ Remote description set for ${targetUserId}`);
+      return true;
+    } catch (error) {
+      console.error(`[WEBRTC] ❌ Error setting remote description for ${targetUserId}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Get the connection state of a peer
+   * 
+   * @param targetUserId - The user ID to check
+   * @returns The connection state or null if not found
+   */
+  getConnectionState(targetUserId: string): RTCPeerConnectionState | null {
+    const peerConnection = this.peerConnections.get(targetUserId)?.connection;
+    return peerConnection ? peerConnection.connectionState : null;
+  }
+
+  /**
+   * Get the ICE connection state of a peer
+   * 
+   * @param targetUserId - The user ID to check
+   * @returns The ICE connection state or null if not found
+   */
+  getIceConnectionState(targetUserId: string): RTCIceConnectionState | null {
+    const peerConnection = this.peerConnections.get(targetUserId)?.connection;
+    return peerConnection ? peerConnection.iceConnectionState : null;
+  }
+
+  /**
+   * Get statistics for a peer connection
+   * 
+   * @param targetUserId - The user ID to get stats for
+   * @returns Promise that resolves with RTCStatsReport or null
+   */
+  async getConnectionStats(targetUserId: string): Promise<RTCStatsReport | null> {
+    const peerConnection = this.peerConnections.get(targetUserId)?.connection;
+    
+    if (!peerConnection) {
+      console.error(`[WEBRTC] No peer connection found for ${targetUserId}`);
+      return null;
+    }
+
+    try {
+      const stats = await peerConnection.getStats();
+      return stats;
+    } catch (error) {
+      console.error(`[WEBRTC] ❌ Error getting stats for ${targetUserId}:`, error);
+      return null;
+    }
   }
 
   /**
