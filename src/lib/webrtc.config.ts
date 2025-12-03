@@ -20,14 +20,11 @@ import { Socket } from "socket.io-client";
 const getIceServers = (): RTCIceServer[] => {
   const servers: RTCIceServer[] = [];
 
-  // Add STUN server from environment
-  const stunUrl = import.meta.env.VITE_STUN_SERVER_URL;
-  if (stunUrl) {
-    servers.push({ urls: stunUrl });
-    console.log("[WEBRTC-CONFIG] 📡 STUN server loaded:", stunUrl);
-  }
+  console.log("[WEBRTC-CONFIG] 🔍 Loading ICE server configuration...");
+  console.log("[WEBRTC-CONFIG] VITE_STUN_SERVER_URL:", import.meta.env.VITE_STUN_SERVER_URL);
+  console.log("[WEBRTC-CONFIG] VITE_TURN_SERVER_URL:", import.meta.env.VITE_TURN_SERVER_URL);
 
-  // Add TURN server from environment
+  // Add TURN server from environment (TURN includes STUN functionality)
   const turnUrl = import.meta.env.VITE_TURN_SERVER_URL;
   const turnUsername = import.meta.env.VITE_TURN_USERNAME;
   const turnCredential = import.meta.env.VITE_TURN_CREDENTIAL;
@@ -38,14 +35,24 @@ const getIceServers = (): RTCIceServer[] => {
       username: turnUsername,
       credential: turnCredential,
     });
-    console.log("[WEBRTC-CONFIG] 🔄 TURN server loaded:", turnUrl);
+    console.log("[WEBRTC-CONFIG] ✅ TURN server loaded:", turnUrl);
+  }
+
+  // Add STUN server from environment
+  const stunUrl = import.meta.env.VITE_STUN_SERVER_URL;
+  if (stunUrl) {
+    servers.push({ urls: stunUrl });
+    console.log("[WEBRTC-CONFIG] ✅ STUN server loaded:", stunUrl);
   }
 
   // Fallback to Google STUN servers if no configuration provided
   if (servers.length === 0) {
-    console.warn("[WEBRTC-CONFIG] ⚠️ No STUN/TURN config found, using Google STUN as fallback");
+    console.warn("[WEBRTC-CONFIG] ⚠️ No STUN/TURN config found in environment variables");
+    console.warn("[WEBRTC-CONFIG] Using Google STUN as fallback");
     servers.push({ urls: "stun:stun.l.google.com:19302" });
     servers.push({ urls: "stun:stun1.l.google.com:19302" });
+  } else {
+    console.log(`[WEBRTC-CONFIG] ✅ Loaded ${servers.length} ICE server(s)`);
   }
 
   return servers;
