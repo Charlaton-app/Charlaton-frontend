@@ -108,19 +108,29 @@ const Meeting: React.FC = () => {
   // WebRTC state
   const [isWebRTCInitialized, setIsWebRTCInitialized] = useState(false);
   const webrtcJoinedRef = useRef(false);
+  const setupCompleteRef = useRef(false); // Track if setup is complete to avoid double cleanup
 
   /**
    * Helper to refresh participants from backend
    */
   const refreshParticipants = useCallback(async () => {
     if (!meetingId) return;
+    
+    console.log("[MEETING] 🔄 Refreshing participants from backend...");
     const participantsResponse = await getRoomParticipants(meetingId);
+    
     if (participantsResponse.error || !participantsResponse.data) {
+      console.error("[MEETING] ❌ Error fetching participants:", participantsResponse.error);
       return;
     }
+
+    console.log(`[MEETING] 📥 Received ${participantsResponse.data.length} participants from backend`);
+    
     // Prefer connections that have resolved user information (backend-created)
     // to avoid duplicates coming from auxiliary services that only store userId.
     const fetched = participantsResponse.data.filter((p) => p.user);
+    console.log(`[MEETING] 📋 ${fetched.length} participants have user info`);
+    
     // De-duplicate by userId, prefer entries with user info
     const byUserId = new Map<string, Participant>();
     for (const p of fetched) {
@@ -133,7 +143,10 @@ const Meeting: React.FC = () => {
         byUserId.set(key, preferred);
       }
     }
-    setParticipants(Array.from(byUserId.values()));
+    
+    const uniqueParticipants = Array.from(byUserId.values());
+    console.log(`[MEETING] 👥 Setting ${uniqueParticipants.length} unique participants`);
+    setParticipants(uniqueParticipants);
 
     // Enrich participants missing `user` with a lightweight fetch
     // This runs in background and updates state once resolved
@@ -314,6 +327,10 @@ const Meeting: React.FC = () => {
       }
       console.log("[MEETING] ✅ Connected to WEBRTC server");
 
+      // ===== 3. Register remote stream callback BEFORE any connections =====
+      console.log("[MEETING] 🎥 Registering remote stream callback");
+      webrtcManager.setOnRemoteStreamCallback(handleRemoteStream);
+
       // Remove any existing listeners first to prevent duplicates
       console.log("[MEETING] Removing any existing listeners before setup");
       chatSocket.off("join_room_success");
@@ -326,10 +343,8 @@ const Meeting: React.FC = () => {
       chatSocket.off("room_users");
       chatSocket.off("message_success");
 
-      // Join room in CHAT socket
-      console.log(`[MEETING] Joining CHAT room: ${meetingId}`);
-      chatSocket.emit("join_room", meetingId);
-
+      // ===== DEFINE ALL LISTENERS FIRST (before emitting) =====
+      
       // Listen for CHAT join room success
       const handleChatJoinSuccess = async (response: JoinRoomResponse) => {
         if (isCleanedUp) return;
@@ -347,20 +362,12 @@ const Meeting: React.FC = () => {
 
       chatSocket.on("join_room_error", handleChatJoinError);
 
-      // Join room in WEBRTC socket (guard against double emission)
-      if (!webrtcJoinedRef.current) {
-        console.log(`[MEETING] Joining WEBRTC room: ${meetingId}`);
-        webrtcSocket.emit("join_room", { roomId: meetingId, success: true });
-        webrtcJoinedRef.current = true;
-      } else {
-        console.log(
-          `[MEETING] ⚠️ WebRTC join_room already emitted, skipping duplicate`
-        );
-      }
-
       // Listen for WEBRTC join room success
       const handleWebRTCJoinSuccess = async (response: JoinRoomResponse) => {
-        if (isCleanedUp) return;
+        if (isCleanedUp) {
+          console.log("[MEETING] ⚠️ isCleanedUp=true, ignoring join_room_success");
+          return;
+        }
 
         console.log("[MEETING] ✅ Successfully joined WEBRTC room:", response);
         console.log(
@@ -369,6 +376,13 @@ const Meeting: React.FC = () => {
         );
 
         // Initialize WebRTC after successfully joining the WebRTC room
+        console.log("[MEETING] 🔍 Checking WebRTC init conditions:", {
+          isWebRTCInitialized,
+          hasWebrtcSocket: !!webrtcSocket,
+          hasMeetingId: !!meetingId,
+          hasUserId: !!user.id
+        });
+        
         if (!isWebRTCInitialized && webrtcSocket && meetingId && user.id) {
           console.log("[MEETING] Initializing WebRTC manager...");
           try {
@@ -381,10 +395,25 @@ const Meeting: React.FC = () => {
             // Start local media with audio + video tracks negotiated,
             // but keep mic and camera muted/disabled by default.
             console.log("[MEETING] Starting local media...");
-            const localStream = await webrtcManager.startLocalMedia(
-              true,
-              true
-            );
+            let localStream: MediaStream | null = null;
+            
+            try {
+              localStream = await webrtcManager.startLocalMedia(true, true);
+            } catch (error: any) {
+              // If video fails, continue with audio only
+              if (error.name === 'NotReadableError') {
+                console.warn("[MEETING] ⚠️ Video unavailable, continuing with audio only");
+                toast.warning("Cámara no disponible, solo audio");
+                try {
+                  localStream = await webrtcManager.startLocalMedia(true, false);
+                } catch (audioError) {
+                  console.error("[MEETING] ❌ Failed to get even audio:", audioError);
+                  throw audioError;
+                }
+              } else {
+                throw error;
+              }
+            }
 
             if (localStream && localAudioRef.current) {
               localAudioRef.current.srcObject = localStream;
@@ -402,8 +431,14 @@ const Meeting: React.FC = () => {
             setIsWebRTCInitialized(true);
             // Start with mic and camera muted to align initial UI state
             setIsMicOn(false);
-            await webrtcManager.toggleAudio(false);
-            await webrtcManager.toggleVideo(false);
+            webrtcManager.toggleAudio(false);
+            
+            // Only toggle video if we have video tracks
+            const hasVideo = localStream?.getVideoTracks().length ?? 0 > 0;
+            if (hasVideo) {
+              webrtcManager.toggleVideo(false);
+            }
+            
             console.log(
               "[MEETING] ✅ WebRTC initialized successfully (mic/camera muted by default)"
             );
@@ -414,6 +449,7 @@ const Meeting: React.FC = () => {
         }
       };
 
+      console.log("[MEETING] 🎧 Registering join_room_success listener for WebRTC");
       webrtcSocket.on("join_room_success", handleWebRTCJoinSuccess);
 
       // Listen for WEBRTC join room error
@@ -423,34 +459,44 @@ const Meeting: React.FC = () => {
         toast.error(response.message || "Error al unirse a WebRTC");
       };
 
+      console.log("[MEETING] 🎧 Registering join_room_error listener for WebRTC");
       webrtcSocket.on("join_room_error", handleWebRTCJoinError);
 
       // Listen for users online in WEBRTC
       const handleUsersOnline = async (users: UserData[]) => {
         if (isCleanedUp) return;
-        console.log("[MEETING] 👥 Users online in WebRTC:", users);
-        console.log(`[MEETING] isWebRTCInitialized: ${isWebRTCInitialized}`);
-        console.log(`[MEETING] webrtcManager.isReady(): ${webrtcManager.isReady()}`);
-        console.log(`[MEETING] Current user ID: ${user.id}`);
+        console.log("[MEETING] 👥 Users online in WebRTC:", users.length, "users");
+        console.log("[MEETING] 📋 User details:", users.map(u => ({
+          id: u.id,
+          userId: u.userId,
+          email: u.email,
+          displayName: u.displayName
+        })));
+
+        // Filter out current user
+        const otherUsers = users.filter((u) => {
+          const userId = u.userId || u.id;
+          return userId && userId !== String(user.id);
+        });
+
+        console.log(`[MEETING] Found ${otherUsers.length} other users to connect to`);
 
         // Keep participants list in sync without reload
         await refreshParticipants();
 
         // Establish WebRTC connections to all existing users
-        // Use webrtcManager.isReady() instead of state to avoid timing issues
-        if (webrtcManager.isReady() && users.length > 1) {
+        if (isWebRTCInitialized && otherUsers.length > 0) {
           console.log(
-            `[MEETING] Establishing WebRTC connections to ${
-              users.length - 1
-            } existing user(s)`
+            `[MEETING] 🔗 Establishing WebRTC connections to ${otherUsers.length} existing user(s)`
           );
-          for (const u of users) {
-            const userId = u.userId;
-            if (userId && userId !== String(user.id)) {
-              console.log(`[MEETING] 🔗 Creating peer connection to ${userId}`);
+          
+          for (const u of otherUsers) {
+            const userId = u.userId || u.id;
+            if (userId) {
+              console.log(`[MEETING] 📤 Creating peer connection to ${userId}`);
               try {
                 await webrtcManager.sendOffer(userId, handleRemoteStream);
-                console.log(`[MEETING] ✅ Offer sent to ${userId}`);
+                console.log(`[MEETING] ✅ Peer connection established with ${userId}`);
               } catch (error) {
                 console.error(
                   `[MEETING] ❌ Error creating connection to ${userId}:`,
@@ -459,8 +505,11 @@ const Meeting: React.FC = () => {
               }
             }
           }
+          console.log("[MEETING] ✅ All peer connections established");
+        } else if (!isWebRTCInitialized) {
+          console.warn("[MEETING] ⚠️ WebRTC not initialized yet, skipping peer connections");
         } else {
-          console.log(`[MEETING] ⚠️ Not creating connections - webrtcManager.isReady(): ${webrtcManager.isReady()}, users: ${users.length}`);
+          console.log("[MEETING] ℹ️ No other users to connect to");
         }
       };
 
@@ -470,36 +519,83 @@ const Meeting: React.FC = () => {
       const handleUserJoinedWebRTC = async (userData: UserData) => {
         if (isCleanedUp) return;
         console.log("[MEETING] 👤 User joined WebRTC:", userData);
-        console.log(`[MEETING] isWebRTCInitialized: ${isWebRTCInitialized}`);
-        console.log(`[MEETING] webrtcManager.isReady(): ${webrtcManager.isReady()}`);
+        console.log("[MEETING] 📋 User data details:", {
+          id: userData.id,
+          userId: userData.userId,
+          email: userData.email,
+          displayName: userData.displayName,
+          nickname: userData.nickname,
+          user: userData.user
+        });
 
-        if (userData && userData.id !== user.id) {
+        const targetUserId = userData.userId || userData.id;
+        
+        if (targetUserId && targetUserId !== String(user.id)) {
           const userName =
             userData.displayName ||
             userData.nickname ||
             userData.email ||
             "Usuario";
 
-          console.log(`[MEETING] User ${userName} (${userData.id}) joined`);
+          console.log(`[MEETING] ✅ New participant: ${userName} (${targetUserId})`);
           toast.info(`${userName} se unió a la reunión`);
           notificationSounds.userJoined();
-          await refreshParticipants();
+
+          // OPTIMISTIC UPDATE: Add user immediately to participants list
+          console.log("[MEETING] 🚀 Optimistic UI update - adding participant");
+          setParticipants((prev) => {
+            // Check if user is already in the list
+            const exists = prev.some((p) => String(p.userId) === String(targetUserId));
+            if (exists) {
+              console.log("[MEETING] ⚠️ Participant already in list, skipping optimistic update");
+              return prev;
+            }
+
+            // Create a temporary participant entry
+            const newParticipant: Participant = {
+              id: `temp-${targetUserId}`,
+              userId: targetUserId,
+              roomId: meetingId!,
+              role: "participant" as const,
+              joinedAt: new Date().toISOString(),
+              user: userData.user || {
+                id: targetUserId,
+                email: userData.email || "",
+                displayName: userData.displayName,
+                nickname: userData.nickname,
+              },
+            };
+
+            console.log("[MEETING] ✅ Added participant optimistically:", newParticipant);
+            return [...prev, newParticipant];
+          });
+
+          // Initialize media states for new participant
+          setMicStates((prev) => ({ ...prev, [targetUserId]: false }));
+          setCameraStates((prev) => ({ ...prev, [targetUserId]: false }));
+
+          // Reconcile with backend after a short delay (gives backend time to update)
+          setTimeout(async () => {
+            console.log("[MEETING] 🔄 Reconciling participants with backend");
+            await refreshParticipants();
+          }, 500);
 
           // If WebRTC is initialized, send offer to new user
-          // Use webrtcManager.isReady() instead of state to avoid timing issues
-          if (webrtcManager.isReady()) {
+          if (isWebRTCInitialized) {
             console.log(
-              `[MEETING] Sending WebRTC offer to new user ${userData.id}`
+              `[MEETING] 📤 Sending WebRTC offer to new user ${targetUserId}`
             );
             try {
-              await webrtcManager.sendOffer(userData.id, handleRemoteStream);
-              console.log(`[MEETING] ✅ Offer sent to ${userData.id}`);
+              await webrtcManager.sendOffer(targetUserId, handleRemoteStream);
+              console.log(`[MEETING] ✅ Offer sent successfully to ${targetUserId}`);
             } catch (error) {
-              console.error(`[MEETING] ❌ Error sending offer to ${userData.id}:`, error);
+              console.error(`[MEETING] ❌ Error sending offer to ${targetUserId}:`, error);
             }
           } else {
-            console.log(`[MEETING] ⚠️ WebRTC not initialized yet, skipping offer to ${userData.id}`);
+            console.warn("[MEETING] ⚠️ WebRTC not initialized, cannot send offer");
           }
+        } else {
+          console.log("[MEETING] ℹ️ Ignoring self-join event or invalid userId");
         }
       };
 
@@ -670,15 +766,45 @@ const Meeting: React.FC = () => {
 
       chatSocket.on("room_ended", handleRoomEnded);
       webrtcSocket.on("room_ended", handleRoomEnded);
+
+      // ===== NOW EMIT JOIN EVENTS (after all listeners are ready) =====
+      
+      console.log(`[MEETING] 📤 Emitting join_room to CHAT server: ${meetingId}`);
+      chatSocket.emit("join_room", meetingId);
+
+      // Join room in WEBRTC socket (guard against double emission)
+      if (!webrtcJoinedRef.current) {
+        console.log(`[MEETING] 📤 Emitting join_room to WEBRTC server: ${meetingId}`);
+        webrtcSocket.emit("join_room", { roomId: meetingId, success: true });
+        webrtcJoinedRef.current = true;
+      } else {
+        console.log(
+          `[MEETING] ⚠️ WebRTC join_room already emitted, skipping duplicate`
+        );
+      }
+      
+      // Mark setup as complete
+      setupCompleteRef.current = true;
+      console.log("[MEETING] ✅ Socket setup complete");
     };
 
     setupSockets();
 
     // Cleanup function
     return () => {
+      console.log("[MEETING] Cleanup called, setupCompleteRef:", setupCompleteRef.current);
+      
+      // Only cleanup if setup was actually complete
+      // This prevents React StrictMode from removing listeners prematurely
+      if (!setupCompleteRef.current) {
+        console.log("[MEETING] ⏭️ Skipping cleanup - setup not complete (StrictMode double render)");
+        return;
+      }
+      
       console.log("[MEETING] Cleaning up sockets and WebRTC");
       isCleanedUp = true;
       webrtcJoinedRef.current = false;
+      setupCompleteRef.current = false;
 
       // Remove all listeners from chat socket
       if (chatSocket) {
@@ -765,11 +891,8 @@ const Meeting: React.FC = () => {
     []
   );
 
-  // Register remote stream handler with WebRTC manager so that
-  // incoming offers/answers also use it by default.
-  useEffect(() => {
-    webrtcManager.setOnRemoteStreamCallback(handleRemoteStream);
-  }, [handleRemoteStream]);
+  // Note: Remote stream callback is now registered inline in setupSockets (line ~334)
+  // to ensure it's set BEFORE any peer connections are created.
 
   /**
    * Auto-scroll when new messages arrive
