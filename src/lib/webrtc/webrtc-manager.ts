@@ -96,6 +96,16 @@ export class WebRTCManager {
       });
     }
 
+    // Set up negotiation needed callback for automatic renegotiation
+    this.connectionManager.setOnNegotiationNeededCallback(async (userId: string) => {
+      console.log(`[WebRTCManager] 🔄 Auto-renegotiation triggered for ${userId}`);
+      try {
+        await this.signalingManager.sendOffer(userId);
+      } catch (error) {
+        console.error(`[WebRTCManager] ❌ Error in auto-renegotiation:`, error);
+      }
+    });
+
     this.isInitialized = true;
     console.log("[WebRTCManager] ✅ Initialization complete");
   }
@@ -103,27 +113,28 @@ export class WebRTCManager {
   /**
    * Start local media
    */
-  async startLocalMedia(audioEnabled: boolean = true, videoEnabled: boolean = false): Promise<MediaStream | null> {
+  async startLocalMedia(
+    audioEnabled: boolean = true, 
+    videoEnabled: boolean = false,
+    audioInitiallyEnabled: boolean = false,
+    videoInitiallyEnabled: boolean = false
+  ): Promise<MediaStream | null> {
     console.log(`[WebRTCManager] 🎬 Starting local media - audio: ${audioEnabled}, video: ${videoEnabled}`);
+    console.log(`[WebRTCManager] 🔇 Initial enabled state - audio: ${audioInitiallyEnabled}, video: ${videoInitiallyEnabled}`);
     
-    const stream = await this.mediaManager.startMedia(audioEnabled, videoEnabled);
+    const stream = await this.mediaManager.startMedia(audioEnabled, videoEnabled, audioInitiallyEnabled, videoInitiallyEnabled);
     
     if (stream) {
       // Update connection manager with new stream
       this.connectionManager.setLocalStream(stream);
       
       // If there are already existing peer connections (from received offers),
-      // update them with the new stream
+      // update them with the new stream (this will trigger negotiationneeded)
       const existingPeers = this.connectionManager.getAllPeerConnections();
       if (existingPeers.size > 0) {
         console.log(`[WebRTCManager] 🔄 Updating ${existingPeers.size} existing peer connections with local stream`);
         this.connectionManager.updateLocalStream(stream);
-        
-        // Renegotiate with all existing peers to send our tracks
-        for (const [userId] of existingPeers) {
-          console.log(`[WebRTCManager] 🔄 Renegotiating with ${userId} to send local tracks`);
-          await this.signalingManager.sendOffer(userId);
-        }
+        // negotiationneeded event will automatically send offers
       }
       
       // Mark participant manager as ready to send offers

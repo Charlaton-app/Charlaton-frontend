@@ -18,10 +18,20 @@ export class MediaManager {
 
   /**
    * Start local media with specified constraints
+   * @param audioEnabled Request audio track (will request permissions)
+   * @param videoEnabled Request video track (will request permissions)
+   * @param audioInitiallyEnabled Initial enabled state for audio track (default: false)
+   * @param videoInitiallyEnabled Initial enabled state for video track (default: false)
    */
-  async startMedia(audioEnabled: boolean = true, videoEnabled: boolean = false): Promise<MediaStream | null> {
+  async startMedia(
+    audioEnabled: boolean = true, 
+    videoEnabled: boolean = false,
+    audioInitiallyEnabled: boolean = false,
+    videoInitiallyEnabled: boolean = false
+  ): Promise<MediaStream | null> {
     try {
       console.log(`[MediaManager] 🎤 Starting media - audio: ${audioEnabled}, video: ${videoEnabled}`);
+      console.log(`[MediaManager] 🔇 Initial state - audioEnabled: ${audioInitiallyEnabled}, videoEnabled: ${videoInitiallyEnabled}`);
 
       const constraints: MediaStreamConstraints = {
         audio: audioEnabled ? {
@@ -55,6 +65,15 @@ export class MediaManager {
           throw error;
         }
       }
+      
+      // Set initial track enabled state to match requested initial state
+      // This ensures tracks start disabled even though we requested permissions
+      this.localStream.getAudioTracks().forEach(track => {
+        track.enabled = audioInitiallyEnabled;
+      });
+      this.localStream.getVideoTracks().forEach(track => {
+        track.enabled = videoInitiallyEnabled;
+      });
       
       console.log("[MediaManager] ✅ Media stream acquired");
       console.log(`[MediaManager]   - Audio tracks: ${this.localStream.getAudioTracks().length}`);
@@ -151,15 +170,14 @@ export class MediaManager {
 
   /**
    * Replace the current stream (useful when adding video to audio-only stream)
+   * NOTE: Does NOT stop the old stream because those tracks may still be in use
+   * by peer connections. The caller (ConnectionManager) should handle track cleanup.
    */
   setLocalStream(stream: MediaStream): void {
     console.log("[MediaManager] 🔄 Replacing local stream");
     
-    // Stop old stream
-    if (this.localStream) {
-      this.stopMedia();
-    }
-    
+    // Don't stop old stream - tracks may be in use by peer connections
+    // Just replace the reference
     this.localStream = stream;
     console.log("[MediaManager] ✅ Stream replaced");
   }

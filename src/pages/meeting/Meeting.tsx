@@ -392,20 +392,31 @@ const Meeting: React.FC = () => {
               webrtcSocket
             );
 
-            // Start local media with audio + video tracks negotiated,
-            // but keep mic and camera muted/disabled by default.
+            // Start local media with audio + video permissions requested,
+            // but keep mic and camera tracks disabled by default to match UI state
             console.log("[MEETING] Starting local media...");
             let localStream: MediaStream | null = null;
             
             try {
-              localStream = await webrtcManager.startLocalMedia(true, true);
+              // Request both audio+video permissions, but start tracks disabled (false, false)
+              localStream = await webrtcManager.startLocalMedia(
+                true,  // request audio permission
+                true,  // request video permission
+                false, // audio track starts disabled
+                false  // video track starts disabled
+              );
             } catch (error: any) {
-              // If video fails, continue with audio only
+              // If video fails, try audio only
               if (error.name === 'NotReadableError') {
                 console.warn("[MEETING] ⚠️ Video unavailable, continuing with audio only");
                 toast.warning("Cámara no disponible, solo audio");
                 try {
-                  localStream = await webrtcManager.startLocalMedia(true, false);
+                  localStream = await webrtcManager.startLocalMedia(
+                    true,   // request audio permission
+                    false,  // no video
+                    false,  // audio track starts disabled
+                    false   // no video track
+                  );
                 } catch (audioError) {
                   console.error("[MEETING] ❌ Failed to get even audio:", audioError);
                   throw audioError;
@@ -429,15 +440,9 @@ const Meeting: React.FC = () => {
             }
 
             setIsWebRTCInitialized(true);
-            // Start with mic and camera muted to align initial UI state
+            // Tracks already start disabled, so just set UI state to match
             setIsMicOn(false);
-            webrtcManager.toggleAudio(false);
-            
-            // Only toggle video if we have video tracks
-            const hasVideo = localStream?.getVideoTracks().length ?? 0 > 0;
-            if (hasVideo) {
-              webrtcManager.toggleVideo(false);
-            }
+            setIsCameraOn(false);
             
             console.log(
               "[MEETING] ✅ WebRTC initialized successfully (mic/camera muted by default)"
@@ -922,6 +927,19 @@ const Meeting: React.FC = () => {
   }, [cameraStates, participants]); // Re-run when camera states or participants change
 
   /**
+   * Attach local video stream when camera is turned on
+   */
+  useEffect(() => {
+    if (isCameraOn && localVideoRef.current) {
+      const localStream = webrtcManager.getLocalStream();
+      if (localStream && localVideoRef.current.srcObject !== localStream) {
+        localVideoRef.current.srcObject = localStream;
+        console.log("[MEETING] 🎥 Local video stream attached to video element");
+      }
+    }
+  }, [isCameraOn, cameraStates]); // Re-run when camera state changes
+
+  /**
    * Handle sending a message
    */
   const handleSendMessage = async () => {
@@ -1095,7 +1113,12 @@ const Meeting: React.FC = () => {
       if (newState && !webrtcManager.getLocalStream()) {
         // Need to start media if not already started
         webrtcManager
-          .startLocalMedia(true, isCameraOn)
+          .startLocalMedia(
+            true,     // request audio
+            isCameraOn, // request video if camera is on
+            newState, // audio track enabled state = newState
+            isCameraOn  // video track enabled state = isCameraOn
+          )
           .then((stream) => {
             if (stream && localAudioRef.current) {
               localAudioRef.current.srcObject = stream;
@@ -1147,7 +1170,12 @@ const Meeting: React.FC = () => {
         // When turning camera on, need to acquire video stream
         console.log("[MEETING] Requesting video stream...");
         webrtcManager
-          .startLocalMedia(isMicOn, true)
+          .startLocalMedia(
+            isMicOn,  // request audio if mic is on
+            true,     // request video
+            isMicOn,  // audio track enabled state = isMicOn
+            true      // video track enabled state = true (we're turning camera on)
+          )
           .then((stream) => {
             if (stream) {
               // Propagate new stream to all existing peer connections
@@ -1156,12 +1184,19 @@ const Meeting: React.FC = () => {
               if (localAudioRef.current) {
                 localAudioRef.current.srcObject = stream;
               }
-              if (localVideoRef.current) {
-                localVideoRef.current.srcObject = stream;
-                console.log(
-                  "[MEETING] ✅ Video stream attached to local video element"
-                );
-              }
+              
+              // Use setTimeout to ensure the video element is rendered
+              setTimeout(() => {
+                if (localVideoRef.current) {
+                  localVideoRef.current.srcObject = stream;
+                  console.log(
+                    "[MEETING] ✅ Video stream attached to local video element"
+                  );
+                } else {
+                  console.warn("[MEETING] ⚠️ localVideoRef.current is null after camera enabled");
+                }
+              }, 100);
+              
               console.log("[MEETING] ✅ Camera enabled, stream attached");
             }
           })
@@ -1425,16 +1460,16 @@ const Meeting: React.FC = () => {
 
               return (
                 <div key={participant.id} className="video-tile">
-                  {cameraStates[participantUserId] ? (
-                    <video
-                      id={`video-${participantUserId}`}
-                      ref={isCurrentUser ? localVideoRef : undefined}
-                      autoPlay
-                      playsInline
-                      muted={isCurrentUser}
-                      className="participant-video"
-                    />
-                  ) : (
+                  <video
+                    id={`video-${participantUserId}`}
+                    ref={isCurrentUser ? localVideoRef : undefined}
+                    autoPlay
+                    playsInline
+                    muted={isCurrentUser}
+                    className="participant-video"
+                    style={{ display: cameraStates[participantUserId] ? 'block' : 'none' }}
+                  />
+                  {!cameraStates[participantUserId] && (
                     <div className="participant-avatar">{initial}</div>
                   )}
                   <div className="participant-info">

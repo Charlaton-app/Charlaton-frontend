@@ -103,22 +103,25 @@ export class SignalingManager {
         return;
       }
 
-      // Check for signaling state collision
+      // Perfect negotiation pattern: handle signaling state collisions
       const currentState = peerConnection.signalingState;
-      if (currentState !== 'stable' && currentState !== 'have-local-offer') {
-        console.log(`[SignalingManager] ⚠️ Collision detected (state: ${currentState}), checking polite/impolite`);
-        
-        // Polite peer: use lexicographical comparison - lower userId is polite
-        const isPolite = this.userId! < senderId;
+      const isPolite = this.userId! < senderId;
+      
+      // Detect collision: we have a local offer pending
+      const offerCollision = currentState === 'have-local-offer';
+      
+      if (offerCollision) {
+        console.log(`[SignalingManager] ⚠️ Offer collision detected (state: ${currentState})`);
+        console.log(`[SignalingManager] This peer is ${isPolite ? 'POLITE' : 'IMPOLITE'}`);
         
         if (!isPolite) {
-          // Impolite peer: ignore the offer
+          // Impolite peer: ignore the incoming offer
           console.log(`[SignalingManager] 🚫 Impolite peer - ignoring offer from ${senderId}`);
           return;
         }
         
-        // Polite peer: rollback and accept the offer
-        console.log(`[SignalingManager] 🤝 Polite peer - rolling back and accepting offer from ${senderId}`);
+        // Polite peer: rollback our pending offer and accept theirs
+        console.log(`[SignalingManager] 🤝 Polite peer - rolling back local offer`);
         await peerConnection.setLocalDescription({ type: 'rollback' } as RTCSessionDescriptionInit);
       }
 

@@ -32,6 +32,7 @@ export class ConnectionManager {
   private roomId: string | null = null;
   private localStream: MediaStream | null = null;
   private onRemoteStreamCallback: RemoteStreamCallback | null = null;
+  private onNegotiationNeededCallback: ((userId: string) => void) | null = null;
 
   constructor() {
     console.log("[ConnectionManager] Initialized");
@@ -60,6 +61,13 @@ export class ConnectionManager {
    */
   setOnRemoteStreamCallback(callback: RemoteStreamCallback): void {
     this.onRemoteStreamCallback = callback;
+  }
+
+  /**
+   * Set callback for negotiation needed events
+   */
+  setOnNegotiationNeededCallback(callback: (userId: string) => void): void {
+    this.onNegotiationNeededCallback = callback;
   }
 
   /**
@@ -130,6 +138,15 @@ export class ConnectionManager {
       
       if (event.streams.length > 0) {
         event.streams[0].getTracks().forEach((track) => {
+          // Check if track of this kind already exists
+          const existingTrack = remoteStream.getTracks().find(t => t.kind === track.kind);
+          
+          if (existingTrack) {
+            console.log(`[ConnectionManager]   - Replacing existing ${track.kind} track`);
+            remoteStream.removeTrack(existingTrack);
+            existingTrack.stop();
+          }
+          
           console.log(`[ConnectionManager]   - Adding ${track.kind} to remote stream (enabled: ${track.enabled}, state: ${track.readyState})`);
           remoteStream.addTrack(track);
         });
@@ -137,7 +154,7 @@ export class ConnectionManager {
         console.warn(`[ConnectionManager] ⚠️ No streams in track event from ${targetUserId}`);
       }
 
-      // Call the callback
+      // Call the callback (it will update the video/audio elements)
       const handler = onRemoteStream || this.onRemoteStreamCallback;
       if (handler) {
         console.log(`[ConnectionManager] 📞 Invoking remote stream callback for ${targetUserId}`);
@@ -161,6 +178,10 @@ export class ConnectionManager {
         this.closePeerConnection(targetUserId);
       }
     };
+
+    // NOTE: onnegotiationneeded is disabled because it causes m-line ordering issues
+    // when tracks are added/replaced. Manual renegotiation is handled explicitly
+    // in updateLocalStream() and when toggling camera on/off
 
     // Store the peer connection
     this.peerConnections.set(targetUserId, {
@@ -216,8 +237,11 @@ export class ConnectionManager {
     console.log(`[ConnectionManager] 🔄 Updating local stream for all peers`);
     this.localStream = stream;
 
+    const peersNeedingRenegotiation: string[] = [];
+
     this.peerConnections.forEach(({ connection }, userId) => {
       const senders = connection.getSenders();
+      let addedNewTrack = false;
 
       stream.getTracks().forEach((track) => {
         const existingSender = senders.find(
@@ -232,9 +256,25 @@ export class ConnectionManager {
         } else {
           console.log(`[ConnectionManager] Adding new ${track.kind} track for ${userId}`);
           connection.addTrack(track, stream);
+          addedNewTrack = true;
         }
       });
+
+      // Only renegotiate if we added a new track (not just replaced)
+      if (addedNewTrack) {
+        peersNeedingRenegotiation.push(userId);
+      }
     });
+
+    // Trigger manual renegotiation for peers that got new tracks
+    if (peersNeedingRenegotiation.length > 0 && this.onNegotiationNeededCallback) {
+      console.log(`[ConnectionManager] 📤 Triggering renegotiation for ${peersNeedingRenegotiation.length} peers`);
+      peersNeedingRenegotiation.forEach(userId => {
+        if (this.onNegotiationNeededCallback) {
+          this.onNegotiationNeededCallback(userId);
+        }
+      });
+    }
   }
 
   /**
