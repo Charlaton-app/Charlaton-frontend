@@ -33,6 +33,7 @@ export interface Participant {
   roomId: string;
   joinedAt: string;
   leftAt?: string | null;
+  firebaseUid?: string; // Firebase UID for WebRTC stream matching
   user?: {
     id: string;
     email: string;

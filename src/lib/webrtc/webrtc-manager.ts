@@ -114,15 +114,13 @@ export class WebRTCManager {
    * Start local media
    */
   async startLocalMedia(
-    audioEnabled: boolean = true, 
-    videoEnabled: boolean = false,
     audioInitiallyEnabled: boolean = false,
     videoInitiallyEnabled: boolean = false
   ): Promise<MediaStream | null> {
-    console.log(`[WebRTCManager] 🎬 Starting local media - audio: ${audioEnabled}, video: ${videoEnabled}`);
+    console.log(`[WebRTCManager] 🎬 Starting local media`);
     console.log(`[WebRTCManager] 🔇 Initial enabled state - audio: ${audioInitiallyEnabled}, video: ${videoInitiallyEnabled}`);
     
-    const stream = await this.mediaManager.startMedia(audioEnabled, videoEnabled, audioInitiallyEnabled, videoInitiallyEnabled);
+    const stream = await this.mediaManager.startMedia(audioInitiallyEnabled, videoInitiallyEnabled);
     
     if (stream) {
       // Update connection manager with new stream

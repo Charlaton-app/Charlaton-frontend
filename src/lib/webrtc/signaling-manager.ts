@@ -15,6 +15,7 @@ import type { RemoteStreamCallback } from "./types";
 export class SignalingManager {
   private socket: Socket | null = null;
   private roomId: string | null = null;
+  private userId: string | null = null;
   private connectionManager: ConnectionManager | null = null;
   private onRemoteStreamCallback: RemoteStreamCallback | null = null;
 
@@ -34,6 +35,7 @@ export class SignalingManager {
     console.log(`[SignalingManager] Initializing for room ${roomId}, user ${userId}`);
     
     this.roomId = roomId;
+    this.userId = userId;
     this.socket = socket;
     this.connectionManager = connectionManager;
     
@@ -93,7 +95,7 @@ export class SignalingManager {
       console.log(`[SignalingManager] 📨 Processing offer from ${senderId}`);
       
       // Get existing peer connection if it exists
-      let peerConnection = await this.connectionManager.createPeerConnection(
+      const peerConnection = await this.connectionManager.createPeerConnection(
         senderId,
         this.onRemoteStreamCallback || undefined
       );
@@ -127,7 +129,29 @@ export class SignalingManager {
 
       // Set remote description
       console.log(`[SignalingManager] Setting remote description for ${senderId}`);
+      console.log(`[SignalingManager] 📄 Remote SDP includes:`, {
+        hasAudio: sdp.sdp?.includes('m=audio'),
+        hasVideo: sdp.sdp?.includes('m=video'),
+      });
       await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
+      
+      // Log what transceivers we have after setting remote description
+      const transceivers = peerConnection.getTransceivers();
+      console.log(`[SignalingManager] 📡 Transceivers after setRemoteDescription (${transceivers.length}):`, 
+        transceivers.map(t => ({
+          mid: t.mid,
+          direction: t.direction,
+          currentDirection: t.currentDirection,
+          receiver: t.receiver ? {
+            track: {
+              kind: t.receiver.track.kind,
+              id: t.receiver.track.id,
+              enabled: t.receiver.track.enabled,
+              readyState: t.receiver.track.readyState,
+            }
+          } : null
+        }))
+      );
 
       // Create and send answer
       console.log(`[SignalingManager] Creating answer for ${senderId}`);
@@ -232,11 +256,48 @@ export class SignalingManager {
         return;
       }
 
+      // Perfect negotiation: check for glare (both peers trying to negotiate)
+      const currentState = peerConnection.signalingState;
+      const isPolite = this.userId! < targetUserId;
+      
+      // If we're processing a remote offer, handle glare
+      if (currentState === 'have-remote-offer') {
+        console.log(`[SignalingManager] ⚠️ Glare detected (state: ${currentState})`);
+        console.log(`[SignalingManager] This peer is ${isPolite ? 'POLITE' : 'IMPOLITE'}`);
+        
+        if (isPolite) {
+          // Polite peer: wait for the remote negotiation to complete
+          console.log(`[SignalingManager] 🤝 Polite peer - deferring offer to ${targetUserId}`);
+          return;
+        }
+        
+        // Impolite peer: we can proceed (remote will rollback)
+        console.log(`[SignalingManager] 💪 Impolite peer - proceeding with offer`);
+      }
+
       // Create and set local description
       console.log(`[SignalingManager] Creating offer for ${targetUserId}`);
       const offer = await peerConnection.createOffer({
         offerToReceiveAudio: true,
         offerToReceiveVideo: true,
+      });
+      
+      // Log SDP contents to verify tracks are included
+      console.log(`[SignalingManager] 📄 SDP includes:`, {
+        hasAudio: offer.sdp?.includes('m=audio'),
+        hasVideo: offer.sdp?.includes('m=video'),
+        transceivers: peerConnection.getTransceivers().map(t => ({
+          mid: t.mid,
+          direction: t.direction,
+          currentDirection: t.currentDirection,
+          sender: {
+            track: t.sender.track ? {
+              kind: t.sender.track.kind,
+              enabled: t.sender.track.enabled,
+              id: t.sender.track.id
+            } : null
+          }
+        }))
       });
       
       await peerConnection.setLocalDescription(offer);
@@ -252,7 +313,7 @@ export class SignalingManager {
       console.log(`[SignalingManager] ✅ Offer sent to ${targetUserId}`);
     } catch (error) {
       console.error(`[SignalingManager] ❌ Error sending offer to ${targetUserId}:`, error);
-      throw error;
+      // Don't throw - just log and continue
     }
   }
 

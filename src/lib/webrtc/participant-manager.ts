@@ -17,6 +17,7 @@ export class ParticipantManager {
   private userId: string | null = null;
   private signalingManager: SignalingManager | null = null;
   private isReady = false; // Flag to prevent premature offer sending
+  private pendingUsers: UserData[] = []; // Users waiting for connection when ready
   
   // Event callbacks
   private onUserJoinedCallback: ParticipantEventCallback | null = null;
@@ -49,9 +50,23 @@ export class ParticipantManager {
   /**
    * Mark as ready to send offers (call after local stream is ready)
    */
-  setReady(): void {
+  async setReady(): Promise<void> {
     console.log("[ParticipantManager] ✅ Marked as ready to send offers");
     this.isReady = true;
+    
+    // Connect to any users that joined while we were getting ready
+    if (this.pendingUsers.length > 0 && this.signalingManager) {
+      console.log(`[ParticipantManager] 🔗 Connecting to ${this.pendingUsers.length} pending users`);
+      for (const user of this.pendingUsers) {
+        try {
+          console.log(`[ParticipantManager] Sending offer to pending user ${user.userId}`);
+          await this.signalingManager.sendOffer(user.userId);
+        } catch (error) {
+          console.error(`[ParticipantManager] Error sending offer to ${user.userId}:`, error);
+        }
+      }
+      this.pendingUsers = [];
+    }
   }
 
   /**
@@ -101,7 +116,8 @@ export class ParticipantManager {
 
       // Only establish connections if we're ready (local stream available)
       if (!this.isReady) {
-        console.log("[ParticipantManager] ⏸️ Not ready yet, skipping offer sending");
+        console.log("[ParticipantManager] ⏸️ Not ready yet, storing pending users");
+        this.pendingUsers = otherUsers;
         return;
       }
 
@@ -139,7 +155,8 @@ export class ParticipantManager {
 
       // Only send offer if we're ready (local stream available)
       if (!this.isReady) {
-        console.log("[ParticipantManager] ⏸️ Not ready yet, skipping offer to new user");
+        console.log("[ParticipantManager] ⏸️ Not ready yet, adding user to pending list");
+        this.pendingUsers.push(userData);
         return;
       }
 

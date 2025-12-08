@@ -24,40 +24,40 @@ export class MediaManager {
    * @param videoInitiallyEnabled Initial enabled state for video track (default: false)
    */
   async startMedia(
-    audioEnabled: boolean = true, 
-    videoEnabled: boolean = false,
     audioInitiallyEnabled: boolean = false,
     videoInitiallyEnabled: boolean = false
   ): Promise<MediaStream | null> {
     try {
-      console.log(`[MediaManager] 🎤 Starting media - audio: ${audioEnabled}, video: ${videoEnabled}`);
-      console.log(`[MediaManager] 🔇 Initial state - audioEnabled: ${audioInitiallyEnabled}, videoEnabled: ${videoInitiallyEnabled}`);
+      console.log(`[MediaManager] 🎤 Starting media - requesting permissions for audio and video`);
+      console.log(`[MediaManager] 🔇 Initial enabled state - audio: ${audioInitiallyEnabled}, video: ${videoInitiallyEnabled}`);
 
+      // ALWAYS request both audio and video to have tracks available
+      // We control their enabled state separately
       const constraints: MediaStreamConstraints = {
-        audio: audioEnabled ? {
+        audio: {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
-        } : false,
-        video: videoEnabled ? {
+        },
+        video: {
           width: { ideal: 1280 },
           height: { ideal: 720 },
           frameRate: { ideal: 30 },
-        } : false,
+        },
       };
 
       try {
         this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
-      } catch (error: any) {
-        // If video fails, try audio only
-        if (videoEnabled && error.name === 'NotReadableError') {
+      } catch (error: unknown) {
+        // If both fail, try audio only
+        if (error instanceof Error && error.name === 'NotReadableError') {
           console.warn("[MediaManager] ⚠️ Video device busy, falling back to audio only");
           const audioOnlyConstraints: MediaStreamConstraints = {
-            audio: audioEnabled ? {
+            audio: {
               echoCancellation: true,
               noiseSuppression: true,
               autoGainControl: true,
-            } : false,
+            },
             video: false,
           };
           this.localStream = await navigator.mediaDevices.getUserMedia(audioOnlyConstraints);

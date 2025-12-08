@@ -142,13 +142,19 @@ export class ConnectionManager {
           const existingTrack = remoteStream.getTracks().find(t => t.kind === track.kind);
           
           if (existingTrack) {
-            console.log(`[ConnectionManager]   - Replacing existing ${track.kind} track`);
-            remoteStream.removeTrack(existingTrack);
-            existingTrack.stop();
+            // Only replace if it's actually a different track (different ID)
+            if (existingTrack.id !== track.id) {
+              console.log(`[ConnectionManager]   - Replacing existing ${track.kind} track (${existingTrack.id} → ${track.id})`);
+              remoteStream.removeTrack(existingTrack);
+              existingTrack.stop();
+              remoteStream.addTrack(track);
+            } else {
+              console.log(`[ConnectionManager]   - Same ${track.kind} track already in stream, skipping`);
+            }
+          } else {
+            console.log(`[ConnectionManager]   - Adding ${track.kind} to remote stream (enabled: ${track.enabled}, state: ${track.readyState})`);
+            remoteStream.addTrack(track);
           }
-          
-          console.log(`[ConnectionManager]   - Adding ${track.kind} to remote stream (enabled: ${track.enabled}, state: ${track.readyState})`);
-          remoteStream.addTrack(track);
         });
       } else {
         console.warn(`[ConnectionManager] ⚠️ No streams in track event from ${targetUserId}`);
@@ -241,7 +247,7 @@ export class ConnectionManager {
 
     this.peerConnections.forEach(({ connection }, userId) => {
       const senders = connection.getSenders();
-      let addedNewTrack = false;
+      let needsRenegotiation = false;
 
       stream.getTracks().forEach((track) => {
         const existingSender = senders.find(
@@ -249,24 +255,35 @@ export class ConnectionManager {
         );
 
         if (existingSender) {
+          const oldTrack = existingSender.track;
           console.log(`[ConnectionManager] Replacing ${track.kind} track for ${userId}`);
+          console.log(`  - Old track: ${oldTrack?.id}, enabled: ${oldTrack?.enabled}`);
+          console.log(`  - New track: ${track.id}, enabled: ${track.enabled}`);
+          
           existingSender.replaceTrack(track).catch((err) =>
             console.error(`[ConnectionManager] ❌ Error replacing track:`, err)
           );
+          
+          // Only need renegotiation if track ID changed (completely new track)
+          // Changing track.enabled does NOT require renegotiation
+          if (oldTrack && oldTrack.id !== track.id) {
+            console.log(`[ConnectionManager] 📤 Track ID changed, renegotiation needed for ${userId}`);
+            needsRenegotiation = true;
+          }
         } else {
           console.log(`[ConnectionManager] Adding new ${track.kind} track for ${userId}`);
           connection.addTrack(track, stream);
-          addedNewTrack = true;
+          needsRenegotiation = true;
         }
       });
 
-      // Only renegotiate if we added a new track (not just replaced)
-      if (addedNewTrack) {
+      // Mark peer for renegotiation if needed
+      if (needsRenegotiation) {
         peersNeedingRenegotiation.push(userId);
       }
     });
 
-    // Trigger manual renegotiation for peers that got new tracks
+    // Trigger manual renegotiation for peers that need it
     if (peersNeedingRenegotiation.length > 0 && this.onNegotiationNeededCallback) {
       console.log(`[ConnectionManager] 📤 Triggering renegotiation for ${peersNeedingRenegotiation.length} peers`);
       peersNeedingRenegotiation.forEach(userId => {
