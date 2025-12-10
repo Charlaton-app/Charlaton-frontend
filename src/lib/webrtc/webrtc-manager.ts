@@ -17,7 +17,6 @@ import { ParticipantManager } from "./participant-manager";
 import type { 
   RemoteStreamCallback, 
   ParticipantEventCallback, 
-  UserData,
   MediaState
 } from "./types";
 
@@ -28,14 +27,11 @@ export class WebRTCManager {
   private participantManager: ParticipantManager;
   
   private isInitialized = false;
-  private roomId: string | null = null;
-  private userId: string | null = null;
 
   // Event callbacks
   private onRemoteStreamCallback: RemoteStreamCallback | null = null;
   private onUserJoinedCallback: ParticipantEventCallback | null = null;
   private onUserLeftCallback: ParticipantEventCallback | null = null;
-  private onMediaStateChangeCallback: ((userId: string, state: MediaState) => void) | null = null;
 
   constructor() {
     console.log("[WebRTCManager] 🚀 Initializing WebRTC Manager");
@@ -59,9 +55,6 @@ export class WebRTCManager {
 
     console.log(`[WebRTCManager] 🔧 Initializing for room ${roomId}, user ${userId}`);
     console.log(`[WebRTCManager] Socket connected: ${socket.connected}, ID: ${socket.id}`);
-
-    this.roomId = roomId;
-    this.userId = userId;
 
     // Initialize connection manager (must be done before signaling/participant managers)
     this.connectionManager.initialize(roomId, socket, null); // localStream will be set later
@@ -239,9 +232,9 @@ export class WebRTCManager {
   /**
    * Set callback for media state changes
    */
-  setOnMediaStateChange(callback: (userId: string, state: MediaState) => void): void {
+  setOnMediaStateChange(_callback: (userId: string, state: MediaState) => void): void {
     console.log("[WebRTCManager] Setting media state change callback");
-    this.onMediaStateChangeCallback = callback;
+    // Not currently used, but keeping the method signature for future implementation
   }
 
   /**
@@ -265,12 +258,9 @@ export class WebRTCManager {
     this.mediaManager.cleanup();
     
     this.isInitialized = false;
-    this.roomId = null;
-    this.userId = null;
     this.onRemoteStreamCallback = null;
     this.onUserJoinedCallback = null;
     this.onUserLeftCallback = null;
-    this.onMediaStateChangeCallback = null;
     
     console.log("[WebRTCManager] ✅ Cleanup complete");
   }

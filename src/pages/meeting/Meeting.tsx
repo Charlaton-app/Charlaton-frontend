@@ -589,7 +589,6 @@ const Meeting: React.FC = () => {
               id: `temp-${targetUserId}`,
               userId: targetUserId,
               roomId: meetingId!,
-              role: "participant" as const,
               joinedAt: new Date().toISOString(),
               user: userData.user || {
                 id: targetUserId,
@@ -1573,7 +1572,7 @@ const Meeting: React.FC = () => {
               });
               
               // Add participants with remote streams that aren't in participants array
-              remoteStreamsRef.current.forEach((stream, firebaseUid) => {
+              remoteStreamsRef.current.forEach((_stream, firebaseUid) => {
                 // Try to find matching participant by Firebase UID
                 const matchingParticipant = participants.find(p => p.firebaseUid === firebaseUid);
                 
