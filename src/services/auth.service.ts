@@ -424,7 +424,10 @@ export const logout = async () => {
     try {
       await firebaseSignOut(auth);
     } catch (firebaseError) {
-      console.error("[AUTH-SERVICE] Error signing out from Firebase:", firebaseError);
+      console.error(
+        "[AUTH-SERVICE] Error signing out from Firebase:",
+        firebaseError
+      );
     }
   }
 

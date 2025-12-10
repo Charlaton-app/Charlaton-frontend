@@ -88,13 +88,8 @@ export async function connectToWebRTC(): Promise<Socket | null> {
     console.log("[WEBRTC-SOCKET] ⚠️ Disconnected:", reason);
   });
 
-  webrtcSocket.on("join_room_success", (data) => {
-    console.log("[WEBRTC-SOCKET] ✅ Successfully joined WebRTC room:", data);
-  });
-
-  webrtcSocket.on("join_room_error", (data) => {
-    console.error("[WEBRTC-SOCKET] ❌ Failed to join WebRTC room:", data);
-  });
+  // NOTE: join_room_success/error listeners are in Meeting.tsx
+  // Do NOT add them here or they will interfere with the component listeners
 
   return webrtcSocket;
 }

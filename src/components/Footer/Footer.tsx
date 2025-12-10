@@ -151,92 +151,10 @@ const Footer: React.FC = () => {
         );
 
       case "manual":
-        return (
-          <Modal isOpen={true} onClose={closeModal} title="Manual de Usuario">
-            <div>
-              <h3>Comenzando con Charlaton</h3>
-              <p>
-                Esta guía te ayudará a aprovechar al máximo nuestra plataforma
-                de videoconferencia.
-              </p>
-
-              <h3>1. Crear tu Primera Reunión</h3>
-              <ol>
-                <li>Inicia sesión en tu cuenta de Charlaton</li>
-                <li>Haz clic en "Iniciar Reunión" en tu dashboard</li>
-                <li>Configura tu cámara y micrófono cuando se te solicite</li>
-                <li>Comparte el enlace de la reunión con los participantes</li>
-              </ol>
-
-              <h3>2. Unirse a una Reunión</h3>
-              <ol>
-                <li>Haz clic en el enlace de invitación que recibiste</li>
-                <li>Ingresa tu nombre si no has iniciado sesión</li>
-                <li>Permite el acceso a tu cámara y micrófono</li>
-                <li>Haz clic en "Unirse a la reunión"</li>
-              </ol>
-
-              <h3>3. Controles Durante la Reunión</h3>
-              <ul>
-                <li>
-                  <strong>Micrófono:</strong> Activar/desactivar tu audio
-                </li>
-                <li>
-                  <strong>Cámara:</strong> Activar/desactivar tu video
-                </li>
-                <li>
-                  <strong>Compartir pantalla:</strong> Mostrar tu pantalla a
-                  otros participantes
-                </li>
-                <li>
-                  <strong>Chat:</strong> Enviar mensajes a todos o participantes
-                  específicos
-                </li>
-                <li>
-                  <strong>Participantes:</strong> Ver la lista de asistentes
-                </li>
-                <li>
-                  <strong>Grabar:</strong> Iniciar/detener grabación (planes
-                  Premium)
-                </li>
-              </ul>
-
-              <h3>4. Funciones Avanzadas</h3>
-              <p>
-                <strong>Fondos Virtuales:</strong> Cambia tu fondo para mayor
-                privacidad o profesionalismo.
-              </p>
-              <p>
-                <strong>Sala de Espera:</strong> Controla quién puede entrar a
-                tu reunión.
-              </p>
-              <p>
-                <strong>Compartir Archivos:</strong> Arrastra archivos al chat
-                para compartirlos con todos.
-              </p>
-              <p>
-                <strong>Pizarra Compartida:</strong> Colabora visualmente con tu
-                equipo en tiempo real.
-              </p>
-
-              <h3>5. Consejos para Mejores Reuniones</h3>
-              <ul>
-                <li>Prueba tu equipo antes de reuniones importantes</li>
-                <li>Usa auriculares para evitar eco</li>
-                <li>Asegura buena iluminación frente a ti</li>
-                <li>Silencia tu micrófono cuando no estés hablando</li>
-                <li>Cierra aplicaciones innecesarias para mejor rendimiento</li>
-              </ul>
-
-              <h3>Soporte Adicional</h3>
-              <p>
-                ¿Necesitas más ayuda? Visita nuestro{" "}
-                <a href="#">Centro de Ayuda</a> o contáctanos en{" "}
-                <a href="mailto:soporte@charlaton.com">soporte@charlaton.com</a>
-              </p>
-            </div>
-          </Modal>
-        );
+        // Abrir el PDF del manual directamente en una nueva pestaña
+        window.open("/docs/manual_usuario.pdf", "_blank");
+        closeModal();
+        return null;
 
       case "speed-test":
         return (

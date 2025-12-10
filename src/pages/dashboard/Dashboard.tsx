@@ -354,12 +354,6 @@ const Dashboard: React.FC = () => {
       },
     },
     {
-      title: "Programar",
-      description: "Agenda reuniones futuras",
-      icon: "calendar",
-      action: () => showToast("Funcionalidad próximamente", "info"),
-    },
-    {
       title: "Resúmenes",
       description: "Revisa los resúmenes de tus reuniones",
       icon: "summary",

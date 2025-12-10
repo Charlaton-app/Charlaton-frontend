@@ -33,6 +33,7 @@ export interface Participant {
   roomId: string;
   joinedAt: string;
   leftAt?: string | null;
+  firebaseUid?: string; // Firebase UID for WebRTC stream matching
   user?: {
     id: string;
     email: string;
@@ -114,12 +115,14 @@ export const createRoom = async (roomData: CreateRoomData) => {
  * @param {string} roomId - Room ID to join
  * @param {string} userId - User ID joining the room
  * @param {string} [password] - Optional room password if required
+ * @param {string} [firebaseUid] - Optional Firebase UID for WebRTC mapping
  * @returns {Promise<{data?: any, error?: string}>} Response with connection data or error
  */
 export const joinRoom = async (
   roomId: string,
   userId: string,
-  password?: string
+  password?: string,
+  firebaseUid?: string
 ) => {
   try {
     // First check if room exists
@@ -140,10 +143,11 @@ export const joinRoom = async (
       return { error: "Contraseña incorrecta" };
     }
 
-    // Create user connection
+    // Create user connection (include firebaseUid for WebRTC mapping)
     const response = await api.post("/connection", {
       userId,
       roomId,
+      firebaseUid, // Include Firebase UID for WebRTC stream matching
     });
 
     if (response.error) {

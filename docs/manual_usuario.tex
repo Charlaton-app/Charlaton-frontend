@@ -1,0 +1,507 @@
+\documentclass[11pt,a4paper]{article}
+
+% Paquetes necesarios
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage[margin=2cm]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{fontawesome5}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,positioning,shadows}
+\usepackage{enumitem}
+\usepackage{float}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{multirow}
+
+% Definir colores de Charlaton
+\definecolor{charlatonBlue}{HTML}{0D5E9E}
+\definecolor{charlatonCyan}{HTML}{24C4E8}
+\definecolor{charlatonOrange}{HTML}{F7941D}
+\definecolor{charlatonBg}{HTML}{F0F8FF}
+\definecolor{charlatonGray}{HTML}{5A5A5A}
+
+% Configurar hipervínculos
+\hypersetup{
+    colorlinks=true,
+    linkcolor=charlatonBlue,
+    urlcolor=charlatonCyan,
+    pdftitle={Manual de Usuario - Charlaton},
+    pdfauthor={Charlaton Team}
+}
+
+% Configurar encabezado y pie de página
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{charlatonBlue}\textbf{Charlaton}}
+\fancyhead[R]{\color{charlatonGray}\textit{Manual de Usuario}}
+\fancyfoot[C]{\color{charlatonGray}\thepage}
+\renewcommand{\headrulewidth}{2pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{charlatonCyan}\leaders\hrule height \headrulewidth\hfill}}
+
+% Estilo de secciones
+\titleformat{\section}
+{\color{charlatonBlue}\Large\bfseries}
+{\thesection}{1em}{}[\color{charlatonCyan}\titlerule]
+
+\titleformat{\subsection}
+{\color{charlatonBlue}\large\bfseries}
+{\thesubsection}{1em}{}
+
+% Caja personalizada para consejos
+\newtcolorbox{tipbox}{
+    colback=charlatonBg,
+    colframe=charlatonCyan,
+    boxrule=1.5pt,
+    arc=4pt,
+    left=10pt,
+    right=10pt,
+    top=10pt,
+    bottom=10pt
+}
+
+% Caja para advertencias
+\newtcolorbox{warningbox}{
+    colback=yellow!10,
+    colframe=charlatonOrange,
+    boxrule=1.5pt,
+    arc=4pt,
+    left=10pt,
+    right=10pt,
+    top=10pt,
+    bottom=10pt
+}
+
+\begin{document}
+
+% Portada
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    
+    % Logo simulado con TikZ
+    \begin{tikzpicture}
+        \shade[ball color=charlatonBlue] (0,0) circle (1.5cm);
+        \node[white,font=\Huge\bfseries] at (0,0) {C};
+    \end{tikzpicture}
+    
+    \vspace{1cm}
+    
+    {\Huge\bfseries\color{charlatonBlue} Charlaton\par}
+    \vspace{0.5cm}
+    {\Large\color{charlatonGray} Plataforma de Videoconferencias\par}
+    \vspace{2cm}
+    
+    {\huge\color{charlatonBlue} Manual de Usuario\par}
+    \vspace{1cm}
+    
+    {\Large\color{charlatonGray} Versión 1.0\par}
+    \vspace{0.5cm}
+    {\large\color{charlatonGray} Diciembre 2024\par}
+    
+    \vfill
+    
+    % Iconos de características
+    \begin{tikzpicture}
+        \node[color=charlatonCyan] at (0,0) {\faVideo};
+        \node[color=charlatonBlue] at (2,0) {\faComments};
+        \node[color=charlatonOrange] at (4,0) {\faUsers};
+        \node[color=charlatonCyan] at (6,0) {\faLock};
+    \end{tikzpicture}
+    
+    \vspace{1cm}
+    {\large\color{charlatonGray} Conéctate, comunica y colabora\par}
+\end{titlepage}
+
+% Tabla de contenidos
+\tableofcontents
+\newpage
+
+% ==================== SECCIÓN 1: INTRODUCCIÓN ====================
+\section{¡Bienvenido a Charlaton! \faSmile}
+
+\begin{center}
+\begin{tikzpicture}
+    \node[draw=charlatonCyan,fill=charlatonBg,rounded corners=10pt,minimum width=12cm,minimum height=1.5cm,drop shadow] {
+        \parbox{11cm}{\centering\large\color{charlatonBlue}
+        \textbf{Charlaton} es tu plataforma de videoconferencias\\
+        fácil, rápida y accesible para todos}
+    };
+\end{tikzpicture}
+\end{center}
+
+\vspace{0.5cm}
+
+Charlaton te permite realizar reuniones virtuales con audio, video y chat en tiempo real. Ya sea para estudiar, trabajar, o simplemente charlar con amigos, ¡aquí lo puedes hacer todo!
+
+\subsection{¿Qué puedes hacer en Charlaton?}
+
+\begin{itemize}[leftmargin=2cm]
+    \item[\color{charlatonCyan}\faVideo] \textbf{Videoconferencias:} Reuniones con audio y video de alta calidad
+    \item[\color{charlatonBlue}\faComments] \textbf{Chat en tiempo real:} Mensajes instantáneos durante las reuniones
+    \item[\color{charlatonOrange}\faUsers] \textbf{Salas compartidas:} Crea o únete a salas públicas o privadas
+    \item[\color{charlatonCyan}\faLock] \textbf{Seguridad:} Salas protegidas con contraseña
+    \item[\color{charlatonBlue}\faRecordVinyl] \textbf{Grabaciones:} Guarda tus reuniones importantes
+\end{itemize}
+
+\begin{tipbox}
+    \faLightbulb\ \textbf{Consejo:} Charlaton funciona en cualquier navegador moderno. No necesitas instalar nada.
+\end{tipbox}
+
+% ==================== SECCIÓN 2: COMENZANDO ====================
+\section{Primeros Pasos \faRocket}
+
+\subsection{Crear tu cuenta}
+
+\begin{enumerate}[leftmargin=2cm]
+    \item \textbf{Ingresa a la plataforma:} Abre tu navegador y ve a la página de Charlaton
+    \item \textbf{Regístrate:} Haz clic en \textcolor{charlatonBlue}{\textbf{"Registrarse"}}
+    \item \textbf{Completa tus datos:}
+    \begin{itemize}
+        \item Correo electrónico
+        \item Contraseña segura
+        \item Nombre de usuario (nickname)
+    \end{itemize}
+    \item \textbf{¡Listo!} Ya puedes ingresar a la plataforma
+\end{enumerate}
+
+\begin{center}
+\begin{tikzpicture}[node distance=1.5cm]
+    \node[draw,rectangle,rounded corners,fill=charlatonBg,minimum width=3cm,minimum height=1cm,drop shadow] (step1) {\small\textbf{Registrarse}};
+    \node[draw,rectangle,rounded corners,fill=charlatonBg,minimum width=3cm,minimum height=1cm,right=of step1,drop shadow] (step2) {\small\textbf{Completar datos}};
+    \node[draw,rectangle,rounded corners,fill=charlatonBg,minimum width=3cm,minimum height=1cm,right=of step2,drop shadow] (step3) {\small\textbf{Comenzar}};
+    \draw[thick,color=charlatonCyan,-latex] (step1) -- (step2);
+    \draw[thick,color=charlatonCyan,-latex] (step2) -- (step3);
+\end{tikzpicture}
+\end{center}
+
+\subsection{Iniciar Sesión}
+
+Si ya tienes cuenta, simplemente:
+\begin{enumerate}[leftmargin=2cm]
+    \item Haz clic en \textcolor{charlatonBlue}{\textbf{"Iniciar Sesión"}}
+    \item Ingresa tu correo y contraseña
+    \item ¡Entra y disfruta!
+\end{enumerate}
+
+\begin{warningbox}
+    \faExclamationTriangle\ \textbf{Importante:} Guarda tu contraseña en un lugar seguro. Si la olvidas, puedes recuperarla usando tu correo electrónico.
+\end{warningbox}
+
+% ==================== SECCIÓN 3: SALAS ====================
+\section{Salas de Reunión \faDoorOpen}
+
+\subsection{Crear una nueva sala}
+
+\begin{enumerate}[leftmargin=2cm]
+    \item En el menú principal, haz clic en \textcolor{charlatonBlue}{\textbf{"Crear Sala"}}
+    \item Completa la información:
+    \begin{itemize}
+        \item \textbf{Nombre:} Ponle un nombre descriptivo a tu sala
+        \item \textbf{Tipo:} Elige si será pública o privada
+        \item \textbf{Contraseña:} (Opcional) Para salas privadas
+        \item \textbf{Programar:} (Opcional) Agenda para más tarde
+    \end{itemize}
+    \item Haz clic en \textcolor{charlatonBlue}{\textbf{"Crear"}}
+\end{enumerate}
+
+\begin{tipbox}
+    \faLightbulb\ \textbf{Consejo:} Las salas públicas aparecen en el listado general. Las privadas solo son accesibles con la contraseña.
+\end{tipbox}
+
+\subsection{Unirse a una sala existente}
+
+\begin{center}
+\begin{tikzpicture}
+    % Opción 1
+    \node[draw=charlatonBlue,fill=charlatonBg,rectangle,rounded corners,minimum width=5cm,minimum height=2.5cm,drop shadow] at (0,0) {
+        \parbox{4.5cm}{
+            \centering\color{charlatonBlue}\textbf{\faList\ Método 1}\\[0.3cm]
+            \small\color{charlatonGray}
+            1. Ver lista de salas\\
+            2. Buscar la sala\\
+            3. Clic en "Unirse"
+        }
+    };
+    % Opción 2
+    \node[draw=charlatonOrange,fill=yellow!10,rectangle,rounded corners,minimum width=5cm,minimum height=2.5cm,drop shadow] at (6,0) {
+        \parbox{4.5cm}{
+            \centering\color{charlatonOrange}\textbf{\faLink\ Método 2}\\[0.3cm]
+            \small\color{charlatonGray}
+            1. Obtén el enlace\\
+            2. Ábrelo en navegador\\
+            3. Ingresa contraseña si aplica
+        }
+    };
+\end{tikzpicture}
+\end{center}
+
+\vspace{0.5cm}
+
+\textbf{Salas con contraseña:} Si la sala es privada, se te pedirá la contraseña antes de entrar.
+
+% ==================== SECCIÓN 4: EN LA REUNIÓN ====================
+\section{Durante la Reunión \faVideo}
+
+\subsection{Panel de Control}
+
+Una vez dentro de la sala, verás el panel de control con varios botones:
+
+\begin{center}
+\begin{tabular}{cl}
+\textcolor{charlatonCyan}{\faMicrophone} & \textbf{Micrófono:} Activar/Desactivar audio \\[0.3cm]
+\textcolor{charlatonBlue}{\faVideo} & \textbf{Cámara:} Activar/Desactivar video \\[0.3cm]
+\textcolor{charlatonOrange}{\faComments} & \textbf{Chat:} Abrir/Cerrar el chat \\[0.3cm]
+\textcolor{charlatonCyan}{\faUsers} & \textbf{Participantes:} Ver lista de usuarios \\[0.3cm]
+\textcolor{red}{\faPhoneSlash} & \textbf{Salir:} Abandonar la reunión \\
+\end{tabular}
+\end{center}
+
+\begin{tipbox}
+    \faLightbulb\ \textbf{Consejo:} Presiona los botones para activar o desactivar. Los iconos cambiarán de color para indicar el estado.
+\end{tipbox}
+
+\subsection{Video y Audio}
+
+\textbf{Para activar tu cámara o micrófono:}
+\begin{itemize}
+    \item Haz clic en el botón correspondiente
+    \item La primera vez, tu navegador te pedirá permiso
+    \item Autoriza el acceso a la cámara/micrófono
+\end{itemize}
+
+\begin{warningbox}
+    \faExclamationTriangle\ \textbf{Importante:} Si no ves video o no escuchas audio, verifica que tu navegador tenga permisos para acceder a la cámara y micrófono.
+\end{warningbox}
+
+\textbf{Controlar tu audio/video:}
+\begin{itemize}
+    \item \textcolor{charlatonCyan}{\faMicrophone}: Micrófono activado
+    \item \textcolor{red}{\faMicrophoneSlash}: Micrófono silenciado
+    \item \textcolor{charlatonBlue}{\faVideo}: Cámara activada
+    \item \textcolor{red}{\faVideoSlash}: Cámara desactivada
+\end{itemize}
+
+\subsection{Chat en Tiempo Real}
+
+El chat te permite enviar mensajes a todos los participantes:
+
+\begin{enumerate}[leftmargin=2cm]
+    \item Haz clic en el botón \textcolor{charlatonOrange}{\faComments}
+    \item Escribe tu mensaje en el campo de texto
+    \item Presiona Enter o el botón de enviar
+    \item ¡Tu mensaje aparecerá para todos!
+\end{enumerate}
+
+\begin{tipbox}
+    \faLightbulb\ \textbf{Consejo:} El chat permanece visible durante toda la reunión y puedes revisar mensajes anteriores haciendo scroll.
+\end{tipbox}
+
+\subsection{Participantes}
+
+Para ver quién está en la sala:
+\begin{itemize}
+    \item Haz clic en \textcolor{charlatonCyan}{\faUsers}
+    \item Verás la lista completa de participantes
+    \item Los iconos indican si tienen audio/video activo
+\end{itemize}
+
+% ==================== SECCIÓN 5: FUNCIONES AVANZADAS ====================
+\section{Funciones Adicionales \faStar}
+
+\subsection{Administración de Salas}
+
+Si eres el \textbf{creador de la sala}, tienes privilegios especiales:
+
+\begin{itemize}[leftmargin=2cm]
+    \item[\color{charlatonBlue}\faCrown] \textbf{Finalizar reunión:} Cierra la sala para todos
+    \item[\color{charlatonCyan}\faUserPlus] \textbf{Agregar administradores:} Comparte el control
+    \item[\color{charlatonOrange}\faKey] \textbf{Cambiar contraseña:} Actualiza la seguridad
+    \item[\color{charlatonBlue}\faTrash] \textbf{Eliminar sala:} Borra la sala permanentemente
+\end{itemize}
+
+\subsection{Grabación de Reuniones}
+
+\begin{warningbox}
+    \faExclamationTriangle\ \textbf{Nota:} La función de grabación está disponible para administradores de la sala.
+\end{warningbox}
+
+Para grabar una reunión:
+\begin{enumerate}[leftmargin=2cm]
+    \item Haz clic en el botón de grabar \textcolor{red}{\faCircle}
+    \item La grabación comenzará automáticamente
+    \item Para detener, presiona el mismo botón
+    \item La grabación se guardará en tu cuenta
+\end{enumerate}
+
+\subsection{Compartir Sala}
+
+Para invitar a otros:
+\begin{enumerate}[leftmargin=2cm]
+    \item Copia el enlace de la sala desde tu navegador
+    \item Envíalo por correo, WhatsApp, etc.
+    \item Si la sala tiene contraseña, compártela también
+\end{enumerate}
+
+\begin{center}
+\begin{tikzpicture}
+    \node[draw=charlatonCyan,fill=charlatonBg,rounded corners,minimum width=10cm,minimum height=1cm,drop shadow] {
+        \parbox{9cm}{\centering\small\texttt{https://charlaton.com/room/abc123xyz}}
+    };
+\end{tikzpicture}
+\end{center}
+
+% ==================== SECCIÓN 6: CONSEJOS ====================
+\section{Consejos para una Mejor Experiencia \faThumbsUp}
+
+\subsection{Conexión y Calidad}
+
+\begin{itemize}[leftmargin=2cm]
+    \item[\color{charlatonCyan}\faWifi] \textbf{Internet estable:} Usa WiFi o conexión por cable
+    \item[\color{charlatonBlue}\faDesktop] \textbf{Cierra otras aplicaciones:} Libera recursos del navegador
+    \item[\color{charlatonOrange}\faVolumeUp] \textbf{Usa audífonos:} Evita eco y mejora el audio
+\end{itemize}
+
+\subsection{Privacidad y Seguridad}
+
+\begin{warningbox}
+    \faLock\ \textbf{Seguridad:} Nunca compartas tus contraseñas. Cierra sesión en computadoras compartidas.
+\end{warningbox}
+
+\begin{itemize}[leftmargin=2cm]
+    \item Usa contraseñas únicas y seguras
+    \item No compartas enlaces de salas privadas públicamente
+    \item Reporta comportamientos inapropiados
+\end{itemize}
+
+\subsection{Etiqueta en Reuniones}
+
+\begin{center}
+\begin{tikzpicture}
+    \node[draw=charlatonBlue,circle,fill=charlatonBg,minimum size=2cm,drop shadow] at (0,0) {\Large\color{charlatonBlue}\faMicrophoneSlash};
+    \node[below] at (0,-1.5) {\small\parbox{2.5cm}{\centering\textbf{Silencia cuando no hables}}};
+    
+    \node[draw=charlatonCyan,circle,fill=charlatonBg,minimum size=2cm,drop shadow] at (4,0) {\Large\color{charlatonCyan}\faComments};
+    \node[below] at (4,-1.5) {\small\parbox{2.5cm}{\centering\textbf{Usa el chat sin interrumpir}}};
+    
+    \node[draw=charlatonOrange,circle,fill=yellow!10,minimum size=2cm,drop shadow] at (8,0) {\Large\color{charlatonOrange}\faSmile};
+    \node[below] at (8,-1.5) {\small\parbox{2.5cm}{\centering\textbf{Sé respetuoso siempre}}};
+\end{tikzpicture}
+\end{center}
+
+% ==================== SECCIÓN 7: RESOLUCIÓN DE PROBLEMAS ====================
+\section{Solución de Problemas \faTools}
+
+\subsection{No puedo activar mi cámara o micrófono}
+
+\textbf{Solución:}
+\begin{enumerate}[leftmargin=2cm]
+    \item Verifica los permisos del navegador
+    \item Ve a Configuración → Privacidad y seguridad
+    \item Asegúrate de permitir acceso a cámara/micrófono
+    \item Recarga la página
+\end{enumerate}
+
+\subsection{No veo a otros participantes}
+
+\textbf{Solución:}
+\begin{itemize}
+    \item Verifica tu conexión a internet
+    \item Recarga la página
+    \item Intenta salir y volver a entrar a la sala
+\end{itemize}
+
+\subsection{El chat no funciona}
+
+\textbf{Solución:}
+\begin{itemize}
+    \item Verifica que estás conectado a la sala
+    \item Revisa tu conexión a internet
+    \item Actualiza la página
+\end{itemize}
+
+\begin{tipbox}
+    \faQuestionCircle\ \textbf{¿Necesitas más ayuda?} Visita nuestra sección de soporte o contacta al equipo de Charlaton.
+\end{tipbox}
+
+% ==================== SECCIÓN 8: PREGUNTAS FRECUENTES ====================
+\section{Preguntas Frecuentes \faQuestion}
+
+\subsection{¿Cuántas personas pueden estar en una sala?}
+
+Charlaton soporta reuniones con múltiples participantes. El número exacto depende de tu plan y conexión.
+
+\subsection{¿Necesito descargar algo?}
+
+No. Charlaton funciona completamente en tu navegador. Solo necesitas un navegador moderno como Chrome, Firefox o Edge.
+
+\subsection{¿Es gratis?}
+
+Charlaton ofrece un plan gratuito con funcionalidades básicas. También hay planes premium con funciones avanzadas.
+
+\subsection{¿Funciona en móvil?}
+
+Sí. Puedes usar Charlaton desde tu teléfono o tablet abriendo la página en tu navegador móvil.
+
+\subsection{¿Las reuniones son seguras?}
+
+Sí. Todas las comunicaciones están cifradas y puedes proteger tus salas con contraseña.
+
+% ==================== SECCIÓN 9: CONTACTO ====================
+\section{Contacto y Soporte \faEnvelope}
+
+\begin{center}
+\begin{tcolorbox}[colback=charlatonBg,colframe=charlatonBlue,width=12cm,arc=10pt,boxrule=2pt]
+    \centering
+    \Large\color{charlatonBlue}\textbf{¿Necesitas ayuda?}\\[0.5cm]
+    \normalsize\color{charlatonGray}
+    Visita nuestra página de soporte\\[0.2cm]
+    o contáctanos por correo:\\[0.3cm]
+    \textcolor{charlatonCyan}{\texttt{soporte@charlaton.com}}\\[0.5cm]
+    \small Estamos aquí para ayudarte 24/7
+\end{tcolorbox}
+\end{center}
+
+% ==================== CONCLUSIÓN ====================
+\section*{¡Comienza Ahora! \faRocket}
+\addcontentsline{toc}{section}{¡Comienza Ahora!}
+
+\begin{center}
+\begin{tikzpicture}
+    \node[draw=charlatonBlue,fill=charlatonBg,rounded corners=15pt,minimum width=13cm,minimum height=3cm,drop shadow,line width=2pt] {
+        \parbox{12cm}{
+            \centering
+            \Large\color{charlatonBlue}\textbf{¡Ya estás listo para usar Charlaton!}\\[0.5cm]
+            \normalsize\color{charlatonGray}
+            Crea tu cuenta, únete a salas o crea las tuyas propias.\\
+            Conéctate con amigos, familia, compañeros de estudio o trabajo.\\[0.3cm]
+            \large\color{charlatonCyan}\textbf{¡La comunicación empieza aquí!}
+        }
+    };
+\end{tikzpicture}
+\end{center}
+
+\vspace{1cm}
+
+\begin{center}
+\begin{tikzpicture}
+    \node[color=charlatonCyan,scale=2] at (0,0) {\faVideo};
+    \node[color=charlatonBlue,scale=2] at (2,0) {\faComments};
+    \node[color=charlatonOrange,scale=2] at (4,0) {\faUsers};
+    \node[color=charlatonCyan,scale=2] at (6,0) {\faHeart};
+\end{tikzpicture}
+\end{center}
+
+\vfill
+
+\begin{center}
+\color{charlatonGray}\small
+---\\
+Manual de Usuario - Charlaton v1.0\\
+© 2024 Charlaton Team. Todos los derechos reservados.
+\end{center}
+
+\end{document}

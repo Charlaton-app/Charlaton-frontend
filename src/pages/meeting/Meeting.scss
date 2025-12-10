@@ -211,13 +211,16 @@ $font-body: "Rubik", sans-serif;
       .video-grid {
         flex: 1;
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(300px, 380px));
         gap: 1rem;
         align-content: start;
+        align-items: start;
+        justify-content: start;
+        justify-items: start;
 
         .video-tile {
           position: relative;
-          aspect-ratio: 16 / 5;
+          aspect-ratio: 1 / 1;
           background: $bg-dark;
           border-radius: 12px;
           overflow: hidden;
@@ -239,22 +242,24 @@ $font-body: "Rubik", sans-serif;
           }
 
           .participant-avatar {
-            width: 88px;
-            height: 88px;
-            background: linear-gradient(
-              135deg,
-              $primary-color 0%,
-              $secondary-color 100%
-            );
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 72px;
+            height: 72px;
+            background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2.2rem;
+            font-size: 2rem;
             font-weight: 700;
             color: $text-white;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
             letter-spacing: 1px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+            z-index: 1;
           }
 
           .participant-info {
@@ -309,14 +314,11 @@ $font-body: "Rubik", sans-serif;
         }
 
         @media (max-width: 1024px) {
-          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
         }
 
         @media (max-width: 640px) {
           grid-template-columns: 1fr;
-          .video-tile {
-            aspect-ratio: 16 / 11;
-          }
         }
       }
 
