@@ -1027,9 +1027,9 @@ const Meeting: React.FC = () => {
       }
       
       // Try to find video element using backend userId
-      const videoEl = document.getElementById(
-        `video-${backendUserId}`
-      ) as HTMLVideoElement | null;
+              const videoEl = document.getElementById(
+                `video-${backendUserId}`
+              ) as HTMLVideoElement | null;
       
       console.log(`[MEETING]   - Checking video element for Firebase UID ${firebaseUid} (backend ID: ${backendUserId}):`);
       console.log(`[MEETING]     - Element found: ${!!videoEl}`);
@@ -1038,10 +1038,15 @@ const Meeting: React.FC = () => {
       console.log(`[MEETING]     - Stream tracks: ${stream.getTracks().length}`);
       
       // Check if stream has active video and update camera state if needed
-      const hasActiveVideo = stream.getVideoTracks().some(t => t.enabled && t.readyState === 'live');
+      const hasActiveVideo = stream
+        .getVideoTracks()
+        .some((t) => t.enabled && t.readyState === "live");
+
+      setCameraStates((prev) => ({ ...prev, [backendUserId]: hasActiveVideo }));
       if (hasActiveVideo && cameraStates[backendUserId] !== true) {
-        console.log(`[MEETING] 📹 Stream has video but cameraState is false - updating to true for ${backendUserId}`);
-        setCameraStates((prev) => ({ ...prev, [backendUserId]: true }));
+        console.log(
+          `[MEETING] 📹 Stream has video but cameraState is false - updating to true for ${backendUserId}`
+        );
       }
       
       if (videoEl) {
@@ -1665,7 +1670,12 @@ const Meeting: React.FC = () => {
                     playsInline
                     muted={isCurrentUser}
                     className="participant-video"
-                    style={{ display: cameraStates[participantUserId] ? 'block' : 'none' }}
+                    style={{
+                      opacity: cameraStates[participantUserId] ? 1 : 0,
+                      visibility: cameraStates[participantUserId]
+                        ? "visible"
+                        : "hidden",
+                    }}
                   />
                   {!cameraStates[participantUserId] && (
                     <div className="participant-avatar">{initial}</div>
