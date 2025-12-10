@@ -277,8 +277,9 @@ const Meeting: React.FC = () => {
         setRoom(roomResponse.data);
         setIsHost(roomResponse.data.creatorId === user.id);
 
-        // Join room
-        const joinResponse = await joinRoom(meetingId, user.id);
+        // Join room (include firebaseUid for WebRTC mapping)
+        const firebaseUid = auth.currentUser?.uid;
+        const joinResponse = await joinRoom(meetingId, user.id, undefined, firebaseUid);
         if (joinResponse.error) {
           setError(joinResponse.error);
           setLoading(false);
