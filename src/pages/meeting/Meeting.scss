@@ -211,13 +211,15 @@ $font-body: "Rubik", sans-serif;
       .video-grid {
         flex: 1;
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         gap: 1rem;
         align-content: start;
+        align-items: start;
+        justify-items: start;
 
         .video-tile {
           position: relative;
-          aspect-ratio: 16 / 5;
+          aspect-ratio: 1 / 1;
           background: $bg-dark;
           border-radius: 12px;
           overflow: hidden;
@@ -309,14 +311,11 @@ $font-body: "Rubik", sans-serif;
         }
 
         @media (max-width: 1024px) {
-          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
         }
 
         @media (max-width: 640px) {
           grid-template-columns: 1fr;
-          .video-tile {
-            aspect-ratio: 16 / 11;
-          }
         }
       }
 

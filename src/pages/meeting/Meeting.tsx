@@ -37,7 +37,10 @@ import {
   disconnectFromChat,
   getSocket,
 } from "../../lib/socket.config";
-import { connectToWebRTC } from "../../lib/webrtcSocket.config";
+import {
+  connectToWebRTC,
+  disconnectFromWebRTC,
+} from "../../lib/webrtcSocket.config";
 import { auth } from "../../lib/firebase.config";
 import { webrtcManager } from "../../lib/webrtc.config";
 import type { Socket } from "socket.io-client";
@@ -798,6 +801,10 @@ const Meeting: React.FC = () => {
         notificationSounds.error();
         // Cleanup and navigate
         disconnectFromChat();
+        disconnectFromWebRTC();
+        setIsWebRTCInitialized(false);
+        setIsMicOn(false);
+        setIsCameraOn(false);
         webrtcManager.cleanup();
         navigate("/dashboard");
       };
@@ -874,6 +881,12 @@ const Meeting: React.FC = () => {
       if (isWebRTCInitialized) {
         webrtcManager.cleanup();
       }
+
+      // Ensure sockets are fully torn down
+      disconnectFromWebRTC();
+      setIsWebRTCInitialized(false);
+      setIsMicOn(false);
+      setIsCameraOn(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [meetingId, user?.id]);
@@ -1164,6 +1177,12 @@ const Meeting: React.FC = () => {
       navigate("/dashboard");
     } catch (err) {
       console.error("[MEETING] Error leaving meeting:", err);
+    } finally {
+      webrtcManager.cleanup();
+      disconnectFromWebRTC();
+      setIsWebRTCInitialized(false);
+      setIsMicOn(false);
+      setIsCameraOn(false);
     }
   };
 
@@ -1202,6 +1221,12 @@ const Meeting: React.FC = () => {
       navigate("/dashboard");
     } catch (err) {
       console.error("[MEETING] Error ending meeting:", err);
+    } finally {
+      webrtcManager.cleanup();
+      disconnectFromWebRTC();
+      setIsWebRTCInitialized(false);
+      setIsMicOn(false);
+      setIsCameraOn(false);
     }
   };
 
@@ -1239,6 +1264,12 @@ const Meeting: React.FC = () => {
     } catch (err) {
       console.error("[MEETING] Error finalizing meeting:", err);
       toast?.error("Error al finalizar la reunión");
+    } finally {
+      webrtcManager.cleanup();
+      disconnectFromWebRTC();
+      setIsWebRTCInitialized(false);
+      setIsMicOn(false);
+      setIsCameraOn(false);
     }
   };
 
